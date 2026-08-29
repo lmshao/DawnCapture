@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DawnCapture (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "DawnCapture (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
