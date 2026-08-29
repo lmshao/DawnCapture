@@ -54,6 +54,9 @@ NuGet.Config
 # Rider
 .idea/
 
+# Agent tooling
+reasonix.toml
+
 # VS Code
 .vscode/
 

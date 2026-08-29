@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="DawnCapture.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <StackPanel Padding="32" Spacing="16" MaxWidth="520" HorizontalAlignment="Left">
+        <TextBlock Text="设置" Style="{StaticResource TitleTextBlockStyle}" />
+
+        <TextBox Header="输出目录" Text="{Binding OutputFolder, Mode=TwoWay}" />
+
+        <NumberBox
+            Header="帧率 (FPS)"
+            Value="{Binding FrameRate, Mode=TwoWay}"
+            SpinButtonPlacementMode="Inline"
+            Minimum="1"
+            Maximum="60" />
+
+        <NumberBox
+            Header="码率 (Kbps)"
+            Value="{Binding BitrateKbps, Mode=TwoWay}"
+            SpinButtonPlacementMode="Inline"
+            Minimum="100"
+            Maximum="100000" />
+
+        <ToggleSwitch Header="录制鼠标光标" IsOn="{Binding CaptureCursor, Mode=TwoWay}" />
+
+        <Button Content="保存" Command="{Binding SaveCommand}" Style="{StaticResource AccentButtonStyle}" />
+
+        <TextBlock Text="{Binding SavedMessage}" Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+    </StackPanel>
+</Page>
