@@ -1,4 +1,7 @@
 using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.UI;
@@ -7,8 +10,11 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Foundation;
 using Windows.Graphics;
+using Windows.Storage.Streams;
+using Point = Windows.Foundation.Point;
 
 namespace DawnCapture.Views;
 
@@ -21,9 +27,17 @@ public sealed partial class RegionPickerWindow : Window
     private const uint LwaColorKey = 0x00000001;
     private const int WmEraseBkgnd = 0x0014;
     private const int MagentaColorRef = 0x00FF00FF;
+    private const uint SwpNoMove = 0x0002;
+    private const uint SwpNoSize = 0x0001;
+    private const uint SwpNoZOrder = 0x0004;
+    private const uint SwpFrameChanged = 0x0020;
+    private const uint RdwInvalidate = 0x0001;
+    private const uint RdwUpdateNow = 0x0100;
+    private const uint RdwFrame = 0x0400;
 
     private readonly TaskCompletionSource<RectInt32?> _tcs = new();
     private readonly WindowSubclassProc _subclassProc;
+    private readonly Task _desktopImageTask;
 
     private Point _start;
     private bool _isDragging;
@@ -48,13 +62,57 @@ public sealed partial class RegionPickerWindow : Window
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _subclassProc = WindowSubClass;
         SetWindowSubclass(hwnd, _subclassProc, 0, 0);
-        EnableAcrylic();
+
+        _desktopImageTask = LoadDesktopImageAsync(virtualScreenBounds);
     }
 
-    public Task<RectInt32?> PickAsync()
+    public async Task<RectInt32?> PickAsync()
     {
+        await _desktopImageTask;
         Activate();
-        return _tcs.Task;
+        return await _tcs.Task;
+    }
+
+    private async Task LoadDesktopImageAsync(RectInt32 bounds)
+    {
+        try
+        {
+            var bitmap = await Task.Run(() => CaptureScreen(bounds));
+            using var stream = new MemoryStream();
+            bitmap.Save(stream, ImageFormat.Png);
+            bitmap.Dispose();
+
+            var randomAccessStream = new InMemoryRandomAccessStream();
+            using (var writer = new DataWriter(randomAccessStream.GetOutputStreamAt(0)))
+            {
+                writer.WriteBytes(stream.ToArray());
+                await writer.StoreAsync();
+                await writer.FlushAsync();
+            }
+
+            randomAccessStream.Seek(0);
+            var bitmapImage = new BitmapImage();
+            await bitmapImage.SetSourceAsync(randomAccessStream);
+            DesktopImage.Source = bitmapImage;
+        }
+        catch
+        {
+            // 截图失败时退化为纯色背景，不阻塞选区流程。
+        }
+    }
+
+    private static Bitmap CaptureScreen(RectInt32 bounds)
+    {
+        var bitmap = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppArgb);
+        using var graphics = Graphics.FromImage(bitmap);
+        graphics.CopyFromScreen(
+            bounds.X,
+            bounds.Y,
+            0,
+            0,
+            new System.Drawing.Size(bounds.Width, bounds.Height),
+            CopyPixelOperation.SourceCopy);
+        return bitmap;
     }
 
     private void Root_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -62,8 +120,6 @@ public sealed partial class RegionPickerWindow : Window
         Root.Focus(FocusState.Programmatic);
         _start = e.GetCurrentPoint(Root).Position;
         _isDragging = true;
-
-        FullShade.Visibility = Visibility.Collapsed;
         UpdateSelection(_start, _start);
     }
 
@@ -168,16 +224,16 @@ public sealed partial class RegionPickerWindow : Window
     {
         _isIndicatorMode = true;
 
-        // 关闭 Acrylic，改用 ColorKey 让窗口除虚线框外完全透明且点击穿透。
-        SetAccentPolicy(AccentState.AccentDisabled);
+        // 运行中切换 WS_EX_LAYERED 后必须 SetWindowPos 才生效，否则窗口会变白。
         EnableColorKeyTransparency();
 
         AppWindow.MoveAndResize(region);
 
         Root.IsHitTestVisible = false;
         Root.Background = new SolidColorBrush(Colors.Transparent);
+        DesktopImage.Visibility = Visibility.Collapsed;
+        FrostOverlay.Visibility = Visibility.Collapsed;
         HintText.Visibility = Visibility.Collapsed;
-        FullShade.Visibility = Visibility.Collapsed;
         ShadeTop.Visibility = Visibility.Collapsed;
         ShadeLeft.Visibility = Visibility.Collapsed;
         ShadeRight.Visibility = Visibility.Collapsed;
@@ -186,59 +242,23 @@ public sealed partial class RegionPickerWindow : Window
         IndicatorRectangle.Visibility = Visibility.Visible;
     }
 
-    private void EnableAcrylic()
-    {
-        // Windows 11 优先 Acrylic，失败回退到 Windows 10 的 BlurBehind。
-        if (!SetAccentPolicy(AccentState.AccentEnableAcrylicBlurBehind))
-        {
-            SetAccentPolicy(AccentState.AccentEnableBlurBehind);
-        }
-    }
-
-    private bool SetAccentPolicy(AccentState state)
-    {
-        try
-        {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var accent = new AccentPolicy
-            {
-                AccentState = state,
-                AccentFlags = 0,
-                GradientColor = 0x44000000,
-                AnimationId = 0
-            };
-
-            int size = Marshal.SizeOf<AccentPolicy>();
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-            try
-            {
-                Marshal.StructureToPtr(accent, ptr, false);
-                var data = new WindowCompositionAttributeData
-                {
-                    Attribute = WindowCompositionAttribute.WcaAccentPolicy,
-                    SizeOfData = size,
-                    Data = ptr
-                };
-
-                return SetWindowCompositionAttribute(hwnd, ref data) != 0;
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(ptr);
-            }
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private void EnableColorKeyTransparency()
     {
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         int exStyle = GetWindowLong(hwnd, GwlExStyle);
         SetWindowLong(hwnd, GwlExStyle, exStyle | WsExLayered | WsExTransparent | WsExNoActivate);
         SetLayeredWindowAttributes(hwnd, MagentaColorRef, 255, LwaColorKey);
+
+        SetWindowPos(
+            hwnd,
+            IntPtr.Zero,
+            0,
+            0,
+            0,
+            0,
+            SwpNoMove | SwpNoSize | SwpNoZOrder | SwpFrameChanged);
+
+        RedrawWindow(hwnd, IntPtr.Zero, IntPtr.Zero, RdwInvalidate | RdwUpdateNow | RdwFrame);
     }
 
     private int WindowSubClass(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, uint dwRefData)
@@ -267,37 +287,7 @@ public sealed partial class RegionPickerWindow : Window
         Close();
     }
 
-    private enum AccentState
-    {
-        AccentDisabled = 0,
-        AccentEnableGradient = 1,
-        AccentEnableTransparentGradient = 2,
-        AccentEnableBlurBehind = 3,
-        AccentEnableAcrylicBlurBehind = 4,
-        AccentInvalidState = 5
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct AccentPolicy
-    {
-        public AccentState AccentState;
-        public uint AccentFlags;
-        public uint GradientColor;
-        public uint AnimationId;
-    }
-
-    private enum WindowCompositionAttribute
-    {
-        WcaAccentPolicy = 19
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct WindowCompositionAttributeData
-    {
-        public WindowCompositionAttribute Attribute;
-        public IntPtr Data;
-        public int SizeOfData;
-    }
+    private delegate int WindowSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, uint dwRefData);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Rect
@@ -307,8 +297,6 @@ public sealed partial class RegionPickerWindow : Window
         public int Right;
         public int Bottom;
     }
-
-    private delegate int WindowSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, uint dwRefData);
 
     [DllImport("user32.dll", EntryPoint = "GetWindowLong")]
     private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
@@ -320,7 +308,17 @@ public sealed partial class RegionPickerWindow : Window
     private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
     [DllImport("user32.dll")]
-    private static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
+    private static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int x,
+        int y,
+        int cx,
+        int cy,
+        uint uFlags);
+
+    [DllImport("user32.dll")]
+    private static extern bool RedrawWindow(IntPtr hWnd, IntPtr lprcUpdate, IntPtr hrgnUpdate, uint flags);
 
     [DllImport("comctl32.dll")]
     private static extern bool SetWindowSubclass(IntPtr hWnd, WindowSubclassProc pfnSubclass, uint uIdSubclass, uint dwRefData);

@@ -56,6 +56,7 @@ public sealed class RecordingService : IRecordingService
     private IDirect3DSurface? _pauseSurface;
     private RectInt32? _cropRect;
     private RegionPickerWindow? _regionIndicator;
+    private RecordingControlWindow? _controlWindow;
     private bool _isRecording;
     private bool _isPaused;
 
@@ -199,7 +200,71 @@ public sealed class RecordingService : IRecordingService
             crop = ClampAndMakeEven(crop, item.Size);
 
             _regionIndicator = regionWindow;
-            return await StartCaptureAsync(item, crop);
+
+            // 选区上方出现 REC 小窗体，点击后才开始录制。
+            var control = new RecordingControlWindow(() => Elapsed);
+            _controlWindow = control;
+
+            var started = false;
+            var tcs = new TaskCompletionSource<bool>();
+
+            control.StartRequested += async () =>
+            {
+                try
+                {
+                    started = await StartCaptureAsync(item, crop);
+                    if (started)
+                    {
+                        control.ShowRecording();
+                    }
+                    else
+                    {
+                        control.CloseWindow();
+                    }
+                }
+                catch
+                {
+                    control.CloseWindow();
+                }
+            };
+
+            control.StopRequested += async () =>
+            {
+                try
+                {
+                    await StopAsync();
+                }
+                finally
+                {
+                    control.CloseWindow();
+                }
+            };
+
+            control.CancelRequested += () =>
+            {
+                if (!started)
+                {
+                    control.CloseWindow();
+                }
+            };
+
+            control.Closed += (_, _) =>
+            {
+                if (!started)
+                {
+                    _regionIndicator?.Close();
+                    _regionIndicator = null;
+                    if (State == RecordingState.PickingSource)
+                    {
+                        State = RecordingState.Idle;
+                    }
+                }
+
+                tcs.TrySetResult(started);
+            };
+
+            control.ShowWaiting(region.Value);
+            return await tcs.Task;
         }
         catch (Exception ex)
         {
@@ -847,6 +912,20 @@ public sealed class RecordingService : IRecordingService
             }
 
             _regionIndicator = null;
+        }
+
+        if (_controlWindow is not null)
+        {
+            try
+            {
+                _controlWindow.CloseWindow();
+            }
+            catch
+            {
+                // 忽略释放异常。
+            }
+
+            _controlWindow = null;
         }
 
         if (_outputStream is not null)

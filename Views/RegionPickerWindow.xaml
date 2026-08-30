@@ -16,10 +16,16 @@
             <KeyboardAccelerator Key="Escape" Invoked="OnEscapeInvoked" />
         </Grid.KeyboardAccelerators>
 
-        <!-- 未开始拖拽时的整屏浅色遮罩 -->
-        <Rectangle x:Name="FullShade" Fill="#22000000" IsHitTestVisible="False" />
+        <!-- 桌面截图作为背景，保证一定可见 -->
+        <Image
+            x:Name="DesktopImage"
+            Stretch="Fill"
+            IsHitTestVisible="False" />
 
-        <!-- 选区外四块遮罩：选区内部保持完全透明 -->
+        <!-- 轻度毛玻璃：一层很淡的白色纱 -->
+        <Rectangle x:Name="FrostOverlay" Fill="#22FFFFFF" IsHitTestVisible="False" />
+
+        <!-- 选区外四块遮罩：选区内部保持透明 -->
         <Rectangle x:Name="ShadeTop" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
         <Rectangle x:Name="ShadeLeft" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
         <Rectangle x:Name="ShadeRight" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
