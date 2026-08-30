@@ -31,6 +31,8 @@
                 Command="{Binding StartCommand}"
                 Style="{StaticResource AccentButtonStyle}" />
 
+            <Button Content="区域录制" Command="{Binding StartRegionCommand}" />
+
             <Button Content="暂停" Command="{Binding PauseCommand}" />
 
             <Button Content="继续" Command="{Binding ResumeCommand}" />

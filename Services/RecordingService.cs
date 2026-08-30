@@ -1,15 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DawnCapture.Models;
+using DawnCapture.Views;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Vortice.Direct3D;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
+using Vortice.Mathematics;
+using Windows.Graphics;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.DirectX.Direct3D11;
@@ -23,6 +27,9 @@ namespace DawnCapture.Services;
 
 public sealed class RecordingService : IRecordingService
 {
+    private static readonly Guid IidDirect3DDxgiInterfaceAccess = new("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1");
+    private static readonly Guid IidD3D11Texture2D = new("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
+
     private readonly ISettingsService _settings;
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly Stopwatch _stopwatch = new();
@@ -31,6 +38,7 @@ public sealed class RecordingService : IRecordingService
     private readonly ManualResetEvent _closedEvent = new(false);
 
     private ID3D11Device? _d3dDevice;
+    private ID3D11DeviceContext? _d3dContext;
     private IDirect3DDevice? _winrtDevice;
     private Direct3D11CaptureFramePool? _framePool;
     private GraphicsCaptureSession? _session;
@@ -46,6 +54,7 @@ public sealed class RecordingService : IRecordingService
     private long _framesWritten;
     private long _pauseTimestamp;
     private IDirect3DSurface? _pauseSurface;
+    private RectInt32? _cropRect;
     private bool _isRecording;
     private bool _isPaused;
 
@@ -105,7 +114,62 @@ public sealed class RecordingService : IRecordingService
                 return false;
             }
 
-            return await StartCaptureAsync(item);
+            return await StartCaptureAsync(item, null);
+        }
+        catch (Exception ex)
+        {
+            CleanupCapture();
+            State = RecordingState.Idle;
+            RaiseFailed(ex.Message);
+            return false;
+        }
+    }
+
+    public async Task<bool> PickScreenAndStartRegionAsync()
+    {
+        if (State != RecordingState.Idle)
+        {
+            return false;
+        }
+
+        if (App.MainWindow is null)
+        {
+            RaiseFailed("主窗口尚未准备好。");
+            return false;
+        }
+
+        State = RecordingState.PickingSource;
+        try
+        {
+            var picker = new GraphicsCapturePicker();
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+            var item = await picker.PickSingleItemAsync();
+            if (item is null)
+            {
+                State = RecordingState.Idle;
+                return false;
+            }
+
+            var monitor = FindMonitorBounds(item.Size);
+            if (monitor is null)
+            {
+                RaiseFailed("无法确定所选屏幕的坐标。区域录制请选择屏幕，而不是窗口。");
+                State = RecordingState.Idle;
+                return false;
+            }
+
+            var regionWindow = new RegionPickerWindow(monitor.Value);
+            var region = await regionWindow.PickAsync();
+            if (region is null)
+            {
+                State = RecordingState.Idle;
+                return false;
+            }
+
+            var crop = ClampAndMakeEven(region.Value, item.Size);
+            return await StartCaptureAsync(item, crop);
         }
         catch (Exception ex)
         {
@@ -175,7 +239,7 @@ public sealed class RecordingService : IRecordingService
         State = RecordingState.Recording;
     }
 
-    private async Task<bool> StartCaptureAsync(GraphicsCaptureItem item)
+    private async Task<bool> StartCaptureAsync(GraphicsCaptureItem item, RectInt32? crop)
     {
         try
         {
@@ -184,6 +248,7 @@ public sealed class RecordingService : IRecordingService
             _frameDuration = 10_000_000L / Math.Max(1, _settings.Current.FrameRate);
             _framesWritten = 0;
             _isPaused = false;
+            _cropRect = crop;
             _closedEvent.Reset();
             _frameEvent.Reset();
 
@@ -202,7 +267,11 @@ public sealed class RecordingService : IRecordingService
 
             _session.StartCapture();
 
-            if (!await CreateMediaObjectsAsync(item.Size))
+            var captureSize = crop is { } c
+                ? new SizeInt32 { Width = c.Width, Height = c.Height }
+                : item.Size;
+
+            if (!await CreateMediaObjectsAsync(captureSize))
             {
                 CleanupCapture();
                 return false;
@@ -222,7 +291,7 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
-    private async Task<bool> CreateMediaObjectsAsync(Windows.Graphics.SizeInt32 size)
+    private async Task<bool> CreateMediaObjectsAsync(SizeInt32 size)
     {
         try
         {
@@ -304,7 +373,7 @@ public sealed class RecordingService : IRecordingService
             null!,
             out _d3dDevice,
             out _,
-            out _);
+            out _d3dContext);
 
         if (result.Failure)
         {
@@ -315,7 +384,7 @@ public sealed class RecordingService : IRecordingService
                 null!,
                 out _d3dDevice,
                 out _,
-                out _);
+                out _d3dContext);
         }
 
         if (result.Failure)
@@ -399,6 +468,20 @@ public sealed class RecordingService : IRecordingService
             }
 
             var surface = frame.Surface;
+            var croppedSurface = default(IDirect3DSurface);
+
+            if (_cropRect is { } crop)
+            {
+                croppedSurface = CropSurface(surface, crop);
+                if (croppedSurface is null)
+                {
+                    args.Request.Sample = null;
+                    return;
+                }
+
+                surface = croppedSurface;
+            }
+
             var timestamp = frame.SystemRelativeTime;
 
             if (_isPaused)
@@ -411,11 +494,90 @@ public sealed class RecordingService : IRecordingService
 
             args.Request.Sample = MediaStreamSample.CreateFromDirect3D11Surface(surface, timestamp);
             _framesWritten++;
+
+            if (!_isPaused && croppedSurface is not null)
+            {
+                // 样本已持有该表面的引用，释放本方法持有的额外引用。
+                croppedSurface.Dispose();
+            }
         }
         catch (Exception ex)
         {
             RaiseFailed(ex.Message);
             args.Request.Sample = null;
+        }
+    }
+
+    private IDirect3DSurface? CropSurface(IDirect3DSurface sourceSurface, RectInt32 crop)
+    {
+        if (_d3dDevice is null || _d3dContext is null)
+        {
+            return null;
+        }
+
+        var pSource = GetTexture2DPointer(sourceSurface);
+        if (pSource == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var source = new ID3D11Texture2D(pSource);
+
+            var description = new Texture2DDescription
+            {
+                Width = (uint)crop.Width,
+                Height = (uint)crop.Height,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = Format.B8G8R8A8_UNorm,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                BindFlags = BindFlags.ShaderResource | BindFlags.RenderTarget,
+                CPUAccessFlags = CpuAccessFlags.None,
+                MiscFlags = ResourceOptionFlags.None
+            };
+
+            using var destination = _d3dDevice.CreateTexture2D(description);
+            var box = new Box(crop.X, crop.Y, 0, crop.X + crop.Width, crop.Y + crop.Height, 1);
+            _d3dContext.CopySubresourceRegion(destination, 0, 0, 0, 0, source, 0, box);
+
+            using var dxgiSurface = destination.QueryInterface<IDXGISurface>();
+            int hr = CreateDirect3D11SurfaceFromDXGISurface(dxgiSurface.NativePointer, out var pWinrtSurface);
+            if (hr != 0)
+            {
+                return null;
+            }
+
+            return WinRT.MarshalInterface<IDirect3DSurface>.FromAbi(pWinrtSurface);
+        }
+        finally
+        {
+            Marshal.Release(pSource);
+        }
+    }
+
+    private IntPtr GetTexture2DPointer(IDirect3DSurface surface)
+    {
+        var inspectable = ((WinRT.IWinRTObject)surface).NativeObject.ThisPtr;
+        var iidAccess = IidDirect3DDxgiInterfaceAccess;
+        int hr = Marshal.QueryInterface(inspectable, ref iidAccess, out var pAccess);
+        if (hr != 0)
+        {
+            return IntPtr.Zero;
+        }
+
+        try
+        {
+            var access = (IDirect3DDxgiInterfaceAccess)Marshal.GetObjectForIUnknown(pAccess);
+            var iidTexture = IidD3D11Texture2D;
+            hr = access.GetInterface(ref iidTexture, out var pTexture);
+            return hr == 0 ? pTexture : IntPtr.Zero;
+        }
+        finally
+        {
+            Marshal.Release(pAccess);
         }
     }
 
@@ -435,6 +597,77 @@ public sealed class RecordingService : IRecordingService
             _currentFrame = null;
             return frame;
         }
+    }
+
+    private static RectInt32 ClampAndMakeEven(RectInt32 region, SizeInt32 itemSize)
+    {
+        int maxX = Math.Max(0, itemSize.Width - 2);
+        int maxY = Math.Max(0, itemSize.Height - 2);
+
+        int x = Math.Clamp(region.X, 0, maxX);
+        int y = Math.Clamp(region.Y, 0, maxY);
+        int width = Math.Clamp(region.Width, 2, itemSize.Width - x);
+        int height = Math.Clamp(region.Height, 2, itemSize.Height - y);
+
+        // H.264 编码器通常要求偶数尺寸。
+        width &= ~1;
+        height &= ~1;
+        width = Math.Max(2, width);
+        height = Math.Max(2, height);
+
+        return new RectInt32
+        {
+            X = x,
+            Y = y,
+            Width = width,
+            Height = height
+        };
+    }
+
+    private static RectInt32? FindMonitorBounds(SizeInt32 itemSize)
+    {
+        var monitors = new List<RectInt32>();
+        EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, delegate(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect rcMonitor, IntPtr data)
+        {
+            var info = new MonitorInfo { cbSize = Marshal.SizeOf<MonitorInfo>() };
+            if (GetMonitorInfo(hMonitor, ref info))
+            {
+                monitors.Add(new RectInt32
+                {
+                    X = info.rcMonitor.Left,
+                    Y = info.rcMonitor.Top,
+                    Width = info.rcMonitor.Right - info.rcMonitor.Left,
+                    Height = info.rcMonitor.Bottom - info.rcMonitor.Top
+                });
+            }
+
+            return true;
+        }, IntPtr.Zero);
+
+        foreach (var monitor in monitors)
+        {
+            if (monitor.Width == itemSize.Width && monitor.Height == itemSize.Height)
+            {
+                return monitor;
+            }
+        }
+
+        // 回退：使用光标所在的显示器。
+        GetCursorPos(out var point);
+        var hMonitor = MonitorFromPoint(point, 2 /* MONITOR_DEFAULTTONEAREST */);
+        var fallback = new MonitorInfo { cbSize = Marshal.SizeOf<MonitorInfo>() };
+        if (GetMonitorInfo(hMonitor, ref fallback))
+        {
+            return new RectInt32
+            {
+                X = fallback.rcMonitor.Left,
+                Y = fallback.rcMonitor.Top,
+                Width = fallback.rcMonitor.Right - fallback.rcMonitor.Left,
+                Height = fallback.rcMonitor.Bottom - fallback.rcMonitor.Top
+            };
+        }
+
+        return null;
     }
 
     private void CleanupCapture()
@@ -500,6 +733,7 @@ public sealed class RecordingService : IRecordingService
             _outputStream = null;
         }
 
+        _cropRect = null;
         _stopwatch.Reset();
     }
 
@@ -543,4 +777,61 @@ public sealed class RecordingService : IRecordingService
     private static extern int CreateDirect3D11DeviceFromDXGIDevice(
         IntPtr dxgiDevice,
         out IntPtr graphicsDevice);
+
+    [DllImport("d3d11.dll", ExactSpelling = true)]
+    private static extern int CreateDirect3D11SurfaceFromDXGISurface(
+        IntPtr dxgiSurface,
+        out IntPtr graphicsSurface);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumDisplayMonitors(
+        IntPtr hdc,
+        IntPtr lprcClip,
+        MonitorEnumProc lpfnEnum,
+        IntPtr dwData);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out NativePoint lpPoint);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromPoint(NativePoint pt, uint dwFlags);
+
+    [ComImport]
+    [Guid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IDirect3DDxgiInterfaceAccess
+    {
+        [PreserveSig]
+        int GetInterface(ref Guid iid, out IntPtr p);
+    }
+
+    private delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect lprcMonitor, IntPtr dwData);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct MonitorInfo
+    {
+        public int cbSize;
+        public NativeRect rcMonitor;
+        public NativeRect rcWork;
+        public uint dwFlags;
+    }
 }

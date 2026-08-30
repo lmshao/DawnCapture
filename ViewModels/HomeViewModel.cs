@@ -28,6 +28,7 @@ public partial class HomeViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartRegionCommand))]
     [NotifyCanExecuteChangedFor(nameof(StopCommand))]
     [NotifyCanExecuteChangedFor(nameof(PauseCommand))]
     [NotifyCanExecuteChangedFor(nameof(ResumeCommand))]
@@ -53,6 +54,13 @@ public partial class HomeViewModel : ObservableObject
     {
         StatusText = "正在选择要录制的屏幕或窗口…";
         await _recordingService.PickAndStartAsync();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanStart))]
+    private async Task StartRegionAsync()
+    {
+        StatusText = "正在选择要录制的屏幕…";
+        await _recordingService.PickScreenAndStartRegionAsync();
     }
 
     [RelayCommand(CanExecute = nameof(CanStop))]
