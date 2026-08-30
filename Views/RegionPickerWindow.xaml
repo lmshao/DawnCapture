@@ -5,13 +5,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="选择录制区域">
 
-    <Window.SystemBackdrop>
-        <DesktopAcrylicBackdrop />
-    </Window.SystemBackdrop>
-
     <Grid
         x:Name="Root"
-        Background="#33000000"
+        Background="Transparent"
         PointerPressed="Root_PointerPressed"
         PointerMoved="Root_PointerMoved"
         PointerReleased="Root_PointerReleased">
@@ -20,21 +16,30 @@
             <KeyboardAccelerator Key="Escape" Invoked="OnEscapeInvoked" />
         </Grid.KeyboardAccelerators>
 
-        <Canvas>
-            <Border
-                x:Name="SelectionBorder"
-                BorderBrush="Red"
-                BorderThickness="2"
-                Background="#22FF0000"
-                Visibility="Collapsed" />
-        </Canvas>
+        <!-- 未开始拖拽时的整屏浅色遮罩 -->
+        <Rectangle x:Name="FullShade" Fill="#22000000" IsHitTestVisible="False" />
+
+        <!-- 选区外四块遮罩：选区内部保持完全透明 -->
+        <Rectangle x:Name="ShadeTop" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+        <Rectangle x:Name="ShadeLeft" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+        <Rectangle x:Name="ShadeRight" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+        <Rectangle x:Name="ShadeBottom" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+
+        <Border
+            x:Name="SelectionBorder"
+            Background="Transparent"
+            BorderBrush="Red"
+            BorderThickness="2"
+            Visibility="Collapsed"
+            IsHitTestVisible="False" />
 
         <Rectangle
             x:Name="IndicatorRectangle"
             Stroke="Red"
             StrokeThickness="2"
             StrokeDashArray="4 3"
-            Visibility="Collapsed" />
+            Visibility="Collapsed"
+            IsHitTestVisible="False" />
 
         <TextBlock
             x:Name="HintText"
@@ -42,6 +47,7 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Top"
             Foreground="White"
-            Text="拖拽选择录制区域，按 Esc 取消" />
+            Text="拖拽选择录制区域，按 Esc 取消"
+            IsHitTestVisible="False" />
     </Grid>
 </Window>
