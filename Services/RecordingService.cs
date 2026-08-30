@@ -17,7 +17,7 @@ namespace DawnCapture.Services;
 
 public sealed class RecordingService : IRecordingService
 {
-    private static readonly Guid IidDxgiSurface = new("54ec77fa-1377-44e6-8c32-88fd5f44c84c");
+    private static readonly Guid IidDxgiSurface = new("cafcb56c-6ac3-4889-bf47-9e23bbd260ec");
     private static readonly Guid IidDirect3DDxgiInterfaceAccess = new("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1");
 
     private readonly ISettingsService _settings;

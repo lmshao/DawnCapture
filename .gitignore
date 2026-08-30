@@ -68,3 +68,6 @@ ehthumbs.db
 # Python (misc tooling)
 __pycache__/
 *.py[cod]
+
+# Reasonix attachments
+.reasonix/
