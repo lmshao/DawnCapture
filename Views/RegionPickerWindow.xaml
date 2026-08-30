@@ -5,9 +5,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="选择录制区域">
 
+    <Window.SystemBackdrop>
+        <DesktopAcrylicBackdrop />
+    </Window.SystemBackdrop>
+
     <Grid
         x:Name="Root"
-        Background="#66000000"
+        Background="#33000000"
         PointerPressed="Root_PointerPressed"
         PointerMoved="Root_PointerMoved"
         PointerReleased="Root_PointerReleased">
@@ -25,7 +29,15 @@
                 Visibility="Collapsed" />
         </Canvas>
 
+        <Rectangle
+            x:Name="IndicatorRectangle"
+            Stroke="Red"
+            StrokeThickness="2"
+            StrokeDashArray="4 3"
+            Visibility="Collapsed" />
+
         <TextBlock
+            x:Name="HintText"
             Margin="0,12,0,0"
             HorizontalAlignment="Center"
             VerticalAlignment="Top"

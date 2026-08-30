@@ -55,6 +55,7 @@ public sealed class RecordingService : IRecordingService
     private long _pauseTimestamp;
     private IDirect3DSurface? _pauseSurface;
     private RectInt32? _cropRect;
+    private RegionPickerWindow? _regionIndicator;
     private bool _isRecording;
     private bool _isPaused;
 
@@ -125,7 +126,7 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
-    public async Task<bool> PickScreenAndStartRegionAsync()
+    public async Task<bool> StartDesktopAsync()
     {
         if (State != RecordingState.Idle)
         {
@@ -141,34 +142,72 @@ public sealed class RecordingService : IRecordingService
         State = RecordingState.PickingSource;
         try
         {
-            var picker = new GraphicsCapturePicker();
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-            var item = await picker.PickSingleItemAsync();
+            var monitor = MonitorFromWindow(hwnd, 2 /* MONITOR_DEFAULTTONEAREST */);
+            var item = CreateCaptureItemForMonitor(monitor);
             if (item is null)
             {
+                RaiseFailed("无法创建桌面捕获会话。");
                 State = RecordingState.Idle;
                 return false;
             }
 
-            var monitor = FindMonitorBounds(item.Size);
-            if (monitor is null)
-            {
-                RaiseFailed("无法确定所选屏幕的坐标。区域录制请选择屏幕，而不是窗口。");
-                State = RecordingState.Idle;
-                return false;
-            }
+            return await StartCaptureAsync(item, null);
+        }
+        catch (Exception ex)
+        {
+            CleanupCapture();
+            State = RecordingState.Idle;
+            RaiseFailed(ex.Message);
+            return false;
+        }
+    }
 
-            var regionWindow = new RegionPickerWindow(monitor.Value);
+    public async Task<bool> StartRegionAsync()
+    {
+        if (State != RecordingState.Idle)
+        {
+            return false;
+        }
+
+        State = RecordingState.PickingSource;
+        try
+        {
+            var regionWindow = new RegionPickerWindow(GetVirtualScreenBounds());
             var region = await regionWindow.PickAsync();
             if (region is null)
             {
+                regionWindow.Close();
                 State = RecordingState.Idle;
                 return false;
             }
 
-            var crop = ClampAndMakeEven(region.Value, item.Size);
+            var point = new NativePoint
+            {
+                X = region.Value.X + region.Value.Width / 2,
+                Y = region.Value.Y + region.Value.Height / 2
+            };
+            var monitor = MonitorFromPoint(point, 2 /* MONITOR_DEFAULTTONEAREST */);
+            var monitorBounds = GetMonitorBounds(monitor);
+            var item = CreateCaptureItemForMonitor(monitor);
+            if (item is null || monitorBounds is null)
+            {
+                regionWindow.Close();
+                RaiseFailed("无法为所选区域创建捕获会话。");
+                State = RecordingState.Idle;
+                return false;
+            }
+
+            var crop = new RectInt32
+            {
+                X = region.Value.X - monitorBounds.Value.X,
+                Y = region.Value.Y - monitorBounds.Value.Y,
+                Width = region.Value.Width,
+                Height = region.Value.Height
+            };
+            crop = ClampAndMakeEven(crop, item.Size);
+
+            _regionIndicator = regionWindow;
             return await StartCaptureAsync(item, crop);
         }
         catch (Exception ex)
@@ -624,50 +663,99 @@ public sealed class RecordingService : IRecordingService
         };
     }
 
-    private static RectInt32? FindMonitorBounds(SizeInt32 itemSize)
+    private static RectInt32? GetMonitorBounds(IntPtr hMonitor)
+    {
+        var info = new MonitorInfo { cbSize = Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(hMonitor, ref info))
+        {
+            return null;
+        }
+
+        return new RectInt32
+        {
+            X = info.rcMonitor.Left,
+            Y = info.rcMonitor.Top,
+            Width = info.rcMonitor.Right - info.rcMonitor.Left,
+            Height = info.rcMonitor.Bottom - info.rcMonitor.Top
+        };
+    }
+
+    private static RectInt32 GetVirtualScreenBounds()
     {
         var monitors = new List<RectInt32>();
         EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, delegate(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect rcMonitor, IntPtr data)
         {
-            var info = new MonitorInfo { cbSize = Marshal.SizeOf<MonitorInfo>() };
-            if (GetMonitorInfo(hMonitor, ref info))
+            monitors.Add(new RectInt32
             {
-                monitors.Add(new RectInt32
-                {
-                    X = info.rcMonitor.Left,
-                    Y = info.rcMonitor.Top,
-                    Width = info.rcMonitor.Right - info.rcMonitor.Left,
-                    Height = info.rcMonitor.Bottom - info.rcMonitor.Top
-                });
-            }
-
+                X = rcMonitor.Left,
+                Y = rcMonitor.Top,
+                Width = rcMonitor.Right - rcMonitor.Left,
+                Height = rcMonitor.Bottom - rcMonitor.Top
+            });
             return true;
         }, IntPtr.Zero);
 
+        if (monitors.Count == 0)
+        {
+            return new RectInt32 { X = 0, Y = 0, Width = 1920, Height = 1080 };
+        }
+
+        int left = int.MaxValue;
+        int top = int.MaxValue;
+        int right = int.MinValue;
+        int bottom = int.MinValue;
         foreach (var monitor in monitors)
         {
-            if (monitor.Width == itemSize.Width && monitor.Height == itemSize.Height)
+            left = Math.Min(left, monitor.X);
+            top = Math.Min(top, monitor.Y);
+            right = Math.Max(right, monitor.X + monitor.Width);
+            bottom = Math.Max(bottom, monitor.Y + monitor.Height);
+        }
+
+        return new RectInt32
+        {
+            X = left,
+            Y = top,
+            Width = right - left,
+            Height = bottom - top
+        };
+    }
+
+    private static GraphicsCaptureItem? CreateCaptureItemForMonitor(IntPtr hMonitor)
+    {
+        const string className = "Windows.Graphics.Capture.GraphicsCaptureItem";
+        var classId = new Guid("79C3F95B-31F7-4EC2-A464-632EF5D30760");
+
+        int hr = WindowsCreateString(className, className.Length, out var hString);
+        if (hr != 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var interopId = new Guid("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356");
+            hr = RoGetActivationFactory(hString, ref interopId, out var pFactory);
+            if (hr != 0)
             {
-                return monitor;
+                return null;
+            }
+
+            try
+            {
+                var interop = (IGraphicsCaptureItemInterop)Marshal.GetObjectForIUnknown(pFactory);
+                hr = interop.CreateForMonitor(hMonitor, ref classId, out var pItem);
+                return hr == 0 ? GraphicsCaptureItem.FromAbi(pItem) : null;
+            }
+            finally
+            {
+                Marshal.Release(pFactory);
             }
         }
-
-        // 回退：使用光标所在的显示器。
-        GetCursorPos(out var point);
-        var hMonitor = MonitorFromPoint(point, 2 /* MONITOR_DEFAULTTONEAREST */);
-        var fallback = new MonitorInfo { cbSize = Marshal.SizeOf<MonitorInfo>() };
-        if (GetMonitorInfo(hMonitor, ref fallback))
+        finally
         {
-            return new RectInt32
-            {
-                X = fallback.rcMonitor.Left,
-                Y = fallback.rcMonitor.Top,
-                Width = fallback.rcMonitor.Right - fallback.rcMonitor.Left,
-                Height = fallback.rcMonitor.Bottom - fallback.rcMonitor.Top
-            };
+            WindowsDeleteString(hString);
         }
-
-        return null;
     }
 
     private void CleanupCapture()
@@ -718,6 +806,20 @@ public sealed class RecordingService : IRecordingService
 
         _pauseSurface?.Dispose();
         _pauseSurface = null;
+
+        if (_regionIndicator is not null)
+        {
+            try
+            {
+                _regionIndicator.Close();
+            }
+            catch
+            {
+                // 忽略释放异常。
+            }
+
+            _regionIndicator = null;
+        }
 
         if (_outputStream is not null)
         {
@@ -794,6 +896,24 @@ public sealed class RecordingService : IRecordingService
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
 
     [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("combase.dll", ExactSpelling = true)]
+    private static extern int WindowsCreateString(
+        [MarshalAs(UnmanagedType.LPWStr)] string sourceString,
+        int length,
+        out IntPtr hstring);
+
+    [DllImport("combase.dll", ExactSpelling = true)]
+    private static extern int WindowsDeleteString(IntPtr hstring);
+
+    [DllImport("combase.dll", ExactSpelling = true)]
+    private static extern int RoGetActivationFactory(
+        IntPtr activatableClassId,
+        ref Guid iid,
+        out IntPtr factory);
+
+    [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out NativePoint lpPoint);
 
     [DllImport("user32.dll")]
@@ -806,6 +926,18 @@ public sealed class RecordingService : IRecordingService
     {
         [PreserveSig]
         int GetInterface(ref Guid iid, out IntPtr p);
+    }
+
+    [ComImport]
+    [Guid("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IGraphicsCaptureItemInterop
+    {
+        [PreserveSig]
+        int CreateForWindow(IntPtr window, ref Guid riid, out IntPtr result);
+
+        [PreserveSig]
+        int CreateForMonitor(IntPtr monitor, ref Guid riid, out IntPtr result);
     }
 
     private delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect lprcMonitor, IntPtr dwData);
