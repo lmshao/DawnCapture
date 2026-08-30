@@ -31,6 +31,8 @@ public sealed class RecordingService : IRecordingService
     private IMFSinkWriter? _sinkWriter;
     private int _streamIndex;
     private long _frameDuration = 333_333;
+    private long _framesWritten;
+    private int _surfaceFailures;
     private bool _mfStarted;
     private string? _outputFilePath;
 
@@ -124,6 +126,11 @@ public sealed class RecordingService : IRecordingService
 
         CleanupCapture();
         State = RecordingState.Idle;
+
+        if (_framesWritten == 0)
+        {
+            RaiseFailed("没有写入任何视频帧，生成的文件为空。请确认捕获目标仍然可见，或查看设置中的输出目录。");
+        }
     }
 
     public void Pause()
@@ -155,6 +162,8 @@ public sealed class RecordingService : IRecordingService
             EnsureDevice();
 
             _frameDuration = 10_000_000L / Math.Max(1, _settings.Current.FrameRate);
+            _framesWritten = 0;
+            _surfaceFailures = 0;
 
             _framePool = Direct3D11CaptureFramePool.Create(
                 _winrtDevice!,
@@ -252,18 +261,28 @@ public sealed class RecordingService : IRecordingService
             Directory.CreateDirectory(folder);
             _outputFilePath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}.mp4");
 
-            using var mediaType = MediaFactory.MFCreateMediaType();
-            mediaType.Set(MediaTypeAttributeKeys.MajorType, MediaTypeGuids.Video);
-            mediaType.Set(MediaTypeAttributeKeys.Subtype, VideoFormatGuids.H264);
-            mediaType.Set(MediaTypeAttributeKeys.AvgBitrate, (uint)(_settings.Current.BitrateKbps * 1000));
-            mediaType.Set(MediaTypeAttributeKeys.InterlaceMode, 2u);
-            mediaType.Set(MediaTypeAttributeKeys.FrameSize, ((ulong)size.Width << 32) | (uint)size.Height);
-            mediaType.Set(MediaTypeAttributeKeys.FrameRate, ((ulong)_settings.Current.FrameRate << 32) | 1);
-            mediaType.Set(MediaTypeAttributeKeys.PixelAspectRatio, ((ulong)1 << 32) | 1);
+            // 输出类型：H.264 压缩流。
+            using var outputType = MediaFactory.MFCreateMediaType();
+            outputType.Set(MediaTypeAttributeKeys.MajorType, MediaTypeGuids.Video);
+            outputType.Set(MediaTypeAttributeKeys.Subtype, VideoFormatGuids.H264);
+            outputType.Set(MediaTypeAttributeKeys.AvgBitrate, (uint)(_settings.Current.BitrateKbps * 1000));
+            outputType.Set(MediaTypeAttributeKeys.InterlaceMode, 2u);
+            outputType.Set(MediaTypeAttributeKeys.FrameSize, PackSize(size));
+            outputType.Set(MediaTypeAttributeKeys.FrameRate, PackRatio(_settings.Current.FrameRate));
+            outputType.Set(MediaTypeAttributeKeys.PixelAspectRatio, PackRatio(1));
+
+            // 输入类型：未压缩的 32 位 BGRA，对应 B8G8R8A8UIntNormalized 的 DXGI 表面。
+            using var inputType = MediaFactory.MFCreateMediaType();
+            inputType.Set(MediaTypeAttributeKeys.MajorType, MediaTypeGuids.Video);
+            inputType.Set(MediaTypeAttributeKeys.Subtype, VideoFormatGuids.Argb32);
+            inputType.Set(MediaTypeAttributeKeys.InterlaceMode, 2u);
+            inputType.Set(MediaTypeAttributeKeys.FrameSize, PackSize(size));
+            inputType.Set(MediaTypeAttributeKeys.FrameRate, PackRatio(_settings.Current.FrameRate));
+            inputType.Set(MediaTypeAttributeKeys.PixelAspectRatio, PackRatio(1));
 
             _sinkWriter = MediaFactory.MFCreateSinkWriterFromURL(_outputFilePath, null!, null!);
-            _streamIndex = _sinkWriter.AddStream(mediaType);
-            _sinkWriter.SetInputMediaType(_streamIndex, mediaType, null!);
+            _streamIndex = _sinkWriter.AddStream(outputType);
+            _sinkWriter.SetInputMediaType(_streamIndex, inputType, null!);
             _sinkWriter.BeginWriting();
             return true;
         }
@@ -295,6 +314,12 @@ public sealed class RecordingService : IRecordingService
         var pDxgiSurface = GetDxgiSurfacePointer(surface);
         if (pDxgiSurface == IntPtr.Zero)
         {
+            _surfaceFailures++;
+            if (_surfaceFailures == 1)
+            {
+                RaiseFailed("无法访问捕获帧的 DXGI 表面，帧没有被写入。");
+            }
+
             return;
         }
 
@@ -313,6 +338,7 @@ public sealed class RecordingService : IRecordingService
             sample.SampleDuration = _frameDuration;
 
             _sinkWriter!.WriteSample(_streamIndex, sample);
+            _framesWritten++;
         }
         catch (Exception ex)
         {
@@ -362,9 +388,28 @@ public sealed class RecordingService : IRecordingService
             return;
         }
 
+        try
+        {
+            _sinkWriter.Flush(_streamIndex);
+        }
+        catch
+        {
+            // 没有样本时 Flush 可能失败，忽略并继续 Finalize。
+        }
+
         _sinkWriter.Finalize();
         _sinkWriter.Dispose();
         _sinkWriter = null;
+    }
+
+    private static ulong PackSize(Windows.Graphics.SizeInt32 size)
+    {
+        return ((ulong)(uint)size.Width << 32) | (uint)size.Height;
+    }
+
+    private static ulong PackRatio(int numerator, int denominator = 1)
+    {
+        return ((ulong)(uint)numerator << 32) | (uint)denominator;
     }
 
     private void CleanupCapture()
