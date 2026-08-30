@@ -43,13 +43,14 @@
                 Click="RegionButton_Click" />
         </StackPanel>
 
-        <ComboBox
-            x:Name="WindowCombo"
+        <ListView
+            x:Name="WindowList"
             Width="360"
+            MaxHeight="240"
             HorizontalAlignment="Center"
             DisplayMemberPath="Title"
-            PlaceholderText="选择要录制的窗口"
-            SelectionChanged="WindowCombo_SelectionChanged"
+            SelectionMode="Single"
+            SelectionChanged="WindowList_SelectionChanged"
             Visibility="Collapsed" />
 
         <StackPanel

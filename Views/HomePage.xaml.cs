@@ -53,7 +53,7 @@ public sealed partial class HomePage : Page
     private async void WindowButton_Click(object sender, RoutedEventArgs e)
     {
         RefreshWindowList();
-        WindowCombo.Visibility = Visibility.Visible;
+        WindowList.Visibility = Visibility.Visible;
     }
 
     private async void RegionButton_Click(object sender, RoutedEventArgs e)
@@ -61,15 +61,15 @@ public sealed partial class HomePage : Page
         await StartAsync(RecordingMode.Region, IntPtr.Zero);
     }
 
-    private async void WindowCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void WindowList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_suppressWindowSelection || WindowCombo.SelectedItem is not WindowItem item)
+        if (_suppressWindowSelection || WindowList.SelectedItem is not WindowItem item)
         {
             return;
         }
 
         _suppressWindowSelection = true;
-        WindowCombo.Visibility = Visibility.Collapsed;
+        WindowList.Visibility = Visibility.Collapsed;
         await StartAsync(RecordingMode.Window, item.Hwnd);
         _suppressWindowSelection = false;
     }
@@ -108,11 +108,11 @@ public sealed partial class HomePage : Page
             return true;
         }, IntPtr.Zero);
 
-        WindowCombo.ItemsSource = windows;
+        WindowList.ItemsSource = windows;
         if (windows.Count > 0)
         {
             _suppressWindowSelection = true;
-            WindowCombo.SelectedIndex = -1;
+            WindowList.SelectedIndex = -1;
             _suppressWindowSelection = false;
         }
     }
