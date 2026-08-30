@@ -79,6 +79,7 @@ public sealed class RecordingService : IRecordingService
             }
 
             _state = value;
+            Log.Debug($"录制状态切换：{_state} -> {value}");
             RaiseStateChanged(value);
         }
     }
@@ -99,6 +100,7 @@ public sealed class RecordingService : IRecordingService
         State = RecordingState.PickingSource;
         try
         {
+            Log.Debug($"窗口录制：HWND=0x{window:X}");
             var item = CreateCaptureItemForWindow(window);
             if (item is null)
             {
@@ -136,6 +138,7 @@ public sealed class RecordingService : IRecordingService
         {
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
             var monitor = MonitorFromWindow(hwnd, 2 /* MONITOR_DEFAULTTONEAREST */);
+            Log.Debug($"桌面录制：主窗口 HWND=0x{hwnd:X}，显示器 HMONITOR=0x{monitor:X}");
             var item = CreateCaptureItemForMonitor(monitor);
             if (item is null)
             {
@@ -165,14 +168,19 @@ public sealed class RecordingService : IRecordingService
         State = RecordingState.PickingSource;
         try
         {
-            var regionWindow = new RegionPickerWindow(GetVirtualScreenBounds());
+            var virtualBounds = GetVirtualScreenBounds();
+            Log.Debug($"区域录制：虚拟屏幕 {virtualBounds.Width}x{virtualBounds.Height} @({virtualBounds.X},{virtualBounds.Y})");
+            var regionWindow = new RegionPickerWindow(virtualBounds);
             var region = await regionWindow.PickAsync();
             if (region is null)
             {
+                Log.Debug("区域选择已取消。");
                 regionWindow.Close();
                 State = RecordingState.Idle;
                 return false;
             }
+
+            Log.Debug($"区域选择结果：{region.Value.Width}x{region.Value.Height} @({region.Value.X},{region.Value.Y})");
 
             var point = new NativePoint
             {
@@ -198,6 +206,7 @@ public sealed class RecordingService : IRecordingService
                 Height = region.Value.Height
             };
             crop = ClampAndMakeEven(crop, item.Size);
+            Log.Debug($"裁剪区域：{crop.Width}x{crop.Height} @({crop.X},{crop.Y})，捕获项尺寸 {item.Size.Width}x{item.Size.Height}");
 
             _regionIndicator = regionWindow;
 
@@ -268,6 +277,7 @@ public sealed class RecordingService : IRecordingService
         }
         catch (Exception ex)
         {
+            Log.Error("StartCaptureAsync 失败", ex);
             CleanupCapture();
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
@@ -302,6 +312,7 @@ public sealed class RecordingService : IRecordingService
         CleanupCapture();
         State = RecordingState.Idle;
 
+        Log.Info($"录制结束，共写入 {_framesWritten} 帧。");
         if (_framesWritten == 0)
         {
             RaiseFailed("没有写入任何视频帧，生成的文件为空。请确认捕获目标仍然可见。");
@@ -344,6 +355,7 @@ public sealed class RecordingService : IRecordingService
             _framesWritten = 0;
             _isPaused = false;
             _cropRect = crop;
+            Log.Debug($"开始捕获：DisplayName={item.DisplayName}，Size={item.Size.Width}x{item.Size.Height}，Crop={crop?.Width}x{crop?.Height}");
             _closedEvent.Reset();
             _frameEvent.Reset();
 
@@ -388,6 +400,7 @@ public sealed class RecordingService : IRecordingService
 
     private async Task<bool> CreateMediaObjectsAsync(SizeInt32 size)
     {
+        Log.Debug($"创建媒体对象：输出尺寸 {size.Width}x{size.Height}，帧率 {_settings.Current.FrameRate}，码率 {_settings.Current.BitrateKbps}Kbps");
         try
         {
             var videoProperties = VideoEncodingProperties.CreateUncompressed(

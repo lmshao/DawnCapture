@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using DawnCapture.Models;
+using DawnCapture.Services;
 using DawnCapture.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -83,6 +84,7 @@ public sealed partial class HomePage : Page
         }
         catch (Exception ex)
         {
+            Log.Error("启动录制失败", ex);
             _viewModel.StatusText = $"启动录制失败：{ex.Message}";
         }
         finally

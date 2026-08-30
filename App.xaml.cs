@@ -1,4 +1,6 @@
-﻿using CommunityToolkit.Mvvm.DependencyInjection;
+﻿using System;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using DawnCapture.Services;
 using DawnCapture.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,8 +12,30 @@ public partial class App : Application
 {
     public App()
     {
+        Log.Init();
+        Log.Info("应用启动，开始初始化。");
+        Log.Info($"日志文件：{Log.FilePath}");
+
         InitializeComponent();
+
+        UnhandledException += (_, e) =>
+        {
+            Log.Error("Application.UnhandledException", e.Exception);
+        };
+
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            Log.Error("AppDomain.UnhandledException", e.ExceptionObject as Exception);
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            Log.Error("TaskScheduler.UnobservedTaskException", e.Exception);
+            e.SetObserved();
+        };
+
         ConfigureServices();
+        Log.Info("服务容器初始化完成。");
     }
 
     public static Window? MainWindow { get; private set; }
@@ -35,7 +59,17 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        MainWindow = Ioc.Default.GetRequiredService<MainWindow>();
-        MainWindow.Activate();
+        try
+        {
+            Log.Info("OnLaunched 开始创建主窗口。");
+            MainWindow = Ioc.Default.GetRequiredService<MainWindow>();
+            MainWindow.Activate();
+            Log.Info("主窗口已激活。");
+        }
+        catch (Exception ex)
+        {
+            Log.Error("OnLaunched 失败", ex);
+            throw;
+        }
     }
 }

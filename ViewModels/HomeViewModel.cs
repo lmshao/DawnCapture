@@ -47,6 +47,7 @@ public partial class HomeViewModel : ObservableObject
 
     public async Task StartRecordingAsync(RecordingMode mode, IntPtr window)
     {
+        Log.Info($"开始录制请求：模式={mode}，窗口=0x{window:X}");
         switch (mode)
         {
             case RecordingMode.Desktop:
@@ -111,6 +112,7 @@ public partial class HomeViewModel : ObservableObject
 
     private void OnRecordingFailed(object? sender, string message)
     {
+        Log.Error($"录制失败：{message}");
         StatusText = $"录制失败：{message}";
     }
 }

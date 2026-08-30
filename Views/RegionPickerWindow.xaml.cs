@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using DawnCapture.Services;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -63,6 +64,7 @@ public sealed partial class RegionPickerWindow : Window
         _subclassProc = WindowSubClass;
         SetWindowSubclass(hwnd, _subclassProc, 0, 0);
 
+        Log.Debug($"RegionPickerWindow 创建：虚拟屏幕 {virtualScreenBounds.Width}x{virtualScreenBounds.Height} @({virtualScreenBounds.X},{virtualScreenBounds.Y})");
         _desktopImageTask = LoadDesktopImageAsync(virtualScreenBounds);
     }
 
@@ -95,9 +97,9 @@ public sealed partial class RegionPickerWindow : Window
             await bitmapImage.SetSourceAsync(randomAccessStream);
             DesktopImage.Source = bitmapImage;
         }
-        catch
+        catch (Exception ex)
         {
-            // 截图失败时退化为纯色背景，不阻塞选区流程。
+            Log.Error("加载桌面截图失败", ex);
         }
     }
 
@@ -216,6 +218,7 @@ public sealed partial class RegionPickerWindow : Window
             Height = height
         };
 
+        Log.Debug($"区域选择完成：{region.Width}x{region.Height} @({region.X},{region.Y})");
         EnterIndicatorMode(region);
         _tcs.TrySetResult(region);
     }
@@ -283,6 +286,7 @@ public sealed partial class RegionPickerWindow : Window
 
     private void Cancel()
     {
+        Log.Debug("区域选择已取消（Esc 或选区过小）。");
         _tcs.TrySetResult(null);
         Close();
     }
