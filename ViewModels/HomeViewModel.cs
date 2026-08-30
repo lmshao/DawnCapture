@@ -4,9 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DawnCapture.Models;
 using DawnCapture.Services;
-using DawnCapture.Views;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 
 namespace DawnCapture.ViewModels;
 
@@ -29,7 +27,6 @@ public partial class HomeViewModel : ObservableObject
     private string _statusText = "准备就绪";
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(StartCommand))]
     [NotifyCanExecuteChangedFor(nameof(StopCommand))]
     [NotifyCanExecuteChangedFor(nameof(PauseCommand))]
     [NotifyCanExecuteChangedFor(nameof(ResumeCommand))]
@@ -42,29 +39,15 @@ public partial class HomeViewModel : ObservableObject
 
     public string ElapsedText => _recordingService.Elapsed.ToString(@"hh\:mm\:ss");
 
-    private bool CanStart() => !IsRecording;
-
     private bool CanStop() => IsRecording;
 
     private bool CanPause() => IsRecording && !IsPaused;
 
     private bool CanResume() => IsRecording && IsPaused;
 
-    [RelayCommand(CanExecute = nameof(CanStart))]
-    private async Task StartAsync()
+    public async Task StartRecordingAsync(RecordingMode mode, IntPtr window)
     {
-        var dialog = new RecordingSourceDialog
-        {
-            XamlRoot = App.MainWindow?.Content?.XamlRoot
-        };
-
-        var result = await dialog.ShowAsync();
-        if (result != ContentDialogResult.Primary)
-        {
-            return;
-        }
-
-        switch (dialog.SelectedMode)
+        switch (mode)
         {
             case RecordingMode.Desktop:
                 StatusText = "正在开始桌面录制…";
@@ -72,7 +55,7 @@ public partial class HomeViewModel : ObservableObject
                 break;
             case RecordingMode.Window:
                 StatusText = "正在开始窗口录制…";
-                await _recordingService.StartWindowAsync(dialog.SelectedWindow);
+                await _recordingService.StartWindowAsync(window);
                 break;
             case RecordingMode.Region:
                 StatusText = "正在选择录制区域…";

@@ -27,9 +27,35 @@
             HorizontalAlignment="Center">
 
             <Button
-                Content="开始录制"
-                Command="{Binding StartCommand}"
-                Style="{StaticResource AccentButtonStyle}" />
+                x:Name="DesktopButton"
+                Content="桌面录制"
+                Style="{StaticResource AccentButtonStyle}"
+                Click="DesktopButton_Click" />
+
+            <Button
+                x:Name="WindowButton"
+                Content="窗口录制"
+                Click="WindowButton_Click" />
+
+            <Button
+                x:Name="RegionButton"
+                Content="区域录制"
+                Click="RegionButton_Click" />
+        </StackPanel>
+
+        <ComboBox
+            x:Name="WindowCombo"
+            Width="360"
+            HorizontalAlignment="Center"
+            DisplayMemberPath="Title"
+            PlaceholderText="选择要录制的窗口"
+            SelectionChanged="WindowCombo_SelectionChanged"
+            Visibility="Collapsed" />
+
+        <StackPanel
+            Orientation="Horizontal"
+            Spacing="12"
+            HorizontalAlignment="Center">
 
             <Button Content="暂停" Command="{Binding PauseCommand}" />
 
