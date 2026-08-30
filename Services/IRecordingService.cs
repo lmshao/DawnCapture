@@ -14,8 +14,8 @@ public interface IRecordingService
 
     event EventHandler<string>? RecordingFailed;
 
-    /// <summary>弹出系统选择器让用户选择窗口，然后开始录制。返回是否成功开始。</summary>
-    Task<bool> PickAndStartAsync();
+    /// <summary>录制指定窗口（HWND）。返回是否成功开始。</summary>
+    Task<bool> StartWindowAsync(IntPtr window);
 
     /// <summary>直接录制主窗口所在显示器（桌面录制）。返回是否成功开始。</summary>
     Task<bool> StartDesktopAsync();
