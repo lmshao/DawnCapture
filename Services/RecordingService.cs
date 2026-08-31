@@ -55,7 +55,7 @@ public sealed class RecordingService : IRecordingService
     private long _pauseTimestamp;
     private IDirect3DSurface? _pauseSurface;
     private RectInt32? _cropRect;
-    private RegionPickerWindow? _regionIndicator;
+    private RegionMarkerWindow? _regionMarker;
     private RecordingControlWindow? _controlWindow;
     private bool _isRecording;
     private bool _isPaused;
@@ -217,7 +217,7 @@ public sealed class RecordingService : IRecordingService
             crop = ClampAndMakeEven(crop, item.Size);
             Log.Debug($"裁剪区域：{crop.Width}x{crop.Height} @({crop.X},{crop.Y})，捕获项尺寸 {item.Size.Width}x{item.Size.Height}");
 
-            _regionIndicator = regionWindow;
+            _regionMarker = new RegionMarkerWindow(region.Value);
 
             // Show the REC control above the selection and start recording when it is clicked.
             var control = new RecordingControlWindow(() => Elapsed);
@@ -270,8 +270,8 @@ public sealed class RecordingService : IRecordingService
             {
                 if (!started)
                 {
-                    _regionIndicator?.Close();
-                    _regionIndicator = null;
+                    _regionMarker?.Close();
+                    _regionMarker = null;
                     if (State == RecordingState.PickingSource)
                     {
                         State = RecordingState.Idle;
@@ -640,40 +640,41 @@ public sealed class RecordingService : IRecordingService
             return null;
         }
 
+        // The Vortice wrapper owns the reference returned by GetInterface.
+        using var source = new ID3D11Texture2D(pSource);
+
+        var description = new Texture2DDescription
+        {
+            Width = (uint)crop.Width,
+            Height = (uint)crop.Height,
+            MipLevels = 1,
+            ArraySize = 1,
+            Format = Format.B8G8R8A8_UNorm,
+            SampleDescription = new SampleDescription(1, 0),
+            Usage = ResourceUsage.Default,
+            BindFlags = BindFlags.ShaderResource | BindFlags.RenderTarget,
+            CPUAccessFlags = CpuAccessFlags.None,
+            MiscFlags = ResourceOptionFlags.None
+        };
+
+        using var destination = _d3dDevice.CreateTexture2D(description);
+        var box = new Box(crop.X, crop.Y, 0, crop.X + crop.Width, crop.Y + crop.Height, 1);
+        _d3dContext.CopySubresourceRegion(destination, 0, 0, 0, 0, source, 0, box);
+
+        using var dxgiSurface = destination.QueryInterface<IDXGISurface>();
+        int hr = CreateDirect3D11SurfaceFromDXGISurface(dxgiSurface.NativePointer, out var pWinrtSurface);
+        if (hr != 0)
+        {
+            return null;
+        }
+
         try
         {
-            using var source = new ID3D11Texture2D(pSource);
-
-            var description = new Texture2DDescription
-            {
-                Width = (uint)crop.Width,
-                Height = (uint)crop.Height,
-                MipLevels = 1,
-                ArraySize = 1,
-                Format = Format.B8G8R8A8_UNorm,
-                SampleDescription = new SampleDescription(1, 0),
-                Usage = ResourceUsage.Default,
-                BindFlags = BindFlags.ShaderResource | BindFlags.RenderTarget,
-                CPUAccessFlags = CpuAccessFlags.None,
-                MiscFlags = ResourceOptionFlags.None
-            };
-
-            using var destination = _d3dDevice.CreateTexture2D(description);
-            var box = new Box(crop.X, crop.Y, 0, crop.X + crop.Width, crop.Y + crop.Height, 1);
-            _d3dContext.CopySubresourceRegion(destination, 0, 0, 0, 0, source, 0, box);
-
-            using var dxgiSurface = destination.QueryInterface<IDXGISurface>();
-            int hr = CreateDirect3D11SurfaceFromDXGISurface(dxgiSurface.NativePointer, out var pWinrtSurface);
-            if (hr != 0)
-            {
-                return null;
-            }
-
             return WinRT.MarshalInterface<IDirect3DSurface>.FromAbi(pWinrtSurface);
         }
         finally
         {
-            Marshal.Release(pSource);
+            Marshal.Release(pWinrtSurface);
         }
     }
 
@@ -887,18 +888,18 @@ public sealed class RecordingService : IRecordingService
         _pauseSurface?.Dispose();
         _pauseSurface = null;
 
-        if (_regionIndicator is not null)
+        if (_regionMarker is not null)
         {
             try
             {
-                _regionIndicator.Close();
+                _regionMarker.Close();
             }
             catch
             {
                 // Ignore cleanup exceptions.
             }
 
-            _regionIndicator = null;
+            _regionMarker = null;
         }
 
         if (_controlWindow is not null)

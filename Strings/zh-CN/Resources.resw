@@ -67,7 +67,7 @@
   <data name="Settings_CaptureCursor.Header" xml:space="preserve"><value>录制鼠标光标</value></data>
   <data name="Settings_Language.Text" xml:space="preserve"><value>语言</value></data>
   <data name="Settings_Save.Content" xml:space="preserve"><value>保存</value></data>
-  <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>拖拽选择录制区域，按 Esc 取消</value></data>
+  <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>拖拽选择录制区域。选中后可拖动选框或控制点调整，按 Enter 确认，按 Esc 取消。</value></data>
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ 停止</value></data>
   <data name="About_Description" xml:space="preserve"><value>基于 WinUI 3 的 Windows 原生屏幕录制工具</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>准备就绪</value></data>
@@ -91,4 +91,7 @@
   <data name="Language_System" xml:space="preserve"><value>跟随系统</value></data>
   <data name="Language_Chinese" xml:space="preserve"><value>简体中文</value></data>
   <data name="Language_English" xml:space="preserve"><value>英语</value></data>
+  <data name="RegionPicker_ToolbarHint.Text" xml:space="preserve"><value>框内拖拽移动 · 控制点拉伸 · Enter 确认</value></data>
+  <data name="RegionPicker_Cancel.Content" xml:space="preserve"><value>取消</value></data>
+  <data name="RegionPicker_Confirm.Content" xml:space="preserve"><value>确认</value></data>
 </root>

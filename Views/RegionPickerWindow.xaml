@@ -7,12 +7,14 @@
     <Grid
         x:Name="Root"
         Background="Transparent"
+        DoubleTapped="Root_DoubleTapped"
         PointerPressed="Root_PointerPressed"
         PointerMoved="Root_PointerMoved"
         PointerReleased="Root_PointerReleased">
 
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="Escape" Invoked="OnEscapeInvoked" />
+            <KeyboardAccelerator Key="Enter" Invoked="OnEnterInvoked" />
         </Grid.KeyboardAccelerators>
 
         <!-- Use the desktop screenshot as a background to ensure visibility. -->
@@ -24,27 +26,43 @@
         <!-- Apply a subtle frosted-glass effect with a translucent white overlay. -->
         <Rectangle x:Name="FrostOverlay" Fill="#22FFFFFF" IsHitTestVisible="False" />
 
-        <!-- Four masks cover the area outside the selection while its interior stays transparent. -->
-        <Rectangle x:Name="ShadeTop" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
-        <Rectangle x:Name="ShadeLeft" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
-        <Rectangle x:Name="ShadeRight" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
-        <Rectangle x:Name="ShadeBottom" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+        <Canvas x:Name="SelectionCanvas" IsHitTestVisible="False">
+            <!-- Four masks cover the area outside the selection while its interior stays transparent. -->
+            <Rectangle x:Name="ShadeTop" Fill="#66000000" Visibility="Collapsed" />
+            <Rectangle x:Name="ShadeLeft" Fill="#66000000" Visibility="Collapsed" />
+            <Rectangle x:Name="ShadeRight" Fill="#66000000" Visibility="Collapsed" />
+            <Rectangle x:Name="ShadeBottom" Fill="#66000000" Visibility="Collapsed" />
 
-        <Border
-            x:Name="SelectionBorder"
-            Background="Transparent"
-            BorderBrush="Red"
-            BorderThickness="2"
-            Visibility="Collapsed"
-            IsHitTestVisible="False" />
+            <Border
+                x:Name="SelectionBorder"
+                Background="Transparent"
+                BorderBrush="#818CF8"
+                BorderThickness="2"
+                Visibility="Collapsed" />
 
-        <Rectangle
-            x:Name="IndicatorRectangle"
-            Stroke="Red"
-            StrokeThickness="2"
-            StrokeDashArray="4 3"
-            Visibility="Collapsed"
-            IsHitTestVisible="False" />
+            <Border
+                x:Name="InfoBorder"
+                Padding="7,3"
+                Background="#EB252836"
+                CornerRadius="4"
+                Visibility="Collapsed">
+                <TextBlock
+                    x:Name="InfoText"
+                    FontFamily="Consolas"
+                    FontSize="12"
+                    FontWeight="SemiBold"
+                    Foreground="#F4F5F8" />
+            </Border>
+
+            <Border x:Name="HandleNorthWest" Width="10" Height="10" Background="White" BorderBrush="#6366F1" BorderThickness="1" CornerRadius="2" Visibility="Collapsed" />
+            <Border x:Name="HandleNorth" Width="10" Height="10" Background="White" BorderBrush="#6366F1" BorderThickness="1" CornerRadius="2" Visibility="Collapsed" />
+            <Border x:Name="HandleNorthEast" Width="10" Height="10" Background="White" BorderBrush="#6366F1" BorderThickness="1" CornerRadius="2" Visibility="Collapsed" />
+            <Border x:Name="HandleWest" Width="10" Height="10" Background="White" BorderBrush="#6366F1" BorderThickness="1" CornerRadius="2" Visibility="Collapsed" />
+            <Border x:Name="HandleEast" Width="10" Height="10" Background="White" BorderBrush="#6366F1" BorderThickness="1" CornerRadius="2" Visibility="Collapsed" />
+            <Border x:Name="HandleSouthWest" Width="10" Height="10" Background="White" BorderBrush="#6366F1" BorderThickness="1" CornerRadius="2" Visibility="Collapsed" />
+            <Border x:Name="HandleSouth" Width="10" Height="10" Background="White" BorderBrush="#6366F1" BorderThickness="1" CornerRadius="2" Visibility="Collapsed" />
+            <Border x:Name="HandleSouthEast" Width="10" Height="10" Background="White" BorderBrush="#6366F1" BorderThickness="1" CornerRadius="2" Visibility="Collapsed" />
+        </Canvas>
 
         <TextBlock
             x:Name="HintText"
@@ -54,5 +72,41 @@
             VerticalAlignment="Top"
             Foreground="White"
             IsHitTestVisible="False" />
+
+        <Border
+            x:Name="Toolbar"
+            Margin="0,0,0,28"
+            Padding="12,8"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Background="#EB252836"
+            BorderBrush="#474D66"
+            BorderThickness="1"
+            CornerRadius="9"
+            Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock
+                    x:Uid="RegionPicker_ToolbarHint"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="#A4AAC0" />
+                <Button
+                    x:Uid="RegionPicker_Cancel"
+                    Padding="12,5"
+                    Background="#363B4F"
+                    BorderBrush="#474D66"
+                    Click="CancelButton_Click"
+                    CornerRadius="6"
+                    Foreground="#F4F5F8" />
+                <Button
+                    x:Uid="RegionPicker_Confirm"
+                    Padding="12,5"
+                    Background="#6366F1"
+                    BorderThickness="0"
+                    Click="ConfirmButton_Click"
+                    CornerRadius="6"
+                    Foreground="White" />
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using DawnCapture.Services;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -9,6 +10,10 @@ namespace DawnCapture.Views;
 
 public sealed partial class RecordingControlWindow : Window
 {
+    private const int DwmwaWindowCornerPreference = 33;
+    private const int DwmwcpRound = 2;
+    private const uint WdaExcludeFromCapture = 0x00000011;
+
     private readonly Func<TimeSpan> _elapsedProvider;
     private readonly DispatcherTimer _timer;
 
@@ -16,6 +21,15 @@ public sealed partial class RecordingControlWindow : Window
     {
         _elapsedProvider = elapsedProvider;
         InitializeComponent();
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        int cornerPreference = DwmwcpRound;
+        DwmSetWindowAttribute(
+            hwnd,
+            DwmwaWindowCornerPreference,
+            ref cornerPreference,
+            sizeof(int));
+        SetWindowDisplayAffinity(hwnd, WdaExcludeFromCapture);
 
         Title = LocalizationService.GetString("Window_RecordingControlTitle");
         if (AppWindow.Presenter is OverlappedPresenter presenter)
@@ -73,11 +87,11 @@ public sealed partial class RecordingControlWindow : Window
 
     private void PositionNear(RectInt32 region)
     {
-        int width = 220;
-        int height = 44;
+        int width = 190;
+        int height = 36;
         int gap = 8;
 
-        int x = Math.Max(0, region.X);
+        int x = region.X;
         int y = region.Y - height - gap;
         if (y < 0)
         {
@@ -112,4 +126,14 @@ public sealed partial class RecordingControlWindow : Window
     {
         CancelRequested?.Invoke();
     }
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr hwnd,
+        int attribute,
+        ref int attributeValue,
+        int attributeSize);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity);
 }
