@@ -1,4 +1,5 @@
 using System;
+using DawnCapture.Services;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -16,7 +17,7 @@ public sealed partial class RecordingControlWindow : Window
         _elapsedProvider = elapsedProvider;
         InitializeComponent();
 
-        Title = "录制控制";
+        Title = LocalizationService.GetString("Window_RecordingControlTitle");
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsAlwaysOnTop = true;
@@ -66,7 +67,7 @@ public sealed partial class RecordingControlWindow : Window
         }
         catch
         {
-            // 窗口可能已经关闭。
+            // The window may already be closed.
         }
     }
 

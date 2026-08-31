@@ -10,9 +10,12 @@
     <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <WinUISDKReferences>false</WinUISDKReferences>
-    <!-- 本项目不做 AOT 发布，字段式 [ObservableProperty] 的 AOT 警告不适用。 -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <!-- This project does not use AOT publishing, so field-based [ObservableProperty] AOT warnings do not apply. -->
     <NoWarn>$(NoWarn);MVVMTK0045</NoWarn>
-    <EnableMsixTooling>true</EnableMsixTooling>
+    <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

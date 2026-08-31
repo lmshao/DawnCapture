@@ -14,13 +14,13 @@ public interface IRecordingService
 
     event EventHandler<string>? RecordingFailed;
 
-    /// <summary>录制指定窗口（HWND）。返回是否成功开始。</summary>
+    /// <summary>Records the specified window (HWND). Returns whether recording started successfully.</summary>
     Task<bool> StartWindowAsync(IntPtr window);
 
-    /// <summary>直接录制主窗口所在显示器（桌面录制）。返回是否成功开始。</summary>
+    /// <summary>Records the display containing the main window. Returns whether recording started successfully.</summary>
     Task<bool> StartDesktopAsync();
 
-    /// <summary>拖拽选择屏幕区域并按选区裁剪录制。返回是否成功开始。</summary>
+    /// <summary>Lets the user select a screen region and records the cropped area. Returns whether recording started successfully.</summary>
     Task<bool> StartRegionAsync();
 
     Task StopAsync();

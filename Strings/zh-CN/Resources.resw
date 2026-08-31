@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Navigation_Home.Content" xml:space="preserve"><value>录制</value></data>
+  <data name="Navigation_Settings.Content" xml:space="preserve"><value>设置</value></data>
+  <data name="Navigation_About.Content" xml:space="preserve"><value>关于</value></data>
+  <data name="Home_Title.Text" xml:space="preserve"><value>屏幕录制</value></data>
+  <data name="Home_Desktop.Content" xml:space="preserve"><value>桌面录制</value></data>
+  <data name="Home_Window.Content" xml:space="preserve"><value>窗口录制</value></data>
+  <data name="Home_Region.Content" xml:space="preserve"><value>区域录制</value></data>
+  <data name="Home_Pause.Content" xml:space="preserve"><value>暂停</value></data>
+  <data name="Home_Resume.Content" xml:space="preserve"><value>继续</value></data>
+  <data name="Home_Stop.Content" xml:space="preserve"><value>停止</value></data>
+  <data name="Settings_Title.Text" xml:space="preserve"><value>设置</value></data>
+  <data name="Settings_OutputFolder.Header" xml:space="preserve"><value>输出目录</value></data>
+  <data name="Settings_FrameRate.Header" xml:space="preserve"><value>帧率 (FPS)</value></data>
+  <data name="Settings_Bitrate.Header" xml:space="preserve"><value>码率 (Kbps)</value></data>
+  <data name="Settings_CaptureCursor.Header" xml:space="preserve"><value>录制鼠标光标</value></data>
+  <data name="Settings_Language.Text" xml:space="preserve"><value>语言</value></data>
+  <data name="Settings_Save.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>拖拽选择录制区域，按 Esc 取消</value></data>
+  <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ 停止</value></data>
+  <data name="About_Description" xml:space="preserve"><value>基于 WinUI 3 的 Windows 原生屏幕录制工具</value></data>
+  <data name="Status_Ready" xml:space="preserve"><value>准备就绪</value></data>
+  <data name="Status_StartingDesktop" xml:space="preserve"><value>正在开始桌面录制…</value></data>
+  <data name="Status_StartingWindow" xml:space="preserve"><value>正在开始窗口录制…</value></data>
+  <data name="Status_SelectingRegion" xml:space="preserve"><value>正在选择录制区域…</value></data>
+  <data name="Status_Preparing" xml:space="preserve"><value>正在准备录制…</value></data>
+  <data name="Status_Recording" xml:space="preserve"><value>录制中</value></data>
+  <data name="Status_Paused" xml:space="preserve"><value>已暂停</value></data>
+  <data name="Status_Stopping" xml:space="preserve"><value>正在停止…</value></data>
+  <data name="Status_Saved" xml:space="preserve"><value>已保存</value></data>
+  <data name="Error_StartRecording" xml:space="preserve"><value>启动录制失败：{0}</value></data>
+  <data name="Error_CreateD3DDevice" xml:space="preserve"><value>创建 D3D11 设备失败：{0}</value></data>
+  <data name="Error_CreateDirect3DDevice" xml:space="preserve"><value>CreateDirect3D11DeviceFromDXGIDevice 失败：0x{0:X8}</value></data>
+  <data name="Failure_CaptureWindow" xml:space="preserve"><value>无法捕获所选窗口。</value></data>
+  <data name="Failure_MainWindowUnavailable" xml:space="preserve"><value>主窗口尚未准备好。</value></data>
+  <data name="Failure_CreateDesktopCapture" xml:space="preserve"><value>无法创建桌面捕获会话。</value></data>
+  <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>无法为所选区域创建捕获会话。</value></data>
+  <data name="Failure_NoFrames" xml:space="preserve"><value>没有写入任何视频帧。请确认捕获目标仍然可见。</value></data>
+  <data name="Window_RegionPickerTitle" xml:space="preserve"><value>选择录制区域</value></data>
+  <data name="Window_RecordingControlTitle" xml:space="preserve"><value>录制控制</value></data>
+  <data name="Language_System" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Language_Chinese" xml:space="preserve"><value>简体中文</value></data>
+  <data name="Language_English" xml:space="preserve"><value>英语</value></data>
+</root>

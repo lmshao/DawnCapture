@@ -104,7 +104,7 @@ public sealed class RecordingService : IRecordingService
             var item = CreateCaptureItemForWindow(window);
             if (item is null)
             {
-                RaiseFailed("无法捕获所选窗口。");
+                RaiseFailed(LocalizationService.GetString("Failure_CaptureWindow"));
                 State = RecordingState.Idle;
                 return false;
             }
@@ -129,7 +129,7 @@ public sealed class RecordingService : IRecordingService
 
         if (App.MainWindow is null)
         {
-            RaiseFailed("主窗口尚未准备好。");
+            RaiseFailed(LocalizationService.GetString("Failure_MainWindowUnavailable"));
             return false;
         }
 
@@ -142,7 +142,7 @@ public sealed class RecordingService : IRecordingService
             var item = CreateCaptureItemForMonitor(monitor);
             if (item is null)
             {
-                RaiseFailed("无法创建桌面捕获会话。");
+                RaiseFailed(LocalizationService.GetString("Failure_CreateDesktopCapture"));
                 State = RecordingState.Idle;
                 return false;
             }
@@ -193,7 +193,7 @@ public sealed class RecordingService : IRecordingService
             if (item is null || monitorBounds is null)
             {
                 regionWindow.Close();
-                RaiseFailed("无法为所选区域创建捕获会话。");
+                RaiseFailed(LocalizationService.GetString("Failure_CreateRegionCapture"));
                 State = RecordingState.Idle;
                 return false;
             }
@@ -210,7 +210,7 @@ public sealed class RecordingService : IRecordingService
 
             _regionIndicator = regionWindow;
 
-            // 选区上方出现 REC 小窗体，点击后才开始录制。
+            // Show the REC control above the selection and start recording when it is clicked.
             var control = new RecordingControlWindow(() => Elapsed);
             _controlWindow = control;
 
@@ -305,7 +305,7 @@ public sealed class RecordingService : IRecordingService
             }
             catch
             {
-                // 转码收尾异常已在任务续延中上报，这里不重复处理。
+                // Finalization errors are reported by the task continuation.
             }
         }
 
@@ -315,7 +315,7 @@ public sealed class RecordingService : IRecordingService
         Log.Info($"录制结束，共写入 {_framesWritten} 帧。");
         if (_framesWritten == 0)
         {
-            RaiseFailed("没有写入任何视频帧，生成的文件为空。请确认捕获目标仍然可见。");
+            RaiseFailed(LocalizationService.GetString("Failure_NoFrames"));
         }
     }
 
@@ -432,7 +432,7 @@ public sealed class RecordingService : IRecordingService
             Directory.CreateDirectory(folder);
             var outputPath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}.mp4");
 
-            // StorageFile.GetFileFromPathAsync 要求文件已存在。
+            // StorageFile.GetFileFromPathAsync requires the file to exist.
             File.Create(outputPath).Dispose();
             var outputFile = await StorageFile.GetFileFromPathAsync(outputPath);
             _outputStream = await outputFile.OpenAsync(FileAccessMode.ReadWrite);
@@ -497,14 +497,16 @@ public sealed class RecordingService : IRecordingService
 
         if (result.Failure)
         {
-            throw new InvalidOperationException($"创建 D3D11 设备失败：{result}");
+            throw new InvalidOperationException(
+                string.Format(LocalizationService.GetString("Error_CreateD3DDevice"), result));
         }
 
         using var dxgiDevice = _d3dDevice.QueryInterface<IDXGIDevice>();
         int hr = CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.NativePointer, out var pWinrtDevice);
         if (hr != 0)
         {
-            throw new InvalidOperationException($"CreateDirect3D11DeviceFromDXGIDevice 失败：0x{hr:X8}");
+            throw new InvalidOperationException(
+                string.Format(LocalizationService.GetString("Error_CreateDirect3DDevice"), hr));
         }
 
         _winrtDevice = WinRT.MarshalInterface<IDirect3DDevice>.FromAbi(pWinrtDevice);
@@ -594,7 +596,7 @@ public sealed class RecordingService : IRecordingService
 
             if (_isPaused)
             {
-                // 暂停后的第一帧：保存表面用于后续冻结帧，保持时间轴连续。
+                // Preserve the first frame after pausing for frozen frames to keep the timeline continuous.
                 _pauseSurface?.Dispose();
                 _pauseSurface = surface;
                 _pauseTimestamp = timestamp.Ticks;
@@ -605,7 +607,7 @@ public sealed class RecordingService : IRecordingService
 
             if (!_isPaused && croppedSurface is not null)
             {
-                // 样本已持有该表面的引用，释放本方法持有的额外引用。
+                // The sample owns a surface reference, so release the extra reference held by this method.
                 croppedSurface.Dispose();
             }
         }
@@ -717,7 +719,7 @@ public sealed class RecordingService : IRecordingService
         int width = Math.Clamp(region.Width, 2, itemSize.Width - x);
         int height = Math.Clamp(region.Height, 2, itemSize.Height - y);
 
-        // H.264 编码器通常要求偶数尺寸。
+        // H.264 encoders generally require even dimensions.
         width &= ~1;
         height &= ~1;
         width = Math.Max(2, width);
@@ -877,7 +879,7 @@ public sealed class RecordingService : IRecordingService
             }
             catch
             {
-                // 忽略释放异常。
+                // Ignore cleanup exceptions.
             }
 
             _session = null;
@@ -892,7 +894,7 @@ public sealed class RecordingService : IRecordingService
             }
             catch
             {
-                // 忽略释放异常。
+                // Ignore cleanup exceptions.
             }
 
             _framePool = null;
@@ -921,7 +923,7 @@ public sealed class RecordingService : IRecordingService
             }
             catch
             {
-                // 忽略释放异常。
+                // Ignore cleanup exceptions.
             }
 
             _regionIndicator = null;
@@ -935,7 +937,7 @@ public sealed class RecordingService : IRecordingService
             }
             catch
             {
-                // 忽略释放异常。
+                // Ignore cleanup exceptions.
             }
 
             _controlWindow = null;
@@ -949,7 +951,7 @@ public sealed class RecordingService : IRecordingService
             }
             catch
             {
-                // 忽略释放异常。
+                // Ignore cleanup exceptions.
             }
 
             _outputStream = null;

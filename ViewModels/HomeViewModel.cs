@@ -24,7 +24,7 @@ public partial class HomeViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    private string _statusText = "准备就绪";
+    private string _statusText = LocalizationService.GetString("Status_Ready");
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StopCommand))]
@@ -51,15 +51,15 @@ public partial class HomeViewModel : ObservableObject
         switch (mode)
         {
             case RecordingMode.Desktop:
-                StatusText = "正在开始桌面录制…";
+                StatusText = LocalizationService.GetString("Status_StartingDesktop");
                 await _recordingService.StartDesktopAsync();
                 break;
             case RecordingMode.Window:
-                StatusText = "正在开始窗口录制…";
+                StatusText = LocalizationService.GetString("Status_StartingWindow");
                 await _recordingService.StartWindowAsync(window);
                 break;
             case RecordingMode.Region:
-                StatusText = "正在选择录制区域…";
+                StatusText = LocalizationService.GetString("Status_SelectingRegion");
                 await _recordingService.StartRegionAsync();
                 break;
         }
@@ -90,11 +90,11 @@ public partial class HomeViewModel : ObservableObject
 
         StatusText = state switch
         {
-            RecordingState.Idle => "准备就绪",
-            RecordingState.PickingSource => "正在准备录制…",
-            RecordingState.Recording => "录制中",
-            RecordingState.Paused => "已暂停",
-            RecordingState.Stopping => "正在停止…",
+            RecordingState.Idle => LocalizationService.GetString("Status_Ready"),
+            RecordingState.PickingSource => LocalizationService.GetString("Status_Preparing"),
+            RecordingState.Recording => LocalizationService.GetString("Status_Recording"),
+            RecordingState.Paused => LocalizationService.GetString("Status_Paused"),
+            RecordingState.Stopping => LocalizationService.GetString("Status_Stopping"),
             _ => StatusText
         };
 
@@ -113,6 +113,6 @@ public partial class HomeViewModel : ObservableObject
     private void OnRecordingFailed(object? sender, string message)
     {
         Log.Error($"录制失败：{message}");
-        StatusText = $"录制失败：{message}";
+        StatusText = string.Format(LocalizationService.GetString("Error_StartRecording"), message);
     }
 }

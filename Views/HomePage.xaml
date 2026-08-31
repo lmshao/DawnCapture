@@ -10,7 +10,7 @@
         HorizontalAlignment="Center"
         VerticalAlignment="Center">
 
-        <TextBlock Text="屏幕录制" Style="{StaticResource TitleTextBlockStyle}" />
+        <TextBlock x:Uid="Home_Title" Style="{StaticResource TitleTextBlockStyle}" />
 
         <TextBlock
             Text="{Binding ElapsedText}"
@@ -28,18 +28,18 @@
 
             <Button
                 x:Name="DesktopButton"
-                Content="桌面录制"
+                x:Uid="Home_Desktop"
                 Style="{StaticResource AccentButtonStyle}"
                 Click="DesktopButton_Click" />
 
             <Button
                 x:Name="WindowButton"
-                Content="窗口录制"
+                x:Uid="Home_Window"
                 Click="WindowButton_Click" />
 
             <Button
                 x:Name="RegionButton"
-                Content="区域录制"
+                x:Uid="Home_Region"
                 Click="RegionButton_Click" />
         </StackPanel>
 
@@ -58,11 +58,11 @@
             Spacing="12"
             HorizontalAlignment="Center">
 
-            <Button Content="暂停" Command="{Binding PauseCommand}" />
+            <Button x:Uid="Home_Pause" Command="{Binding PauseCommand}" />
 
-            <Button Content="继续" Command="{Binding ResumeCommand}" />
+            <Button x:Uid="Home_Resume" Command="{Binding ResumeCommand}" />
 
-            <Button Content="停止" Command="{Binding StopCommand}" />
+            <Button x:Uid="Home_Stop" Command="{Binding StopCommand}" />
         </StackPanel>
     </StackPanel>
 </Page>

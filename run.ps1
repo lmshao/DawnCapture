@@ -1,35 +1,45 @@
-# DawnCapture one-click rebuild, register and run (Debug/x64)
+# DawnCapture one-click clean, rebuild, and launch (Debug/x64)
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
 
-# Close any existing instance so we get a fresh launch
+$project = Join-Path $root "DawnCapture.csproj"
+$configuration = "Debug"
+$platform = "x64"
+$framework = "net8.0-windows10.0.19041.0"
+$runtimeIdentifier = "win-x64"
+$executable = Join-Path $root "bin\$platform\$configuration\$framework\$runtimeIdentifier\DawnCapture.exe"
+
+# Close any existing instance so files are not locked during clean.
 Get-Process DawnCapture -ErrorAction SilentlyContinue | Stop-Process -Force
 
-Write-Host "==> Building DawnCapture (Debug/x64)" -ForegroundColor Cyan
-dotnet build DawnCapture.csproj -c Debug -p:Platform=x64
+Write-Host "==> Cleaning DawnCapture ($configuration/$platform)" -ForegroundColor Cyan
+dotnet clean $project -c $configuration -p:Platform=$platform -p:RuntimeIdentifier=$runtimeIdentifier
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Clean failed with exit code $LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+
+Write-Host "==> Building DawnCapture ($configuration/$platform)" -ForegroundColor Cyan
+dotnet build $project `
+    -c $configuration `
+    -p:Platform=$platform `
+    -p:RuntimeIdentifier=$runtimeIdentifier
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE
 }
 
-$appxManifest = Join-Path $root "bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\AppX\AppxManifest.xml"
-if (-not (Test-Path $appxManifest)) {
-    Write-Error "AppxManifest.xml not found: $appxManifest"
+if (-not (Test-Path $executable)) {
+    Write-Error "Application executable not found after build: $executable"
     exit 1
 }
 
-Write-Host "==> Registering app package" -ForegroundColor Cyan
-Add-AppxPackage -Register $appxManifest -ForceUpdateFromAnyVersion
-
-[xml]$manifest = Get-Content (Join-Path $root "Package.appxmanifest")
-$packageName = $manifest.Package.Identity.Name
-$package = Get-AppxPackage -Name $packageName
-if (-not $package) {
-    Write-Error "Package not found after registration: $packageName"
+Write-Host "==> Launching DawnCapture" -ForegroundColor Cyan
+$process = Start-Process -FilePath $executable -WorkingDirectory (Split-Path $executable) -PassThru
+if ($process.WaitForExit(10000)) {
+    Write-Error "DawnCapture exited during startup with code $($process.ExitCode)"
     exit 1
 }
 
-Write-Host "==> Launching $($package.PackageFamilyName)" -ForegroundColor Cyan
-explorer.exe "shell:AppsFolder\$($package.PackageFamilyName)!App"
-Write-Host "Done."
+Write-Host "Done. DawnCapture is running (PID $($process.Id))." -ForegroundColor Green

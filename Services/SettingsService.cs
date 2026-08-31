@@ -35,7 +35,7 @@ public sealed class SettingsService : ISettingsService
         }
         catch
         {
-            // 设置文件损坏时退回默认值，不让应用崩溃。
+            // Fall back to defaults when the settings file is corrupt.
             Current = new AppSettings();
         }
     }
@@ -55,7 +55,7 @@ public sealed class SettingsService : ISettingsService
         }
         catch
         {
-            // 保存失败不应影响录制主流程。
+            // A save failure must not interrupt the recording workflow.
         }
     }
 }

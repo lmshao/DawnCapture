@@ -85,7 +85,9 @@ public sealed partial class HomePage : Page
         catch (Exception ex)
         {
             Log.Error("启动录制失败", ex);
-            _viewModel.StatusText = $"启动录制失败：{ex.Message}";
+            _viewModel.StatusText = string.Format(
+                LocalizationService.GetString("Error_StartRecording"),
+                ex.Message);
         }
         finally
         {

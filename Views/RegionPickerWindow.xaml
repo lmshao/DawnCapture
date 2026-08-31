@@ -2,8 +2,7 @@
 <Window
     x:Class="DawnCapture.Views.RegionPickerWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="选择录制区域">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid
         x:Name="Root"
@@ -16,16 +15,16 @@
             <KeyboardAccelerator Key="Escape" Invoked="OnEscapeInvoked" />
         </Grid.KeyboardAccelerators>
 
-        <!-- 桌面截图作为背景，保证一定可见 -->
+        <!-- Use the desktop screenshot as a background to ensure visibility. -->
         <Image
             x:Name="DesktopImage"
             Stretch="Fill"
             IsHitTestVisible="False" />
 
-        <!-- 轻度毛玻璃：一层很淡的白色纱 -->
+        <!-- Apply a subtle frosted-glass effect with a translucent white overlay. -->
         <Rectangle x:Name="FrostOverlay" Fill="#22FFFFFF" IsHitTestVisible="False" />
 
-        <!-- 选区外四块遮罩：选区内部保持透明 -->
+        <!-- Four masks cover the area outside the selection while its interior stays transparent. -->
         <Rectangle x:Name="ShadeTop" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
         <Rectangle x:Name="ShadeLeft" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
         <Rectangle x:Name="ShadeRight" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
@@ -49,11 +48,11 @@
 
         <TextBlock
             x:Name="HintText"
+            x:Uid="RegionPicker_Hint"
             Margin="0,12,0,0"
             HorizontalAlignment="Center"
             VerticalAlignment="Top"
             Foreground="White"
-            Text="拖拽选择录制区域，按 Esc 取消"
             IsHitTestVisible="False" />
     </Grid>
 </Window>

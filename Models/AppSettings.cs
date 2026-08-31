@@ -13,4 +13,6 @@ public sealed class AppSettings
     public int BitrateKbps { get; set; } = 8000;
 
     public bool CaptureCursor { get; set; } = true;
+
+    public string Language { get; set; } = "system";
 }

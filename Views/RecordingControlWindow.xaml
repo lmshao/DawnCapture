@@ -2,8 +2,7 @@
 <Window
     x:Class="DawnCapture.Views.RecordingControlWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="录制控制">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid Background="#E6202020">
         <StackPanel
@@ -30,11 +29,11 @@
 
             <Button
                 x:Name="StopButton"
+                x:Uid="RecordingControl_Stop"
                 Padding="8,2"
                 VerticalAlignment="Center"
                 Background="#CCEF4444"
                 Click="StopButton_Click"
-                Content="⏹ 停止"
                 Foreground="White"
                 Visibility="Collapsed" />
 

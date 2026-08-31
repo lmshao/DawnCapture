@@ -20,17 +20,17 @@
         SelectionChanged="NavView_SelectionChanged">
 
         <NavigationView.MenuItems>
-            <NavigationViewItem Content="录制" Tag="Home">
+            <NavigationViewItem x:Uid="Navigation_Home" Tag="Home">
                 <NavigationViewItem.Icon>
                     <SymbolIcon Symbol="Video" />
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
-            <NavigationViewItem Content="设置" Tag="Settings">
+            <NavigationViewItem x:Uid="Navigation_Settings" Tag="Settings">
                 <NavigationViewItem.Icon>
                     <SymbolIcon Symbol="Setting" />
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
-            <NavigationViewItem Content="关于" Tag="About">
+            <NavigationViewItem x:Uid="Navigation_About" Tag="About">
                 <NavigationViewItem.Icon>
                     <SymbolIcon Symbol="Help" />
                 </NavigationViewItem.Icon>

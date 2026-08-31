@@ -2,6 +2,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using Microsoft.Windows.ApplicationModel.Resources;
+using Microsoft.Windows.Globalization;
 
 namespace DawnCapture.Services;
 
@@ -23,7 +25,7 @@ public static class Log
         }
         catch
         {
-            // 日志初始化失败不应影响应用运行。
+            // Log initialization failures must not prevent the application from running.
         }
     }
 
@@ -92,7 +94,39 @@ public static class Log
         }
         catch
         {
-            // 写日志失败时静默忽略。
+            // Silently ignore log write failures.
         }
+    }
+}
+
+public static class LocalizationService
+{
+    public const string SystemLanguage = "system";
+    public const string SimplifiedChinese = "zh-CN";
+    public const string English = "en-US";
+
+    private static ResourceLoader? _resourceLoader;
+
+    public static void ApplyLanguage(string? language)
+    {
+        string? languageOverride = language switch
+        {
+            SimplifiedChinese => SimplifiedChinese,
+            English => English,
+            _ => null
+        };
+
+        if (languageOverride is not null)
+        {
+            ApplicationLanguages.PrimaryLanguageOverride = languageOverride;
+        }
+
+        _resourceLoader = null;
+    }
+
+    public static string GetString(string key)
+    {
+        _resourceLoader ??= new ResourceLoader();
+        return _resourceLoader.GetString(key);
     }
 }

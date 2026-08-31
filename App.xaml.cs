@@ -12,6 +12,9 @@ public partial class App : Application
 {
     public App()
     {
+        var settingsService = new SettingsService();
+        LocalizationService.ApplyLanguage(settingsService.Current.Language);
+
         Log.Init();
         Log.Info("应用启动，开始初始化。");
         Log.Info($"日志文件：{Log.FilePath}");
@@ -34,17 +37,17 @@ public partial class App : Application
             e.SetObserved();
         };
 
-        ConfigureServices();
+        ConfigureServices(settingsService);
         Log.Info("服务容器初始化完成。");
     }
 
     public static Window? MainWindow { get; private set; }
 
-    private static void ConfigureServices()
+    private static void ConfigureServices(ISettingsService settingsService)
     {
         var services = new ServiceCollection();
 
-        services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<ISettingsService>(settingsService);
         services.AddSingleton<IRecordingService, RecordingService>();
 
         services.AddSingleton<MainViewModel>();

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Navigation_Home.Content" xml:space="preserve"><value>Record</value></data>
+  <data name="Navigation_Settings.Content" xml:space="preserve"><value>Settings</value></data>
+  <data name="Navigation_About.Content" xml:space="preserve"><value>About</value></data>
+  <data name="Home_Title.Text" xml:space="preserve"><value>Screen Recording</value></data>
+  <data name="Home_Desktop.Content" xml:space="preserve"><value>Desktop</value></data>
+  <data name="Home_Window.Content" xml:space="preserve"><value>Window</value></data>
+  <data name="Home_Region.Content" xml:space="preserve"><value>Region</value></data>
+  <data name="Home_Pause.Content" xml:space="preserve"><value>Pause</value></data>
+  <data name="Home_Resume.Content" xml:space="preserve"><value>Resume</value></data>
+  <data name="Home_Stop.Content" xml:space="preserve"><value>Stop</value></data>
+  <data name="Settings_Title.Text" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_OutputFolder.Header" xml:space="preserve"><value>Output folder</value></data>
+  <data name="Settings_FrameRate.Header" xml:space="preserve"><value>Frame rate (FPS)</value></data>
+  <data name="Settings_Bitrate.Header" xml:space="preserve"><value>Bitrate (Kbps)</value></data>
+  <data name="Settings_CaptureCursor.Header" xml:space="preserve"><value>Capture mouse cursor</value></data>
+  <data name="Settings_Language.Text" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings_Save.Content" xml:space="preserve"><value>Save</value></data>
+  <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>Drag to select a recording region. Press Esc to cancel.</value></data>
+  <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ Stop</value></data>
+  <data name="About_Description" xml:space="preserve"><value>A native Windows screen recorder built with WinUI 3</value></data>
+  <data name="Status_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Status_StartingDesktop" xml:space="preserve"><value>Starting desktop recording…</value></data>
+  <data name="Status_StartingWindow" xml:space="preserve"><value>Starting window recording…</value></data>
+  <data name="Status_SelectingRegion" xml:space="preserve"><value>Selecting a recording region…</value></data>
+  <data name="Status_Preparing" xml:space="preserve"><value>Preparing to record…</value></data>
+  <data name="Status_Recording" xml:space="preserve"><value>Recording</value></data>
+  <data name="Status_Paused" xml:space="preserve"><value>Paused</value></data>
+  <data name="Status_Stopping" xml:space="preserve"><value>Stopping…</value></data>
+  <data name="Status_Saved" xml:space="preserve"><value>Saved</value></data>
+  <data name="Error_StartRecording" xml:space="preserve"><value>Failed to start recording: {0}</value></data>
+  <data name="Error_CreateD3DDevice" xml:space="preserve"><value>Failed to create the D3D11 device: {0}</value></data>
+  <data name="Error_CreateDirect3DDevice" xml:space="preserve"><value>CreateDirect3D11DeviceFromDXGIDevice failed: 0x{0:X8}</value></data>
+  <data name="Failure_CaptureWindow" xml:space="preserve"><value>Unable to capture the selected window.</value></data>
+  <data name="Failure_MainWindowUnavailable" xml:space="preserve"><value>The main window is not ready.</value></data>
+  <data name="Failure_CreateDesktopCapture" xml:space="preserve"><value>Unable to create a desktop capture session.</value></data>
+  <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>Unable to create a capture session for the selected region.</value></data>
+  <data name="Failure_NoFrames" xml:space="preserve"><value>No video frames were written. Make sure the capture target is still visible.</value></data>
+  <data name="Window_RegionPickerTitle" xml:space="preserve"><value>Select Recording Region</value></data>
+  <data name="Window_RecordingControlTitle" xml:space="preserve"><value>Recording Controls</value></data>
+  <data name="Language_System" xml:space="preserve"><value>Use system language</value></data>
+  <data name="Language_Chinese" xml:space="preserve"><value>Chinese (Simplified)</value></data>
+  <data name="Language_English" xml:space="preserve"><value>English</value></data>
+</root>

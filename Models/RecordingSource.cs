@@ -21,9 +21,9 @@ public sealed class RecordingSource
 
     public RecordingSourceKind Kind { get; }
 
-    /// <summary>用于屏幕/窗口捕获的 GraphicsCaptureItem，区域捕获时为 null。</summary>
+    /// <summary>The GraphicsCaptureItem used for display or window capture; null for region capture.</summary>
     public GraphicsCaptureItem? Item { get; }
 
-    /// <summary>区域捕获时的屏幕坐标区域，屏幕/窗口捕获时为 null。</summary>
+    /// <summary>The screen-coordinate bounds used for region capture; null for display or window capture.</summary>
     public RectInt32? Region { get; }
 }

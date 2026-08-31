@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using DawnCapture.Services;
 
 namespace DawnCapture.ViewModels;
 
@@ -8,5 +9,5 @@ public partial class AboutViewModel : ObservableObject
 
     public string Version => "0.1.0";
 
-    public string Description => "基于 WinUI 3 的 Windows 原生屏幕录制工具";
+    public string Description => LocalizationService.GetString("About_Description");
 }

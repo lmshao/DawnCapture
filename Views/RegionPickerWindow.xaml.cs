@@ -48,7 +48,7 @@ public sealed partial class RegionPickerWindow : Window
     {
         InitializeComponent();
 
-        Title = "选择录制区域";
+        Title = LocalizationService.GetString("Window_RegionPickerTitle");
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsAlwaysOnTop = true;
@@ -227,7 +227,7 @@ public sealed partial class RegionPickerWindow : Window
     {
         _isIndicatorMode = true;
 
-        // 运行中切换 WS_EX_LAYERED 后必须 SetWindowPos 才生效，否则窗口会变白。
+        // Call SetWindowPos after toggling WS_EX_LAYERED at runtime, or the window turns white.
         EnableColorKeyTransparency();
 
         AppWindow.MoveAndResize(region);
