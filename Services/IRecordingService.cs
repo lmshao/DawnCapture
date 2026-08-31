@@ -14,8 +14,8 @@ public interface IRecordingService
 
     event EventHandler<string>? RecordingFailed;
 
-    /// <summary>Records the specified window (HWND). Returns whether recording started successfully.</summary>
-    Task<bool> StartWindowAsync(IntPtr window);
+    /// <summary>Lets the user pick a window and starts recording it. Returns whether recording started successfully.</summary>
+    Task<bool> PickAndStartWindowAsync();
 
     /// <summary>Records the display containing the main window. Returns whether recording started successfully.</summary>
     Task<bool> StartDesktopAsync();

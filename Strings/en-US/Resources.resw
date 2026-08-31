@@ -82,7 +82,6 @@
   <data name="Error_StartRecording" xml:space="preserve"><value>Failed to start recording: {0}</value></data>
   <data name="Error_CreateD3DDevice" xml:space="preserve"><value>Failed to create the D3D11 device: {0}</value></data>
   <data name="Error_CreateDirect3DDevice" xml:space="preserve"><value>CreateDirect3D11DeviceFromDXGIDevice failed: 0x{0:X8}</value></data>
-  <data name="Failure_CaptureWindow" xml:space="preserve"><value>Unable to capture the selected window.</value></data>
   <data name="Failure_MainWindowUnavailable" xml:space="preserve"><value>The main window is not ready.</value></data>
   <data name="Failure_CreateDesktopCapture" xml:space="preserve"><value>Unable to create a desktop capture session.</value></data>
   <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>Unable to create a capture session for the selected region.</value></data>

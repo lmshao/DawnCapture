@@ -45,9 +45,9 @@ public partial class HomeViewModel : ObservableObject
 
     private bool CanResume() => IsRecording && IsPaused;
 
-    public async Task StartRecordingAsync(RecordingMode mode, IntPtr window)
+    public async Task StartRecordingAsync(RecordingMode mode)
     {
-        Log.Info($"开始录制请求：模式={mode}，窗口=0x{window:X}");
+        Log.Info($"开始录制请求：模式={mode}");
         switch (mode)
         {
             case RecordingMode.Desktop:
@@ -56,7 +56,7 @@ public partial class HomeViewModel : ObservableObject
                 break;
             case RecordingMode.Window:
                 StatusText = LocalizationService.GetString("Status_StartingWindow");
-                await _recordingService.StartWindowAsync(window);
+                await _recordingService.PickAndStartWindowAsync();
                 break;
             case RecordingMode.Region:
                 StatusText = LocalizationService.GetString("Status_SelectingRegion");

@@ -43,16 +43,6 @@
                 Click="RegionButton_Click" />
         </StackPanel>
 
-        <ListView
-            x:Name="WindowList"
-            Width="360"
-            MaxHeight="240"
-            HorizontalAlignment="Center"
-            DisplayMemberPath="Title"
-            SelectionMode="Single"
-            SelectionChanged="WindowList_SelectionChanged"
-            Visibility="Collapsed" />
-
         <StackPanel
             Orientation="Horizontal"
             Spacing="12"

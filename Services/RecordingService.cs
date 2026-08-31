@@ -90,25 +90,34 @@ public sealed class RecordingService : IRecordingService
 
     public event EventHandler<string>? RecordingFailed;
 
-    public async Task<bool> StartWindowAsync(IntPtr window)
+    public async Task<bool> PickAndStartWindowAsync()
     {
         if (State != RecordingState.Idle)
         {
             return false;
         }
 
+        if (App.MainWindow is null)
+        {
+            RaiseFailed(LocalizationService.GetString("Failure_MainWindowUnavailable"));
+            return false;
+        }
+
         State = RecordingState.PickingSource;
         try
         {
-            Log.Debug($"窗口录制：HWND=0x{window:X}");
-            var item = CreateCaptureItemForWindow(window);
+            var picker = new GraphicsCapturePicker();
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+            var item = await picker.PickSingleItemAsync();
             if (item is null)
             {
-                RaiseFailed(LocalizationService.GetString("Failure_CaptureWindow"));
                 State = RecordingState.Idle;
                 return false;
             }
 
+            Log.Debug($"窗口录制：DisplayName={item.DisplayName}，Size={item.Size.Width}x{item.Size.Height}");
             return await StartCaptureAsync(item, null);
         }
         catch (Exception ex)
@@ -790,43 +799,6 @@ public sealed class RecordingService : IRecordingService
             Width = right - left,
             Height = bottom - top
         };
-    }
-
-    private static GraphicsCaptureItem? CreateCaptureItemForWindow(IntPtr window)
-    {
-        const string className = "Windows.Graphics.Capture.GraphicsCaptureItem";
-        var itemId = new Guid("79C3F95B-31F7-4EC2-A464-632EF5D30760");
-
-        int hr = WindowsCreateString(className, className.Length, out var hString);
-        if (hr != 0)
-        {
-            return null;
-        }
-
-        try
-        {
-            var interopId = new Guid("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356");
-            hr = RoGetActivationFactory(hString, ref interopId, out var pFactory);
-            if (hr != 0)
-            {
-                return null;
-            }
-
-            try
-            {
-                var interop = (IGraphicsCaptureItemInterop)Marshal.GetObjectForIUnknown(pFactory);
-                hr = interop.CreateForWindow(window, ref itemId, out var pItem);
-                return hr == 0 ? GraphicsCaptureItem.FromAbi(pItem) : null;
-            }
-            finally
-            {
-                Marshal.Release(pFactory);
-            }
-        }
-        finally
-        {
-            WindowsDeleteString(hString);
-        }
     }
 
     private static GraphicsCaptureItem? CreateCaptureItemForMonitor(IntPtr hMonitor)
