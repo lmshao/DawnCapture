@@ -2,7 +2,7 @@ namespace DawnCapture.Models;
 
 public enum RecordingMode
 {
-    Desktop,
+    FullScreen,
     Window,
     Region
 }

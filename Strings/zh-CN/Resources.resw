@@ -54,7 +54,7 @@
   <data name="Navigation_Settings.Content" xml:space="preserve"><value>设置</value></data>
   <data name="Navigation_About.Content" xml:space="preserve"><value>关于</value></data>
   <data name="Home_Title.Text" xml:space="preserve"><value>屏幕录制</value></data>
-  <data name="Home_Desktop.Content" xml:space="preserve"><value>桌面录制</value></data>
+  <data name="Home_FullScreen.Content" xml:space="preserve"><value>全屏录制</value></data>
   <data name="Home_Window.Content" xml:space="preserve"><value>窗口录制</value></data>
   <data name="Home_Region.Content" xml:space="preserve"><value>区域录制</value></data>
   <data name="Home_Pause.Content" xml:space="preserve"><value>暂停</value></data>
@@ -71,7 +71,7 @@
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ 停止</value></data>
   <data name="About_Description" xml:space="preserve"><value>基于 WinUI 3 的 Windows 原生屏幕录制工具</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>准备就绪</value></data>
-  <data name="Status_StartingDesktop" xml:space="preserve"><value>正在开始桌面录制…</value></data>
+  <data name="Status_StartingFullScreen" xml:space="preserve"><value>正在开始全屏录制…</value></data>
   <data name="Status_StartingWindow" xml:space="preserve"><value>正在开始窗口录制…</value></data>
   <data name="Status_SelectingRegion" xml:space="preserve"><value>正在选择录制区域…</value></data>
   <data name="Status_Preparing" xml:space="preserve"><value>正在准备录制…</value></data>
@@ -83,7 +83,7 @@
   <data name="Error_CreateD3DDevice" xml:space="preserve"><value>创建 D3D11 设备失败：{0}</value></data>
   <data name="Error_CreateDirect3DDevice" xml:space="preserve"><value>CreateDirect3D11DeviceFromDXGIDevice 失败：0x{0:X8}</value></data>
   <data name="Failure_MainWindowUnavailable" xml:space="preserve"><value>主窗口尚未准备好。</value></data>
-  <data name="Failure_CreateDesktopCapture" xml:space="preserve"><value>无法创建桌面捕获会话。</value></data>
+  <data name="Failure_CreateFullScreenCapture" xml:space="preserve"><value>无法创建全屏捕获会话。</value></data>
   <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>无法为所选区域创建捕获会话。</value></data>
   <data name="Failure_NoFrames" xml:space="preserve"><value>没有写入任何视频帧。请确认捕获目标仍然可见。</value></data>
   <data name="Window_RegionPickerTitle" xml:space="preserve"><value>选择录制区域</value></data>

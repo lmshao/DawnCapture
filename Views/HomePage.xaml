@@ -27,10 +27,10 @@
             HorizontalAlignment="Center">
 
             <Button
-                x:Name="DesktopButton"
-                x:Uid="Home_Desktop"
+                x:Name="FullScreenButton"
+                x:Uid="Home_FullScreen"
                 Style="{StaticResource AccentButtonStyle}"
-                Click="DesktopButton_Click" />
+                Click="FullScreenButton_Click" />
 
             <Button
                 x:Name="WindowButton"

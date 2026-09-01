@@ -16,8 +16,8 @@ public partial class App : Application
         LocalizationService.ApplyLanguage(settingsService.Current.Language);
 
         Log.Init();
-        Log.Info("应用启动，开始初始化。");
-        Log.Info($"日志文件：{Log.FilePath}");
+        Log.Info("Application startup initialization started.");
+        Log.Info($"Log file: {Log.FilePath}");
 
         InitializeComponent();
 
@@ -38,7 +38,7 @@ public partial class App : Application
         };
 
         ConfigureServices(settingsService);
-        Log.Info("服务容器初始化完成。");
+        Log.Info("Service container initialization completed.");
     }
 
     public static Window? MainWindow { get; private set; }
@@ -64,14 +64,14 @@ public partial class App : Application
     {
         try
         {
-            Log.Info("OnLaunched 开始创建主窗口。");
+            Log.Info("OnLaunched started creating the main window.");
             MainWindow = Ioc.Default.GetRequiredService<MainWindow>();
             MainWindow.Activate();
-            Log.Info("主窗口已激活。");
+            Log.Info("Main window activated.");
         }
         catch (Exception ex)
         {
-            Log.Error("OnLaunched 失败", ex);
+            Log.Error("OnLaunched failed", ex);
             throw;
         }
     }

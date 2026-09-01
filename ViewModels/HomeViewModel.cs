@@ -47,12 +47,12 @@ public partial class HomeViewModel : ObservableObject
 
     public async Task StartRecordingAsync(RecordingMode mode)
     {
-        Log.Info($"开始录制请求：模式={mode}");
+        Log.Info($"Recording request started: Mode={mode}");
         switch (mode)
         {
-            case RecordingMode.Desktop:
-                StatusText = LocalizationService.GetString("Status_StartingDesktop");
-                await _recordingService.StartDesktopAsync();
+            case RecordingMode.FullScreen:
+                StatusText = LocalizationService.GetString("Status_StartingFullScreen");
+                await _recordingService.StartFullScreenAsync();
                 break;
             case RecordingMode.Window:
                 StatusText = LocalizationService.GetString("Status_StartingWindow");
@@ -112,7 +112,7 @@ public partial class HomeViewModel : ObservableObject
 
     private void OnRecordingFailed(object? sender, string message)
     {
-        Log.Error($"录制失败：{message}");
+        Log.Error($"Recording failed: {message}");
         StatusText = string.Format(LocalizationService.GetString("Error_StartRecording"), message);
     }
 }

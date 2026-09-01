@@ -54,7 +54,7 @@
   <data name="Navigation_Settings.Content" xml:space="preserve"><value>Settings</value></data>
   <data name="Navigation_About.Content" xml:space="preserve"><value>About</value></data>
   <data name="Home_Title.Text" xml:space="preserve"><value>Screen Recording</value></data>
-  <data name="Home_Desktop.Content" xml:space="preserve"><value>Desktop</value></data>
+  <data name="Home_FullScreen.Content" xml:space="preserve"><value>Full Screen</value></data>
   <data name="Home_Window.Content" xml:space="preserve"><value>Window</value></data>
   <data name="Home_Region.Content" xml:space="preserve"><value>Region</value></data>
   <data name="Home_Pause.Content" xml:space="preserve"><value>Pause</value></data>
@@ -71,7 +71,7 @@
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ Stop</value></data>
   <data name="About_Description" xml:space="preserve"><value>A native Windows screen recorder built with WinUI 3</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>Ready</value></data>
-  <data name="Status_StartingDesktop" xml:space="preserve"><value>Starting desktop recording…</value></data>
+  <data name="Status_StartingFullScreen" xml:space="preserve"><value>Starting full-screen recording…</value></data>
   <data name="Status_StartingWindow" xml:space="preserve"><value>Starting window recording…</value></data>
   <data name="Status_SelectingRegion" xml:space="preserve"><value>Selecting a recording region…</value></data>
   <data name="Status_Preparing" xml:space="preserve"><value>Preparing to record…</value></data>
@@ -83,7 +83,7 @@
   <data name="Error_CreateD3DDevice" xml:space="preserve"><value>Failed to create the D3D11 device: {0}</value></data>
   <data name="Error_CreateDirect3DDevice" xml:space="preserve"><value>CreateDirect3D11DeviceFromDXGIDevice failed: 0x{0:X8}</value></data>
   <data name="Failure_MainWindowUnavailable" xml:space="preserve"><value>The main window is not ready.</value></data>
-  <data name="Failure_CreateDesktopCapture" xml:space="preserve"><value>Unable to create a desktop capture session.</value></data>
+  <data name="Failure_CreateFullScreenCapture" xml:space="preserve"><value>Unable to create a full-screen capture session.</value></data>
   <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>Unable to create a capture session for the selected region.</value></data>
   <data name="Failure_NoFrames" xml:space="preserve"><value>No video frames were written. Make sure the capture target is still visible.</value></data>
   <data name="Window_RegionPickerTitle" xml:space="preserve"><value>Select Recording Region</value></data>

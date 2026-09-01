@@ -47,7 +47,7 @@ public sealed partial class RegionPickerWindow : Window
 
         AppWindow.MoveAndResize(virtualScreenBounds);
 
-        Log.Debug($"RegionPickerWindow 创建：虚拟屏幕 {virtualScreenBounds.Width}x{virtualScreenBounds.Height} @({virtualScreenBounds.X},{virtualScreenBounds.Y})");
+        Log.Debug($"RegionPickerWindow created: VirtualScreen={virtualScreenBounds.Width}x{virtualScreenBounds.Height} @({virtualScreenBounds.X},{virtualScreenBounds.Y})");
         _desktopImageTask = LoadDesktopImageAsync(virtualScreenBounds);
     }
 
@@ -82,7 +82,7 @@ public sealed partial class RegionPickerWindow : Window
         }
         catch (Exception ex)
         {
-            Log.Error("加载桌面截图失败", ex);
+            Log.Error("Failed to load the desktop screenshot", ex);
         }
     }
 
@@ -430,7 +430,7 @@ public sealed partial class RegionPickerWindow : Window
             Height = height
         };
 
-        Log.Debug($"区域选择完成：{region.Width}x{region.Height} @({region.X},{region.Y})");
+        Log.Debug($"Region selection completed: {region.Width}x{region.Height} @({region.X},{region.Y})");
         _tcs.TrySetResult(region);
         Close();
     }
@@ -471,7 +471,7 @@ public sealed partial class RegionPickerWindow : Window
 
     private void Cancel()
     {
-        Log.Debug("区域选择已取消（Esc 或选区过小）。");
+        Log.Debug("Region selection canceled because Escape was pressed or the selection was too small.");
         _tcs.TrySetResult(null);
         Close();
     }

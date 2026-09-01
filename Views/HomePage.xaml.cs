@@ -33,14 +33,14 @@ public sealed partial class HomePage : Page
     private void UpdateStartButtons()
     {
         bool idle = !_viewModel.IsRecording;
-        DesktopButton.IsEnabled = idle;
+        FullScreenButton.IsEnabled = idle;
         WindowButton.IsEnabled = idle;
         RegionButton.IsEnabled = idle;
     }
 
-    private async void DesktopButton_Click(object sender, RoutedEventArgs e)
+    private async void FullScreenButton_Click(object sender, RoutedEventArgs e)
     {
-        await StartAsync(RecordingMode.Desktop);
+        await StartAsync(RecordingMode.FullScreen);
     }
 
     private async void WindowButton_Click(object sender, RoutedEventArgs e)
@@ -62,7 +62,7 @@ public sealed partial class HomePage : Page
         }
         catch (Exception ex)
         {
-            Log.Error("启动录制失败", ex);
+            Log.Error("Failed to start recording", ex);
             _viewModel.StatusText = string.Format(
                 LocalizationService.GetString("Error_StartRecording"),
                 ex.Message);
