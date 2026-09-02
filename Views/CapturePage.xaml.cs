@@ -173,6 +173,14 @@ public sealed partial class CapturePage : Page
         CaptureOutline.BorderBrush = committed ? accent : stroke;
     }
 
+    private void MonitorCard_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is MonitorDisplay display)
+        {
+            ViewModel.SelectDisplayCommand.Execute(display);
+        }
+    }
+
     public void ShowFolderFlyout() => FolderFlyout.ShowAt(SaveToButton);
 
     private void Workspace_SizeChanged(object sender, SizeChangedEventArgs e)

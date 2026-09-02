@@ -4,21 +4,35 @@ using DawnCapture.Models;
 using DawnCapture.Services;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DawnCapture.ViewModels;
 
 public partial class CaptureViewModel : ObservableObject
 {
-    public CaptureViewModel(ISettingsService settingsService, MainViewModel mainViewModel)
+    public CaptureViewModel(
+        ISettingsService settingsService,
+        MainViewModel mainViewModel,
+        IMonitorService monitorService,
+        IRecordingService recordingService)
     {
         _settingsService = settingsService;
         _mainViewModel = mainViewModel;
+        _monitorService = monitorService;
+        _recordingService = recordingService;
+
+        _recordingService.StateChanged += OnRecordingStateChanged;
+        _recordingService.RecordingFailed += OnRecordingFailed;
+
         DestinationFolderSummary = _mainViewModel.OutputFolderSummary;
         RecordButtonLabel = LocalizationService.GetString("Dock_StartRecording");
         VideoQualityLabel = LocalizationService.GetString("Dock_Quality");
         AudioQualityLabel = LocalizationService.GetString("Dock_AudioQuality");
         VideoCodecSummary = LocalizationService.GetString("Dock_Codec_Avc");
         AudioCodecSummary = LocalizationService.GetString("Dock_Codec_Audio");
+        InitializeMonitors();
         ApplySelectedMode();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
@@ -26,6 +40,16 @@ public partial class CaptureViewModel : ObservableObject
 
     private readonly ISettingsService _settingsService;
     private readonly MainViewModel _mainViewModel;
+    private readonly IMonitorService _monitorService;
+    private readonly IRecordingService _recordingService;
+
+    public ObservableCollection<MonitorDisplay> Monitors { get; } = new();
+
+    [ObservableProperty]
+    private MonitorDisplay? _selectedDisplay;
+
+    [ObservableProperty]
+    private bool _showDisplayPreview;
 
     [ObservableProperty]
     private CaptureModeKind _selectedMode = CaptureModeKind.FullScreen;
@@ -167,12 +191,25 @@ public partial class CaptureViewModel : ObservableObject
 
         HasSource = SelectedMode switch
         {
-            CaptureModeKind.FullScreen => false,
+            CaptureModeKind.FullScreen => SelectedDisplay != null,
             CaptureModeKind.Window => false,
             CaptureModeKind.Region => true,
             CaptureModeKind.AudioOnly => true,
             _ => false
         };
+    }
+
+    private void InitializeMonitors()
+    {
+        Monitors.Clear();
+        foreach (var monitor in _monitorService.GetMonitors())
+        {
+            Monitors.Add(monitor);
+        }
+
+        // Single monitor: skip the picker and go straight to the live-area preview.
+        // Multiple monitors: start from the card grid so the user explicitly picks.
+        SelectedDisplay = Monitors.Count == 1 ? Monitors[0] : null;
     }
 
     partial void OnIsRecordingChanged(bool value)
@@ -188,30 +225,95 @@ public partial class CaptureViewModel : ObservableObject
     private void SelectMode(CaptureModeKind mode) => SelectedMode = mode;
 
     [RelayCommand]
-    private void ToggleRecording()
+    private async Task ToggleRecording()
     {
-        IsRecording = !IsRecording;
-        if (IsRecording)
+        if (_recordingService.State == RecordingState.Idle)
         {
-            _mainViewModel.AppStatusText = string.Format(
-                LocalizationService.GetString("AppStatus_Recording"),
-                ControllerSource);
+            switch (SelectedMode)
+            {
+                case CaptureModeKind.FullScreen:
+                    await _recordingService.StartFullScreenAsync();
+                    break;
+                case CaptureModeKind.Window:
+                    await _recordingService.PickAndStartWindowAsync();
+                    break;
+                case CaptureModeKind.Region:
+                    await _recordingService.StartRegionAsync();
+                    break;
+                case CaptureModeKind.AudioOnly:
+                    // Audio-only recording is not implemented yet.
+                    break;
+            }
         }
-        else
+        else if (_recordingService.State is RecordingState.Recording or RecordingState.Paused)
         {
-            IsPaused = false;
-            TimerText = "00:00";
-            _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+            await _recordingService.StopAsync();
         }
     }
 
     [RelayCommand]
-    private void TogglePause() => IsPaused = !IsPaused;
+    private void TogglePause()
+    {
+        if (_recordingService.State == RecordingState.Recording)
+        {
+            _recordingService.Pause();
+        }
+        else if (_recordingService.State == RecordingState.Paused)
+        {
+            _recordingService.Resume();
+        }
+    }
+
+    private void OnRecordingStateChanged(object? sender, RecordingState state)
+    {
+        IsRecording = state is RecordingState.Recording or RecordingState.Paused;
+        IsPaused = state == RecordingState.Paused;
+
+        switch (state)
+        {
+            case RecordingState.Recording:
+                _mainViewModel.AppStatusText = string.Format(
+                    LocalizationService.GetString("AppStatus_Recording"),
+                    ControllerSource);
+                break;
+            case RecordingState.Paused:
+                _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Paused");
+                break;
+            case RecordingState.Idle:
+                TimerText = "00:00";
+                _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+                break;
+        }
+    }
+
+    private void OnRecordingFailed(object? sender, string message)
+    {
+        _mainViewModel.AppStatusText = message;
+    }
+
+    [RelayCommand]
+    private void SelectDisplay(MonitorDisplay? display)
+    {
+        if (display == null)
+        {
+            return;
+        }
+
+        SelectedDisplay = display;
+        HasSource = true;
+        UpdateHeaderCopy();
+        UpdatePreviewCopy();
+    }
 
     [RelayCommand]
     private void PreviewAction()
     {
-        // UI shell only.
+        if (SelectedMode == CaptureModeKind.FullScreen)
+        {
+            HasSource = false;
+            UpdateHeaderCopy();
+            UpdatePreviewCopy();
+        }
     }
 
     [RelayCommand]
@@ -248,7 +350,7 @@ public partial class CaptureViewModel : ObservableObject
             CaptureModeKind.AudioOnly => LocalizationService.GetString("Capture_Source_AudioOnly"),
             CaptureModeKind.Region when HasSource => "Selected region / 1280 x 720",
             CaptureModeKind.Window when HasSource => "Visual Studio Code / 1600 x 900",
-            CaptureModeKind.FullScreen when HasSource => "Display 1 / 2560 x 1440",
+            CaptureModeKind.FullScreen when HasSource => $"{SelectedDisplay?.Name} / {SelectedDisplay?.Resolution}",
             _ => LocalizationService.GetString("Capture_Source_None")
         };
 
@@ -258,6 +360,7 @@ public partial class CaptureViewModel : ObservableObject
             PreviewCaption = LocalizationService.GetString("Capture_Preview_AudioLevels");
             ShowPreviewAction = false;
             ShowMonitorGrid = false;
+            ShowDisplayPreview = false;
             ShowEmptySource = false;
             ShowRegionPreview = false;
             ShowWindowPreview = false;
@@ -265,17 +368,20 @@ public partial class CaptureViewModel : ObservableObject
         }
 
         ShowMonitorGrid = SelectedMode == CaptureModeKind.FullScreen && !HasSource;
+        ShowDisplayPreview = SelectedMode == CaptureModeKind.FullScreen && HasSource;
         ShowEmptySource = (SelectedMode == CaptureModeKind.Window || SelectedMode == CaptureModeKind.Region) && !HasSource;
         ShowRegionPreview = SelectedMode == CaptureModeKind.Region && HasSource;
         ShowWindowPreview = SelectedMode == CaptureModeKind.Window && HasSource;
 
         if (SelectedMode == CaptureModeKind.FullScreen)
         {
-            PreviewLabel = HasSource ? "Display 1 / 2560 x 1440" : LocalizationService.GetString("Capture_Preview_ChooseDisplay");
+            PreviewLabel = HasSource
+                ? $"{SelectedDisplay?.Name} / {SelectedDisplay?.Resolution}"
+                : LocalizationService.GetString("Capture_Preview_ChooseDisplay");
             PreviewCaption = HasSource
                 ? LocalizationService.GetString("Capture_Preview_FullScreenCaption")
                 : LocalizationService.GetString("Capture_Preview_SelectDisplayHint");
-            ShowPreviewAction = HasSource;
+            ShowPreviewAction = HasSource && Monitors.Count > 1;
             PreviewActionLabel = LocalizationService.GetString("Capture_Action_ChangeDisplay");
         }
         else if (SelectedMode == CaptureModeKind.Window)

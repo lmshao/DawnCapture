@@ -147,16 +147,66 @@ public sealed class RecordingService : IRecordingService
         {
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
             var monitor = MonitorFromWindow(hwnd, 2 /* MONITOR_DEFAULTTONEAREST */);
-            Log.Debug($"Full-screen recording: MainWindow=0x{hwnd:X}, Monitor=0x{monitor:X}");
+            var bounds = GetMonitorBounds(monitor);
+            var dpiScale = GetMonitorDpiScale(monitor);
+            Log.Debug($"Full-screen recording: MainWindow=0x{hwnd:X}, Monitor=0x{monitor:X}, Bounds={bounds?.Width}x{bounds?.Height}");
             var item = CreateCaptureItemForMonitor(monitor);
-            if (item is null)
+            if (item is null || bounds is null)
             {
                 RaiseFailed(LocalizationService.GetString("Failure_CreateFullScreenCapture"));
                 State = RecordingState.Idle;
                 return false;
             }
 
-            return await StartCaptureAsync(item, null);
+            if (!await StartCaptureAsync(item, null))
+            {
+                return false;
+            }
+
+            var control = new RecordingControlWindow(() => Elapsed);
+            _controlWindow = control;
+
+            control.StopRequested += async () =>
+            {
+                try
+                {
+                    await StopAsync();
+                }
+                finally
+                {
+                    control.CloseWindow();
+                }
+            };
+
+            control.PauseRequested += () =>
+            {
+                if (State == RecordingState.Recording)
+                {
+                    Pause();
+                    control.ShowPaused();
+                }
+                else if (State == RecordingState.Paused)
+                {
+                    Resume();
+                    control.ShowRecording();
+                }
+            };
+
+            control.Closed += (_, _) =>
+            {
+                if (State is RecordingState.Recording or RecordingState.Paused)
+                {
+                    _ = StopAsync();
+                }
+            };
+
+            // Industry convention: float the control at the top-left of the
+            // monitor being recorded, and hide the main window so the recorded
+            // desktop does not contain the recorder UI.
+            control.ShowRecordingTopLeft(bounds.Value, dpiScale);
+            Log.Debug($"Full-screen control shown at ({bounds.Value.X + 12},{bounds.Value.Y + 12}).");
+            MinimizeMainWindow();
+            return true;
         }
         catch (Exception ex)
         {
@@ -198,6 +248,7 @@ public sealed class RecordingService : IRecordingService
             };
             var monitor = MonitorFromPoint(point, 2 /* MONITOR_DEFAULTTONEAREST */);
             var monitorBounds = GetMonitorBounds(monitor);
+            var dpiScale = GetMonitorDpiScale(monitor);
             var item = CreateCaptureItemForMonitor(monitor);
             if (item is null || monitorBounds is null)
             {
@@ -281,7 +332,7 @@ public sealed class RecordingService : IRecordingService
                 tcs.TrySetResult(started);
             };
 
-            control.ShowWaiting(region.Value);
+            control.ShowWaiting(region.Value, dpiScale);
             return await tcs.Task;
         }
         catch (Exception ex)
@@ -320,6 +371,7 @@ public sealed class RecordingService : IRecordingService
 
         CleanupCapture();
         State = RecordingState.Idle;
+        RestoreMainWindow();
 
         Log.Info($"Recording stopped: {_framesWritten} frames written.");
         if (_framesWritten == 0)
@@ -761,6 +813,24 @@ public sealed class RecordingService : IRecordingService
         };
     }
 
+    private static double GetMonitorDpiScale(IntPtr hMonitor)
+    {
+        try
+        {
+            int hr = GetDpiForMonitor(hMonitor, 0 /* MDT_EFFECTIVE_DPI */, out uint dpiX, out _);
+            if (hr == 0 && dpiX > 0)
+            {
+                return dpiX / 96.0;
+            }
+        }
+        catch
+        {
+            // Fall back to 100% scaling.
+        }
+
+        return 1.0;
+    }
+
     private static RectInt32 GetVirtualScreenBounds()
     {
         var monitors = new List<RectInt32>();
@@ -970,6 +1040,42 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
+    private static void MinimizeMainWindow()
+    {
+        try
+        {
+            if (App.MainWindow is null)
+            {
+                return;
+            }
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            ShowWindow(hwnd, 6 /* SW_MINIMIZE */);
+        }
+        catch
+        {
+            // Ignore window state failures.
+        }
+    }
+
+    private static void RestoreMainWindow()
+    {
+        try
+        {
+            if (App.MainWindow is null)
+            {
+                return;
+            }
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            ShowWindow(hwnd, 9 /* SW_RESTORE */);
+        }
+        catch
+        {
+            // Ignore window state failures.
+        }
+    }
+
     [DllImport("d3d11.dll", ExactSpelling = true)]
     private static extern int CreateDirect3D11DeviceFromDXGIDevice(
         IntPtr dxgiDevice,
@@ -989,6 +1095,12 @@ public sealed class RecordingService : IRecordingService
 
     [DllImport("user32.dll")]
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
+
+    [DllImport("shcore.dll")]
+    private static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType, out uint dpiX, out uint dpiY);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hwnd, int nCmdShow);
 
     [DllImport("user32.dll")]
     private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);

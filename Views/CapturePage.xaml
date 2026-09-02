@@ -189,27 +189,56 @@
                                 Style="{StaticResource AccentButtonStyle}" />
                         </StackPanel>
 
-                        <Grid Visibility="{x:Bind ViewModel.ShowMonitorGrid, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <Grid ColumnSpacing="12" RowSpacing="12" VerticalAlignment="Center">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Button Height="154" Padding="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="1" CornerRadius="7">
-                                    <StackPanel Spacing="0">
-                                        <Border Height="90" Background="{StaticResource DawnSurfaceMutedBrush}" BorderBrush="{StaticResource DawnStrokeStrongBrush}" BorderThickness="1" CornerRadius="4" />
-                                        <TextBlock Margin="0,9,0,0" FontWeight="SemiBold" Text="Display 1" />
-                                        <TextBlock Margin="0,3,0,0" FontSize="11" Foreground="{StaticResource DawnTextFaintBrush}" Text="Primary / 2560 x 1440" />
-                                    </StackPanel>
-                                </Button>
-                                <Button Grid.Column="1" Height="154" Padding="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="1" CornerRadius="7">
-                                    <StackPanel Spacing="0">
-                                        <Border Height="90" Background="{StaticResource DawnSurfaceMutedBrush}" BorderBrush="{StaticResource DawnStrokeStrongBrush}" BorderThickness="1" CornerRadius="4" />
-                                        <TextBlock Margin="0,9,0,0" FontWeight="SemiBold" Text="Display 2" />
-                                        <TextBlock Margin="0,3,0,0" FontSize="11" Foreground="{StaticResource DawnTextFaintBrush}" Text="1920 x 1080" />
-                                    </StackPanel>
-                                </Button>
-                            </Grid>
+                        <ItemsRepeater
+                            VerticalAlignment="Center"
+                            ItemsSource="{x:Bind ViewModel.Monitors, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.ShowMonitorGrid, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ItemsRepeater.Layout>
+                                <UniformGridLayout MinItemWidth="220" MinColumnSpacing="12" MinRowSpacing="12" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="models:MonitorDisplay">
+                                    <Button
+                                        Height="154"
+                                        Padding="10"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        VerticalContentAlignment="Top"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        BorderBrush="{StaticResource DawnStrokeBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="7"
+                                        Click="MonitorCard_Click">
+                                        <StackPanel Spacing="0">
+                                            <Border
+                                                Height="90"
+                                                Background="{StaticResource DawnSurfaceMutedBrush}"
+                                                BorderBrush="{StaticResource DawnStrokeStrongBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4">
+                                                <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill" />
+                                            </Border>
+                                            <TextBlock Margin="0,9,0,0" FontWeight="SemiBold" Text="{x:Bind Name}" />
+                                            <TextBlock
+                                                Margin="0,3,0,0"
+                                                FontSize="11"
+                                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                                Text="{x:Bind Detail}" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+
+                        <!-- Selected display preview (desktop snapshot) -->
+                        <Grid Visibility="{x:Bind ViewModel.ShowDisplayPreview, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Border
+                                Background="{StaticResource DawnSurfaceMutedBrush}"
+                                BorderBrush="{StaticResource DawnStrokeStrongBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                                <Image Source="{x:Bind ViewModel.SelectedDisplay.Thumbnail, Mode=OneWay}" Stretch="Uniform" />
+                            </Border>
                         </Grid>
 
                         <!-- Region preview fills the outline, matching UX .region-preview -->
@@ -371,48 +400,6 @@
                         Text="Ctrl R" />
                 </StackPanel>
             </Grid>
-        </Border>
-
-        <!-- Recording controller -->
-        <Border
-            Grid.Row="2"
-            Margin="0,0,22,20"
-            Padding="10,0,7,0"
-            HorizontalAlignment="Right"
-            VerticalAlignment="Bottom"
-            Background="{ThemeResource LayerFillColorDefaultBrush}"
-            BorderBrush="{StaticResource DawnStrokeStrongBrush}"
-            BorderThickness="1"
-            CornerRadius="10"
-            Visibility="{x:Bind ViewModel.ShowController, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-            <StackPanel Height="44" Orientation="Horizontal" Spacing="10">
-                <Border
-                    Width="3"
-                    Height="26"
-                    VerticalAlignment="Center"
-                    Background="{StaticResource DawnAccentBrush}"
-                    CornerRadius="0,3,3,0" />
-                <TextBlock
-                    Width="48"
-                    VerticalAlignment="Center"
-                    Style="{StaticResource TimerTextBlockStyle}"
-                    Text="{x:Bind ViewModel.TimerText, Mode=OneWay}" />
-                <TextBlock
-                    VerticalAlignment="Center"
-                    FontSize="11"
-                    Foreground="{StaticResource DawnTextFaintBrush}"
-                    Text="{x:Bind ViewModel.ControllerSource, Mode=OneWay}" />
-                <Button
-                    Width="30"
-                    Height="30"
-                    Command="{x:Bind ViewModel.TogglePauseCommand}"
-                    Content="II" />
-                <Button
-                    Width="30"
-                    Height="30"
-                    Command="{x:Bind ViewModel.ToggleRecordingCommand}"
-                    Content="[]" />
-            </StackPanel>
         </Border>
         </Grid>
     </Grid>
