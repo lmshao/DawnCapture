@@ -51,7 +51,8 @@ public partial class App : Application
         services.AddSingleton<IRecordingService, RecordingService>();
 
         services.AddSingleton<MainViewModel>();
-        services.AddSingleton<HomeViewModel>();
+        services.AddSingleton<CaptureViewModel>();
+        services.AddSingleton<RecordingsViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<AboutViewModel>();
 

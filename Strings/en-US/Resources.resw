@@ -61,15 +61,11 @@
   <data name="Home_Resume.Content" xml:space="preserve"><value>Resume</value></data>
   <data name="Home_Stop.Content" xml:space="preserve"><value>Stop</value></data>
   <data name="Settings_Title.Text" xml:space="preserve"><value>Settings</value></data>
-  <data name="Settings_OutputFolder.Header" xml:space="preserve"><value>Output folder</value></data>
-  <data name="Settings_FrameRate.Header" xml:space="preserve"><value>Frame rate (FPS)</value></data>
-  <data name="Settings_Bitrate.Header" xml:space="preserve"><value>Bitrate (Kbps)</value></data>
-  <data name="Settings_CaptureCursor.Header" xml:space="preserve"><value>Capture mouse cursor</value></data>
   <data name="Settings_Language.Text" xml:space="preserve"><value>Language</value></data>
   <data name="Settings_Save.Content" xml:space="preserve"><value>Save</value></data>
   <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>Drag to select. Drag inside to move, or drag handles to resize. Press Enter to confirm or Esc to cancel.</value></data>
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ Stop</value></data>
-  <data name="About_Description" xml:space="preserve"><value>A native Windows screen recorder built with WinUI 3</value></data>
+  <data name="About_Description" xml:space="preserve"><value>A fast, lightweight, privacy-friendly screen and audio recorder built for Windows 11. Your recordings always stay on your device.</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>Ready</value></data>
   <data name="Status_StartingFullScreen" xml:space="preserve"><value>Starting full-screen recording…</value></data>
   <data name="Status_StartingWindow" xml:space="preserve"><value>Starting window recording…</value></data>
@@ -94,4 +90,104 @@
   <data name="RegionPicker_ToolbarHint.Text" xml:space="preserve"><value>Drag inside to move · Drag handles to resize · Enter to confirm</value></data>
   <data name="RegionPicker_Cancel.Content" xml:space="preserve"><value>Cancel</value></data>
   <data name="RegionPicker_Confirm.Content" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Nav_Capture.Text" xml:space="preserve"><value>Capture</value></data>
+  <data name="Nav_Recordings.Text" xml:space="preserve"><value>Recordings</value></data>
+  <data name="Nav_Settings.Text" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav_About.Text" xml:space="preserve"><value>About</value></data>
+  <data name="Nav_Workspace.Text" xml:space="preserve"><value>WORKSPACE</value></data>
+  <data name="Storage_LocalDisk" xml:space="preserve"><value>Local disk ({0}:)</value></data>
+  <data name="Storage_Available" xml:space="preserve"><value>{0} GB available</value></data>
+  <data name="Storage_Unavailable" xml:space="preserve"><value>Space unavailable</value></data>
+  <data name="Storage_Label" xml:space="preserve"><value>Storage</value></data>
+  <data name="Capture_Eyebrow_Ready" xml:space="preserve"><value>Ready to record</value></data>
+  <data name="Capture_Eyebrow_SourceRequired" xml:space="preserve"><value>Source required</value></data>
+  <data name="Capture_Eyebrow_Recording" xml:space="preserve"><value>Recording in progress</value></data>
+  <data name="Capture_Title_Default" xml:space="preserve"><value>What would you like to capture?</value></data>
+  <data name="Capture_Title_SourceReady" xml:space="preserve"><value>Your capture source is ready</value></data>
+  <data name="Capture_Title_Recording" xml:space="preserve"><value>Recording quietly in the background</value></data>
+  <data name="Capture_Desc_Default" xml:space="preserve"><value>Choose a source, review the settings, and start recording.</value></data>
+  <data name="Capture_Desc_NoSource" xml:space="preserve"><value>Select a source now, or Start recording will open the selector.</value></data>
+  <data name="Capture_Desc_Recording" xml:space="preserve"><value>Use the floating controller to pause or stop.</value></data>
+  <data name="Capture_ModeSection" xml:space="preserve"><value>Capture mode</value></data>
+  <data name="Capture_Mode_FullScreen" xml:space="preserve"><value>Full screen</value></data>
+  <data name="Capture_Mode_FullScreen_Desc" xml:space="preserve"><value>Capture the entire display</value></data>
+  <data name="Capture_Mode_Window" xml:space="preserve"><value>Window</value></data>
+  <data name="Capture_Mode_Window_Desc" xml:space="preserve"><value>Choose an application window</value></data>
+  <data name="Capture_Mode_Region" xml:space="preserve"><value>Region</value></data>
+  <data name="Capture_Mode_Region_Desc" xml:space="preserve"><value>Select part of the screen</value></data>
+  <data name="Capture_Mode_Audio" xml:space="preserve"><value>Audio only</value></data>
+  <data name="Capture_Mode_Audio_Desc" xml:space="preserve"><value>Record sound without video</value></data>
+  <data name="Capture_SourceLabel_Video" xml:space="preserve"><value>Sound and picture</value></data>
+  <data name="Capture_SourceLabel_Audio" xml:space="preserve"><value>Audio sources</value></data>
+  <data name="Capture_Microphone" xml:space="preserve"><value>Microphone</value></data>
+  <data name="Capture_SystemAudio" xml:space="preserve"><value>System audio</value></data>
+  <data name="Capture_ShowCursor" xml:space="preserve"><value>Show cursor</value></data>
+  <data name="Capture_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="Capture_Preview_ChooseDisplay" xml:space="preserve"><value>Choose a display</value></data>
+  <data name="Capture_Preview_NoWindow" xml:space="preserve"><value>No window selected</value></data>
+  <data name="Capture_Preview_NoRegion" xml:space="preserve"><value>No region selected</value></data>
+  <data name="Capture_Preview_SelectRegionFirst" xml:space="preserve"><value>Select a region before recording.</value></data>
+  <data name="Capture_Preview_SelectDisplayHint" xml:space="preserve"><value>Select a display card to use it immediately.</value></data>
+  <data name="Capture_Preview_WindowPickerHint" xml:space="preserve"><value>Choose window opens the native capture picker flow.</value></data>
+  <data name="Capture_Preview_FullScreenCaption" xml:space="preserve"><value>The entire selected display will be recorded.</value></data>
+  <data name="Capture_Preview_WindowCaption" xml:space="preserve"><value>Only this application window will be recorded.</value></data>
+  <data name="Capture_Preview_RegionCaption" xml:space="preserve"><value>Only the selected portion of the display will be recorded.</value></data>
+  <data name="Capture_Preview_AudioSummary" xml:space="preserve"><value>Microphone + system audio</value></data>
+  <data name="Capture_Preview_AudioLevels" xml:space="preserve"><value>Live levels / AAC-LC / M4A / 48 kHz stereo.</value></data>
+  <data name="Capture_Action_ChangeDisplay" xml:space="preserve"><value>Change display</value></data>
+  <data name="Capture_Action_ChooseWindow" xml:space="preserve"><value>Choose window</value></data>
+  <data name="Capture_Action_SelectRegion" xml:space="preserve"><value>Select region</value></data>
+  <data name="Capture_Action_ChangeWindow" xml:space="preserve"><value>Change window</value></data>
+  <data name="Capture_Action_EditRegion" xml:space="preserve"><value>Edit region</value></data>
+  <data name="Capture_EmptyWindow_Title" xml:space="preserve"><value>No window selected</value></data>
+  <data name="Capture_EmptyWindow_Desc" xml:space="preserve"><value>Choose an application window with the Windows capture picker.</value></data>
+  <data name="Capture_EmptyRegion_Title" xml:space="preserve"><value>No region selected</value></data>
+  <data name="Capture_EmptyRegion_Desc" xml:space="preserve"><value>Draw a precise capture area in the transparent region picker.</value></data>
+  <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>Audio only / AAC-LC / M4A</value></data>
+  <data name="Capture_Source_None" xml:space="preserve"><value>No source</value></data>
+  <data name="Dock_SaveTo" xml:space="preserve"><value>Save to</value></data>
+  <data name="Dock_Quality" xml:space="preserve"><value>Quality</value></data>
+  <data name="Dock_AudioQuality" xml:space="preserve"><value>Audio quality</value></data>
+  <data name="Dock_Codec_Avc" xml:space="preserve"><value>Compatible / H.264 AVC</value></data>
+  <data name="Dock_Codec_Audio" xml:space="preserve"><value>AAC-LC / M4A</value></data>
+  <data name="Dock_StartRecording" xml:space="preserve"><value>Start recording</value></data>
+  <data name="Dock_StopRecording" xml:space="preserve"><value>Stop recording</value></data>
+  <data name="AppStatus_Recording" xml:space="preserve"><value>Recording / {0}</value></data>
+  <data name="Recordings_Eyebrow" xml:space="preserve"><value>Local library</value></data>
+  <data name="Recordings_Title" xml:space="preserve"><value>Recordings</value></data>
+  <data name="Recordings_Desc" xml:space="preserve"><value>Your recently saved video and audio recordings.</value></data>
+  <data name="Recordings_Search.PlaceholderText" xml:space="preserve"><value>Search recordings</value></data>
+  <data name="Recordings_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Recordings_Type_Full" xml:space="preserve"><value>Full</value></data>
+  <data name="Recordings_Type_Region" xml:space="preserve"><value>Region</value></data>
+  <data name="Recordings_Type_Window" xml:space="preserve"><value>Window</value></data>
+  <data name="Recordings_Type_Audio" xml:space="preserve"><value>Audio</value></data>
+  <data name="Recordings_More" xml:space="preserve"><value>More</value></data>
+  <data name="Settings_Eyebrow" xml:space="preserve"><value>Preferences</value></data>
+  <data name="Settings_AutoSave" xml:space="preserve"><value>Changes are saved automatically.</value></data>
+  <data name="Settings_Group_Recording" xml:space="preserve"><value>Recording</value></data>
+  <data name="Settings_Group_General" xml:space="preserve"><value>General</value></data>
+  <data name="Settings_OutputFolder_Desc" xml:space="preserve"><value>Where completed recordings are saved</value></data>
+  <data name="Settings_FrameRate" xml:space="preserve"><value>Frame rate</value></data>
+  <data name="Settings_FrameRate_Desc" xml:space="preserve"><value>Higher values create larger files</value></data>
+  <data name="Settings_Quality" xml:space="preserve"><value>Quality</value></data>
+  <data name="Settings_Quality_Desc" xml:space="preserve"><value>Balanced works well for most recordings</value></data>
+  <data name="Settings_VideoCodec" xml:space="preserve"><value>Video codec</value></data>
+  <data name="Settings_VideoCodec_Desc" xml:space="preserve"><value>Choose compatibility or smaller files</value></data>
+  <data name="Settings_Codec_Avc_Status" xml:space="preserve"><value>Works with nearly every player, editor, browser, and upload service.</value></data>
+  <data name="Settings_AudioQuality" xml:space="preserve"><value>Audio quality</value></data>
+  <data name="Settings_AudioQuality_Desc" xml:space="preserve"><value>AAC-LC in an M4A file for audio-only recordings</value></data>
+  <data name="Settings_CaptureCursor_Desc" xml:space="preserve"><value>Show the pointer in recorded video</value></data>
+  <data name="Settings_Countdown" xml:space="preserve"><value>Recording countdown</value></data>
+  <data name="Settings_Countdown_Desc" xml:space="preserve"><value>Show a three-second countdown before recording</value></data>
+  <data name="Settings_Notification" xml:space="preserve"><value>Completion notification</value></data>
+  <data name="Settings_Notification_Desc" xml:space="preserve"><value>Show a Windows notification after saving</value></data>
+  <data name="Settings_Language_Desc" xml:space="preserve"><value>Restart the app after changing this setting</value></data>
+  <data name="Common_Browse" xml:space="preserve"><value>Browse...</value></data>
+  <data name="About_Version" xml:space="preserve"><value>DawnCapture {0}</value></data>
+  <data name="About_Title" xml:space="preserve"><value>Capture the moments that matter.</value></data>
+  <data name="About_Author" xml:space="preserve"><value>Created by SHAO Liming · {0}</value></data>
+  <data name="About_Licenses" xml:space="preserve"><value>Open source licenses</value></data>
+  <data name="FolderFlyout_Open" xml:space="preserve"><value>Open folder</value></data>
+  <data name="FolderFlyout_Change" xml:space="preserve"><value>Change folder</value></data>
 </root>

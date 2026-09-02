@@ -10,7 +10,7 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <ResourceDictionary Source="ms-appx:///Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+            <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" xmlns:helpers="using:DawnCapture.Helpers" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -4,9 +4,51 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <StackPanel Padding="32" Spacing="12">
-        <TextBlock Text="{Binding AppName}" Style="{StaticResource TitleTextBlockStyle}" />
-        <TextBlock Text="{Binding Description}" />
-        <TextBlock Text="{Binding Version}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-    </StackPanel>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel
+            MinHeight="600"
+            Padding="{StaticResource DawnPagePadding}"
+            Spacing="7"
+            VerticalAlignment="Center">
+
+            <Border
+                Width="60"
+                Height="60"
+                Margin="0,0,0,28"
+                Background="{StaticResource DawnSurfaceMutedBrush}"
+                BorderBrush="{StaticResource DawnStrokeStrongBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+                <FontIcon
+                    FontSize="24"
+                    Foreground="{StaticResource DawnAccentBrush}"
+                    Glyph="&#xE714;" />
+            </Border>
+
+            <TextBlock
+                Style="{StaticResource DawnEyebrowTextStyle}"
+                Text="{x:Bind ViewModel.VersionLabel, Mode=OneWay}" />
+
+            <TextBlock
+                FontSize="34"
+                Style="{StaticResource DawnPageTitleStyle}"
+                Text="{x:Bind ViewModel.Title, Mode=OneWay}" />
+
+            <TextBlock
+                MaxWidth="520"
+                Style="{StaticResource DawnPageDescriptionStyle}"
+                Text="{x:Bind ViewModel.Description, Mode=OneWay}" />
+
+            <TextBlock
+                Margin="0,20,0,0"
+                Foreground="{StaticResource DawnTextMutedBrush}"
+                Text="{x:Bind ViewModel.AuthorLine, Mode=OneWay}" />
+
+            <Button
+                Margin="0,24,0,0"
+                Command="{x:Bind ViewModel.OpenLicensesCommand}"
+                Content="Open source licenses"
+                x:Uid="About_Licenses" />
+        </StackPanel>
+    </ScrollViewer>
 </Page>

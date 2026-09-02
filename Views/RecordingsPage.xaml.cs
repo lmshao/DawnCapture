@@ -5,13 +5,13 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace DawnCapture.Views;
 
-public sealed partial class SettingsPage : Page
+public sealed partial class RecordingsPage : Page
 {
-    public SettingsViewModel ViewModel { get; }
+    public RecordingsViewModel ViewModel { get; }
 
-    public SettingsPage()
+    public RecordingsPage()
     {
-        ViewModel = Ioc.Default.GetRequiredService<SettingsViewModel>();
+        ViewModel = Ioc.Default.GetRequiredService<RecordingsViewModel>();
         InitializeComponent();
     }
 }

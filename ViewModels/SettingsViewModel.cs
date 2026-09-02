@@ -1,10 +1,11 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using DawnCapture.Helpers;
+using DawnCapture.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using DawnCapture.Services;
 using Microsoft.UI.Xaml;
 
 namespace DawnCapture.ViewModels;
@@ -12,13 +13,15 @@ namespace DawnCapture.ViewModels;
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settingsService;
+    private readonly MainViewModel _mainViewModel;
 
-    public SettingsViewModel(ISettingsService settingsService)
+    public SettingsViewModel(ISettingsService settingsService, MainViewModel mainViewModel)
     {
         _settingsService = settingsService;
+        _mainViewModel = mainViewModel;
         _outputFolder = _settingsService.Current.OutputFolder;
-        _frameRate = _settingsService.Current.FrameRate;
-        _bitrateKbps = _settingsService.Current.BitrateKbps;
+        _outputFolderDisplay = PathDisplayHelper.MiddleEllipsis(_outputFolder, 44);
+        _frameRateIndex = _settingsService.Current.FrameRate >= 60 ? 1 : 0;
         _captureCursor = _settingsService.Current.CaptureCursor;
         _selectedLanguage = Languages.FirstOrDefault(
             option => option.Code == _settingsService.Current.Language) ?? Languages[0];
@@ -35,39 +38,74 @@ public partial class SettingsViewModel : ObservableObject
     private string _outputFolder;
 
     [ObservableProperty]
-    private double _frameRate;
+    private string _outputFolderDisplay;
 
     [ObservableProperty]
-    private double _bitrateKbps;
+    private int _frameRateIndex;
+
+    [ObservableProperty]
+    private int _qualityIndex = 1;
+
+    [ObservableProperty]
+    private int _codecIndex;
+
+    [ObservableProperty]
+    private int _audioQualityIndex = 1;
 
     [ObservableProperty]
     private bool _captureCursor;
 
     [ObservableProperty]
-    private LanguageOption _selectedLanguage = null!;
+    private bool _countdownEnabled = true;
 
     [ObservableProperty]
-    private string _savedMessage = string.Empty;
+    private bool _notificationEnabled = true;
 
-    [RelayCommand]
-    private void Save()
+    [ObservableProperty]
+    private LanguageOption _selectedLanguage = null!;
+
+    partial void OnOutputFolderChanged(string value)
     {
-        _settingsService.Current.OutputFolder = OutputFolder;
-        _settingsService.Current.FrameRate = Math.Max(1, (int)Math.Round(FrameRate));
-        _settingsService.Current.BitrateKbps = Math.Max(100, (int)Math.Round(BitrateKbps));
-        _settingsService.Current.CaptureCursor = CaptureCursor;
-        bool languageChanged = _settingsService.Current.Language != SelectedLanguage.Code;
-        _settingsService.Current.Language = SelectedLanguage.Code;
+        OutputFolderDisplay = PathDisplayHelper.MiddleEllipsis(value, 44);
+        PersistSettings();
+        _mainViewModel.RefreshStorage();
+    }
+
+    partial void OnFrameRateIndexChanged(int value) => PersistSettings();
+
+    partial void OnCaptureCursorChanged(bool value) => PersistSettings();
+
+    partial void OnSelectedLanguageChanged(LanguageOption value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        bool languageChanged = _settingsService.Current.Language != value.Code;
+        _settingsService.Current.Language = value.Code;
         _settingsService.Save();
 
         if (languageChanged)
         {
-            LocalizationService.ApplyLanguage(SelectedLanguage.Code);
+            LocalizationService.ApplyLanguage(value.Code);
             RestartApplication();
-            return;
         }
+    }
 
-        SavedMessage = LocalizationService.GetString("Status_Saved");
+    [RelayCommand]
+    private void BrowseFolder()
+    {
+        // UI shell: folder picker dialog in a later step.
+    }
+
+    private void PersistSettings()
+    {
+        _settingsService.Current.OutputFolder = OutputFolder;
+        _settingsService.Current.FrameRate = FrameRateIndex == 1 ? 60 : 30;
+        _settingsService.Current.CaptureCursor = CaptureCursor;
+        _settingsService.Save();
+        _mainViewModel.RefreshStorage();
     }
 
     private static void RestartApplication()

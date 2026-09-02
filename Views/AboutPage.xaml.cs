@@ -7,9 +7,11 @@ namespace DawnCapture.Views;
 
 public sealed partial class AboutPage : Page
 {
+    public AboutViewModel ViewModel { get; }
+
     public AboutPage()
     {
+        ViewModel = Ioc.Default.GetRequiredService<AboutViewModel>();
         InitializeComponent();
-        DataContext = Ioc.Default.GetRequiredService<AboutViewModel>();
     }
 }

@@ -12,31 +12,215 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <NavigationView
-        x:Name="NavView"
-        PaneDisplayMode="Left"
-        IsBackButtonVisible="Collapsed"
-        IsSettingsVisible="False"
-        SelectionChanged="NavView_SelectionChanged">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{StaticResource DawnNavPaneWidth}" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <NavigationView.MenuItems>
-            <NavigationViewItem x:Uid="Navigation_Home" Tag="Home">
-                <NavigationViewItem.Icon>
-                    <SymbolIcon Symbol="Video" />
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
-            <NavigationViewItem x:Uid="Navigation_Settings" Tag="Settings">
-                <NavigationViewItem.Icon>
-                    <SymbolIcon Symbol="Setting" />
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
-            <NavigationViewItem x:Uid="Navigation_About" Tag="About">
-                <NavigationViewItem.Icon>
-                    <SymbolIcon Symbol="Help" />
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
-        </NavigationView.MenuItems>
+        <!-- Sidebar (176px, icon + label — matches UX + ICON_ASSETS) -->
+        <Border
+            Grid.Column="0"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            BorderBrush="{StaticResource DawnStrokeBrush}"
+            BorderThickness="0,0,1,0">
+            <Grid Padding="10,18,10,12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-        <Frame x:Name="ContentFrame" />
-    </NavigationView>
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="10,0,10,8"
+                    Style="{StaticResource DawnNavCaptionStyle}"
+                    x:Uid="Nav_Workspace"
+                    Text="Workspace" />
+
+                <StackPanel Grid.Row="1" Spacing="2">
+                    <Button
+                        x:Name="NavCaptureBtn"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="NavButton_Click"
+                        Tag="Capture">
+                        <Grid MinHeight="40">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                x:Name="NavCaptureMark"
+                                Grid.Column="0"
+                                Height="20"
+                                VerticalAlignment="Center"
+                                Background="{StaticResource DawnAccentBrush}"
+                                CornerRadius="0,3,3,0" />
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="11,0,11,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="11">
+                                <SymbolIcon Foreground="{StaticResource DawnTextMutedBrush}" Symbol="Video" />
+                                <TextBlock
+                                    x:Name="NavCaptureLabel"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Foreground="{StaticResource DawnTextBrush}"
+                                    x:Uid="Nav_Capture"
+                                    Text="Capture" />
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <Button
+                        x:Name="NavRecordingsBtn"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="NavButton_Click"
+                        Tag="Recordings">
+                        <Grid MinHeight="40">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                x:Name="NavRecordingsMark"
+                                Grid.Column="0"
+                                Height="20"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                CornerRadius="0,3,3,0" />
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="11,0,11,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="11">
+                                <SymbolIcon Foreground="{StaticResource DawnTextMutedBrush}" Symbol="Library" />
+                                <TextBlock
+                                    x:Name="NavRecordingsLabel"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Foreground="{StaticResource DawnTextMutedBrush}"
+                                    x:Uid="Nav_Recordings"
+                                    Text="Recordings" />
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <Button
+                        x:Name="NavSettingsBtn"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="NavButton_Click"
+                        Tag="Settings">
+                        <Grid MinHeight="40">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                x:Name="NavSettingsMark"
+                                Grid.Column="0"
+                                Height="20"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                CornerRadius="0,3,3,0" />
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="11,0,11,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="11">
+                                <SymbolIcon Foreground="{StaticResource DawnTextMutedBrush}" Symbol="Setting" />
+                                <TextBlock
+                                    x:Name="NavSettingsLabel"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Foreground="{StaticResource DawnTextMutedBrush}"
+                                    x:Uid="Nav_Settings"
+                                    Text="Settings" />
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <Button
+                        x:Name="NavAboutBtn"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="NavButton_Click"
+                        Tag="About">
+                        <Grid MinHeight="40">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                x:Name="NavAboutMark"
+                                Grid.Column="0"
+                                Height="20"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                CornerRadius="0,3,3,0" />
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="11,0,11,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="11">
+                                <SymbolIcon Foreground="{StaticResource DawnTextMutedBrush}" Symbol="Help" />
+                                <TextBlock
+                                    x:Name="NavAboutLabel"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Foreground="{StaticResource DawnTextMutedBrush}"
+                                    x:Uid="Nav_About"
+                                    Text="About" />
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+
+                <Button
+                    Grid.Row="2"
+                    Margin="0,8,0,0"
+                    Padding="10,14,10,4"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="StorageFooter_Click">
+                    <StackPanel Spacing="2">
+                        <TextBlock
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource DawnTextMutedBrush}"
+                            Text="{x:Bind ViewModel.StorageLabel, Mode=OneWay}" />
+                        <TextBlock
+                            x:Name="StorageAvailableLabel"
+                            FontSize="11"
+                            Foreground="{StaticResource DawnTextFaintBrush}"
+                            Text="{x:Bind ViewModel.StorageAvailable, Mode=OneWay}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Frame
+            x:Name="ContentFrame"
+            Grid.Column="1"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch" />
+    </Grid>
 </Window>
