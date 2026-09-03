@@ -190,4 +190,10 @@
   <data name="About_Licenses" xml:space="preserve"><value>开源许可</value></data>
   <data name="FolderFlyout_Open" xml:space="preserve"><value>打开文件夹</value></data>
   <data name="FolderFlyout_Change" xml:space="preserve"><value>更改文件夹</value></data>
+  <data name="DisplayDialog_Title" xml:space="preserve"><value>选择显示器</value></data>
+  <data name="DisplayDialog_Desc" xml:space="preserve"><value>选择要录制的显示器。确认前当前来源保持不变。</value></data>
+  <data name="DisplayDialog_Use" xml:space="preserve"><value>使用此显示器</value></data>
+  <data name="DisplayDialog_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>请选择显示器</value></data>
+  <data name="AppStatus_ChoosingDisplay" xml:space="preserve"><value>正在选择显示器</value></data>
 </root>

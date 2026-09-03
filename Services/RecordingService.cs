@@ -129,29 +129,34 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
-    public async Task<bool> StartFullScreenAsync()
+    public async Task<bool> StartFullScreenAsync(MonitorDisplay display)
     {
         if (State != RecordingState.Idle)
         {
             return false;
         }
 
-        if (App.MainWindow is null)
+        if (display.Handle == IntPtr.Zero)
         {
-            RaiseFailed(LocalizationService.GetString("Failure_MainWindowUnavailable"));
+            RaiseFailed(LocalizationService.GetString("Failure_CreateFullScreenCapture"));
             return false;
         }
 
         State = RecordingState.PickingSource;
         try
         {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            var monitor = MonitorFromWindow(hwnd, 2 /* MONITOR_DEFAULTTONEAREST */);
-            var bounds = GetMonitorBounds(monitor);
+            var monitor = display.Handle;
+            var bounds = new Windows.Graphics.RectInt32
+            {
+                X = display.X,
+                Y = display.Y,
+                Width = display.Width,
+                Height = display.Height
+            };
             var dpiScale = GetMonitorDpiScale(monitor);
-            Log.Debug($"Full-screen recording: MainWindow=0x{hwnd:X}, Monitor=0x{monitor:X}, Bounds={bounds?.Width}x{bounds?.Height}");
+            Log.Debug($"Full-screen recording: Monitor=0x{monitor:X}, Bounds={bounds.Width}x{bounds.Height} @({bounds.X},{bounds.Y})");
             var item = CreateCaptureItemForMonitor(monitor);
-            if (item is null || bounds is null)
+            if (item is null)
             {
                 RaiseFailed(LocalizationService.GetString("Failure_CreateFullScreenCapture"));
                 State = RecordingState.Idle;
@@ -200,11 +205,8 @@ public sealed class RecordingService : IRecordingService
                 }
             };
 
-            // Industry convention: float the control at the top-left of the
-            // monitor being recorded, and hide the main window so the recorded
-            // desktop does not contain the recorder UI.
-            control.ShowRecordingTopLeft(bounds.Value, dpiScale);
-            Log.Debug($"Full-screen control shown at ({bounds.Value.X + 12},{bounds.Value.Y + 12}).");
+            control.ShowRecordingTopLeft(bounds, dpiScale);
+            Log.Debug($"Full-screen control shown at ({bounds.X + 12},{bounds.Y + 12}).");
             MinimizeMainWindow();
             return true;
         }

@@ -17,8 +17,8 @@ public interface IRecordingService
     /// <summary>Lets the user pick a window and starts recording it. Returns whether recording started successfully.</summary>
     Task<bool> PickAndStartWindowAsync();
 
-    /// <summary>Records the display containing the main window. Returns whether recording started successfully.</summary>
-    Task<bool> StartFullScreenAsync();
+    /// <summary>Records the selected display. Returns whether recording started successfully.</summary>
+    Task<bool> StartFullScreenAsync(MonitorDisplay display);
 
     /// <summary>Lets the user select a screen region and records the cropped area. Returns whether recording started successfully.</summary>
     Task<bool> StartRegionAsync();

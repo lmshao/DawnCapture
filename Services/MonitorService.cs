@@ -14,6 +14,8 @@ namespace DawnCapture.Services;
 public interface IMonitorService
 {
     IReadOnlyList<MonitorDisplay> GetMonitors();
+
+    void RefreshThumbnail(MonitorDisplay monitor);
 }
 
 public class MonitorService : IMonitorService
@@ -30,6 +32,7 @@ public class MonitorService : IMonitorService
             {
                 raw.Add(new MonitorInfo
                 {
+                    Handle = hMonitor,
                     IsPrimary = (info.dwFlags & 1) != 0,
                     X = rect.Left,
                     Y = rect.Top,
@@ -48,6 +51,12 @@ public class MonitorService : IMonitorService
             var m = ordered[i];
             result.Add(new MonitorDisplay
             {
+                Handle = m.Handle,
+                Index = i + 1,
+                X = m.X,
+                Y = m.Y,
+                Width = m.Width,
+                Height = m.Height,
                 Name = $"Display {i + 1}",
                 Resolution = $"{m.Width} x {m.Height}",
                 Detail = m.IsPrimary ? $"Primary / {m.Width} x {m.Height}" : $"{m.Width} x {m.Height}",
@@ -57,6 +66,11 @@ public class MonitorService : IMonitorService
         }
 
         return result;
+    }
+
+    public void RefreshThumbnail(MonitorDisplay monitor)
+    {
+        monitor.Thumbnail = CaptureThumbnail(monitor.X, monitor.Y, monitor.Width, monitor.Height);
     }
 
     private static ImageSource? CaptureThumbnail(int x, int y, int width, int height)
@@ -110,6 +124,7 @@ public class MonitorService : IMonitorService
 
     private sealed class MonitorInfo
     {
+        public IntPtr Handle { get; init; }
         public bool IsPrimary { get; init; }
         public int X { get; init; }
         public int Y { get; init; }

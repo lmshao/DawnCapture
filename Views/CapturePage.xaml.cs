@@ -31,7 +31,8 @@ public sealed partial class CapturePage : Page
                 UpdateModeSelection();
                 UpdateOutlineBrush();
             }
-            else if (e.PropertyName == nameof(CaptureViewModel.HasSource))
+            else if (e.PropertyName == nameof(CaptureViewModel.HasSource) ||
+                     e.PropertyName == nameof(CaptureViewModel.SelectedDisplay))
             {
                 UpdateOutlineBrush();
             }
@@ -171,14 +172,6 @@ public sealed partial class CapturePage : Page
         var stroke = (Brush)Application.Current.Resources["DawnStrokeStrongBrush"];
         bool committed = ViewModel.SelectedMode != CaptureModeKind.AudioOnly && ViewModel.HasSource;
         CaptureOutline.BorderBrush = committed ? accent : stroke;
-    }
-
-    private void MonitorCard_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.DataContext is MonitorDisplay display)
-        {
-            ViewModel.SelectDisplayCommand.Execute(display);
-        }
     }
 
     public void ShowFolderFlyout() => FolderFlyout.ShowAt(SaveToButton);

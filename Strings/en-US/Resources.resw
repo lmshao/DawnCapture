@@ -190,4 +190,10 @@
   <data name="About_Licenses" xml:space="preserve"><value>Open source licenses</value></data>
   <data name="FolderFlyout_Open" xml:space="preserve"><value>Open folder</value></data>
   <data name="FolderFlyout_Change" xml:space="preserve"><value>Change folder</value></data>
+  <data name="DisplayDialog_Title" xml:space="preserve"><value>Choose a display</value></data>
+  <data name="DisplayDialog_Desc" xml:space="preserve"><value>Select the display to capture. Your current source stays active until you confirm.</value></data>
+  <data name="DisplayDialog_Use" xml:space="preserve"><value>Use display</value></data>
+  <data name="DisplayDialog_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>Select a display</value></data>
+  <data name="AppStatus_ChoosingDisplay" xml:space="preserve"><value>Choosing a display</value></data>
 </root>

@@ -2,6 +2,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DawnCapture.Models;
 using DawnCapture.Services;
+using DawnCapture.Views;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -47,6 +49,12 @@ public partial class CaptureViewModel : ObservableObject
 
     [ObservableProperty]
     private MonitorDisplay? _selectedDisplay;
+
+    [ObservableProperty]
+    private ImageSource? _selectedDisplayThumbnail;
+
+    [ObservableProperty]
+    private string _selectedDisplayBadge = string.Empty;
 
     [ObservableProperty]
     private bool _showDisplayPreview;
@@ -172,6 +180,15 @@ public partial class CaptureViewModel : ObservableObject
 
     public string OutputFolderFull => _mainViewModel.OutputFolderFull;
 
+    partial void OnSelectedDisplayChanged(MonitorDisplay? value)
+    {
+        SelectedDisplayThumbnail = value?.Thumbnail;
+        SelectedDisplayBadge = value?.BadgeLabel ?? string.Empty;
+        SyncHasSource();
+        UpdateHeaderCopy();
+        UpdatePreviewCopy();
+    }
+
     partial void OnSelectedModeChanged(CaptureModeKind value)
     {
         ApplySelectedMode();
@@ -189,6 +206,11 @@ public partial class CaptureViewModel : ObservableObject
             : LocalizationService.GetString("Capture_SourceLabel_Video");
         ShowVideoQuality = SelectedMode != CaptureModeKind.AudioOnly;
 
+        SyncHasSource();
+    }
+
+    private void SyncHasSource()
+    {
         HasSource = SelectedMode switch
         {
             CaptureModeKind.FullScreen => SelectedDisplay != null,
@@ -197,6 +219,16 @@ public partial class CaptureViewModel : ObservableObject
             CaptureModeKind.AudioOnly => true,
             _ => false
         };
+    }
+
+    private void CommitDisplay(MonitorDisplay display)
+    {
+        var monitor = Monitors.FirstOrDefault(m => m.Handle == display.Handle) ?? display;
+        _monitorService.RefreshThumbnail(monitor);
+        SelectedDisplay = monitor;
+        SelectedDisplayThumbnail = monitor.Thumbnail;
+        SelectedDisplayBadge = monitor.BadgeLabel;
+        Log.Info($"Display committed: {monitor.Name} ({monitor.Resolution}), Handle=0x{monitor.Handle:X}");
     }
 
     private void InitializeMonitors()
@@ -210,6 +242,7 @@ public partial class CaptureViewModel : ObservableObject
         // Single monitor: skip the picker and go straight to the live-area preview.
         // Multiple monitors: start from the card grid so the user explicitly picks.
         SelectedDisplay = Monitors.Count == 1 ? Monitors[0] : null;
+        Log.Info($"Monitors initialized: count={Monitors.Count}, autoSelected={SelectedDisplay?.Name ?? "none"}");
     }
 
     partial void OnIsRecordingChanged(bool value)
@@ -232,7 +265,15 @@ public partial class CaptureViewModel : ObservableObject
             switch (SelectedMode)
             {
                 case CaptureModeKind.FullScreen:
-                    await _recordingService.StartFullScreenAsync();
+                    if (SelectedDisplay is null)
+                    {
+                        Log.Info("Recording blocked: no display selected.");
+                        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_SelectDisplay");
+                        return;
+                    }
+
+                    Log.Info($"Recording requested: {SelectedDisplay.Name}, Handle=0x{SelectedDisplay.Handle:X}");
+                    await _recordingService.StartFullScreenAsync(SelectedDisplay);
                     break;
                 case CaptureModeKind.Window:
                     await _recordingService.PickAndStartWindowAsync();
@@ -299,20 +340,29 @@ public partial class CaptureViewModel : ObservableObject
             return;
         }
 
-        SelectedDisplay = display;
-        HasSource = true;
-        UpdateHeaderCopy();
-        UpdatePreviewCopy();
+        CommitDisplay(display);
     }
 
     [RelayCommand]
-    private void PreviewAction()
+    private async Task PreviewActionAsync()
     {
-        if (SelectedMode == CaptureModeKind.FullScreen)
+        if (SelectedMode != CaptureModeKind.FullScreen || Monitors.Count <= 1)
         {
-            HasSource = false;
-            UpdateHeaderCopy();
-            UpdatePreviewCopy();
+            return;
+        }
+
+        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_ChoosingDisplay");
+        foreach (var monitor in Monitors)
+        {
+            _monitorService.RefreshThumbnail(monitor);
+        }
+
+        var picked = await DisplayPickerDialog.ShowAsync(Monitors.ToList(), SelectedDisplay);
+        _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+
+        if (picked != null)
+        {
+            CommitDisplay(picked);
         }
     }
 
