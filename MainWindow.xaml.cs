@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using CommunityToolkit.Mvvm.DependencyInjection;
+using DawnCapture.Helpers;
 using DawnCapture.ViewModels;
 using DawnCapture.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ public sealed partial class MainWindow : Window
     {
         ViewModel = Ioc.Default.GetRequiredService<MainViewModel>();
         InitializeComponent();
+        WindowIconHelper.Apply(this);
         ConfigureWindowMetrics();
         RegisterNavElements();
         NavigateTo("Capture", force: true);

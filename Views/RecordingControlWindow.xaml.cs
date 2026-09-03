@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using DawnCapture.Helpers;
 using DawnCapture.Services;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -28,6 +29,7 @@ public sealed partial class RecordingControlWindow : Window
     {
         _elapsedProvider = elapsedProvider;
         InitializeComponent();
+        WindowIconHelper.Apply(this);
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         int cornerPreference = DwmwcpRound;
