@@ -32,6 +32,7 @@ public sealed class RecordingService : IRecordingService
     private static readonly Guid IidD3D11Texture2D = new("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
 
     private readonly ISettingsService _settings;
+    private readonly IRecordingCatalogService _catalogService;
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly Stopwatch _stopwatch = new();
     private readonly object _frameLock = new();
@@ -68,12 +69,15 @@ public sealed class RecordingService : IRecordingService
     private bool _isRecording;
     private bool _isPaused;
     private bool _isStopping;
+    private string? _currentOutputPath;
+    private RecordingSourceKind _currentSourceKind = RecordingSourceKind.Screen;
 
     private RecordingState _state = RecordingState.Idle;
 
-    public RecordingService(ISettingsService settings)
+    public RecordingService(ISettingsService settings, IRecordingCatalogService catalogService)
     {
         _settings = settings;
+        _catalogService = catalogService;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
     }
 
@@ -129,6 +133,7 @@ public sealed class RecordingService : IRecordingService
             }
 
             Log.Debug($"Window recording: DisplayName={item.DisplayName}, Size={item.Size.Width}x{item.Size.Height}");
+            _currentSourceKind = RecordingSourceKind.Window;
             return await StartCaptureAsync(item, null);
         }
         catch (Exception ex)
@@ -168,6 +173,7 @@ public sealed class RecordingService : IRecordingService
             };
             var dpiScale = GetMonitorDpiScale(monitor);
             Log.Debug($"Full-screen recording: Monitor=0x{monitor:X}, Bounds={bounds.Width}x{bounds.Height} @({bounds.X},{bounds.Y})");
+            _currentSourceKind = RecordingSourceKind.Screen;
             var item = CreateCaptureItemForMonitor(monitor);
             if (item is null)
             {
@@ -284,6 +290,7 @@ public sealed class RecordingService : IRecordingService
             };
             crop = ClampAndMakeEven(crop, item.Size);
             Log.Debug($"Crop region: {crop.Width}x{crop.Height} @({crop.X},{crop.Y}), CaptureSize={item.Size.Width}x{item.Size.Height}");
+            _currentSourceKind = RecordingSourceKind.Region;
 
             _regionMarker = new RegionMarkerWindow(region.Value);
 
@@ -387,6 +394,10 @@ public sealed class RecordingService : IRecordingService
             }
         }
 
+        string? completedOutputPath = _currentOutputPath;
+        TimeSpan recordedDuration = _stopwatch.Elapsed;
+        RecordingSourceKind sourceKind = _currentSourceKind;
+
         _isRecording = false;
         _isStopping = false;
         CleanupCapture();
@@ -397,6 +408,47 @@ public sealed class RecordingService : IRecordingService
         if (_framesWritten == 0)
         {
             RaiseFailed(LocalizationService.GetString("Failure_NoFrames"));
+        }
+        else
+        {
+            await TryRegisterRecordingAsync(completedOutputPath, recordedDuration, sourceKind);
+        }
+    }
+
+    private async Task TryRegisterRecordingAsync(
+        string? outputPath,
+        TimeSpan duration,
+        RecordingSourceKind sourceKind)
+    {
+        if (string.IsNullOrWhiteSpace(outputPath) || !File.Exists(outputPath))
+        {
+            return;
+        }
+
+        try
+        {
+            var fileInfo = new FileInfo(outputPath);
+            DateTime recordedUtc = fileInfo.LastWriteTimeUtc > fileInfo.CreationTimeUtc
+                ? fileInfo.LastWriteTimeUtc
+                : fileInfo.CreationTimeUtc;
+
+            await _catalogService.RegisterRecordingAsync(
+                outputPath,
+                new DateTimeOffset(recordedUtc),
+                duration,
+                RecordingMediaKind.Video,
+                sourceKind,
+                new RecordingEncodingInfo
+                {
+                    VideoCodec = "H.264",
+                    AudioCodec = _audioOptions.HasAnySource ? "AAC" : null,
+                    FrameRate = _settings.Current.FrameRate,
+                    BitrateKbps = _settings.Current.BitrateKbps
+                });
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to register recording '{outputPath}'", ex);
         }
     }
 
@@ -567,6 +619,7 @@ public sealed class RecordingService : IRecordingService
 
             Directory.CreateDirectory(folder);
             var outputPath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}.mp4");
+            _currentOutputPath = outputPath;
 
             // StorageFile.GetFileFromPathAsync requires the file to exist.
             File.Create(outputPath).Dispose();
@@ -1211,6 +1264,7 @@ public sealed class RecordingService : IRecordingService
 
         _transcodeTask = null;
         _transcoder = null;
+        _currentOutputPath = null;
 
         _cropRect = null;
         _stopwatch.Reset();

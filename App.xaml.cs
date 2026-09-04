@@ -47,6 +47,8 @@ public partial class App : Application
     {
         var services = new ServiceCollection();
 
+        services.AddSingleton<IRecordingCatalogService, RecordingCatalogService>();
+        services.AddSingleton<IRecordingLibraryService, RecordingLibraryService>();
         services.AddSingleton<ISettingsService>(settingsService);
         services.AddSingleton<IRecordingService, RecordingService>();
         services.AddSingleton<IMonitorService, MonitorService>();
@@ -62,11 +64,16 @@ public partial class App : Application
         Ioc.Default.ConfigureServices(services.BuildServiceProvider());
     }
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         try
         {
             Log.Info("OnLaunched started creating the main window.");
+
+            var settingsService = Ioc.Default.GetRequiredService<ISettingsService>();
+            var catalogService = Ioc.Default.GetRequiredService<IRecordingCatalogService>();
+            await catalogService.SyncLibraryAsync(settingsService.Current.OutputFolder);
+
             MainWindow = Ioc.Default.GetRequiredService<MainWindow>();
             MainWindow.Activate();
             Log.Info("Main window activated.");

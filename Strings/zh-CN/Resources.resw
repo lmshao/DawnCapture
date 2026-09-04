@@ -153,16 +153,39 @@
   <data name="Dock_StartRecording" xml:space="preserve"><value>开始录制</value></data>
   <data name="Dock_StopRecording" xml:space="preserve"><value>停止录制</value></data>
   <data name="AppStatus_Recording" xml:space="preserve"><value>录制中 / {0}</value></data>
-  <data name="Recordings_Eyebrow" xml:space="preserve"><value>本地库</value></data>
-  <data name="Recordings_Title" xml:space="preserve"><value>录像库</value></data>
-  <data name="Recordings_Desc" xml:space="preserve"><value>最近保存的视频和音频录像。</value></data>
+  <data name="Recordings_Eyebrow.Text" xml:space="preserve"><value>本地库</value></data>
+  <data name="Recordings_Title.Text" xml:space="preserve"><value>录像库</value></data>
+  <data name="Recordings_Desc.Text" xml:space="preserve"><value>最近保存的视频和音频录像。</value></data>
   <data name="Recordings_Search.PlaceholderText" xml:space="preserve"><value>搜索录像</value></data>
-  <data name="Recordings_OpenFolder" xml:space="preserve"><value>打开文件夹</value></data>
+  <data name="Recordings_OpenFolder.Content" xml:space="preserve"><value>打开文件夹</value></data>
   <data name="Recordings_Type_Full" xml:space="preserve"><value>全屏</value></data>
   <data name="Recordings_Type_Region" xml:space="preserve"><value>区域</value></data>
   <data name="Recordings_Type_Window" xml:space="preserve"><value>窗口</value></data>
   <data name="Recordings_Type_Audio" xml:space="preserve"><value>音频</value></data>
-  <data name="Recordings_More" xml:space="preserve"><value>更多</value></data>
+  <data name="Recordings_Play.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>播放</value></data>
+  <data name="Recordings_Type_Video" xml:space="preserve"><value>视频</value></data>
+  <data name="Recordings_VideosCount" xml:space="preserve"><value>{0} 个视频</value></data>
+  <data name="Recordings_AudioCount" xml:space="preserve"><value>{0} 个音频</value></data>
+  <data name="Recordings_TotalSize" xml:space="preserve"><value>共 {0}</value></data>
+  <data name="Recordings_Size_GB" xml:space="preserve"><value>{0:0.#} GB</value></data>
+  <data name="Recordings_Size_MB" xml:space="preserve"><value>{0:0.#} MB</value></data>
+  <data name="Recordings_Size_KB" xml:space="preserve"><value>{0:0.#} KB</value></data>
+  <data name="Recordings_Size_B" xml:space="preserve"><value>{0} B</value></data>
+  <data name="Recordings_Media_Audio" xml:space="preserve"><value>音频</value></data>
+  <data name="Recordings_Media_Video" xml:space="preserve"><value>视频</value></data>
+  <data name="Recordings_DateToday" xml:space="preserve"><value>今天 {0}</value></data>
+  <data name="Recordings_DateYesterday" xml:space="preserve"><value>昨天 {0}</value></data>
+  <data name="Recordings_DateTimeFormat" xml:space="preserve"><value>yyyy年M月d日 HH:mm</value></data>
+  <data name="Recordings_DateDuration" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Recordings_DurationUnknown" xml:space="preserve"><value>--:--</value></data>
+  <data name="Recordings_Empty.Text" xml:space="preserve"><value>还没有录像。完成录制后会显示在这里。</value></data>
+  <data name="Recordings_Column_Name" xml:space="preserve"><value>文件名</value></data>
+  <data name="Recordings_Column_Updated" xml:space="preserve"><value>更新时间</value></data>
+  <data name="Recordings_Column_Size" xml:space="preserve"><value>大小</value></data>
+  <data name="Recordings_Format_VideoAudio" xml:space="preserve"><value>{0} · {1} + {2}</value></data>
+  <data name="Recordings_Format_VideoOnly" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Recordings_Format_Audio" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>未知</value></data>
   <data name="Settings_Eyebrow" xml:space="preserve"><value>偏好设置</value></data>
   <data name="Settings_AutoSave" xml:space="preserve"><value>更改会自动保存。</value></data>
   <data name="Settings_Group_Recording" xml:space="preserve"><value>录制</value></data>

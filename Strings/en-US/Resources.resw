@@ -153,16 +153,39 @@
   <data name="Dock_StartRecording" xml:space="preserve"><value>Start recording</value></data>
   <data name="Dock_StopRecording" xml:space="preserve"><value>Stop recording</value></data>
   <data name="AppStatus_Recording" xml:space="preserve"><value>Recording / {0}</value></data>
-  <data name="Recordings_Eyebrow" xml:space="preserve"><value>Local library</value></data>
-  <data name="Recordings_Title" xml:space="preserve"><value>Recordings</value></data>
-  <data name="Recordings_Desc" xml:space="preserve"><value>Your recently saved video and audio recordings.</value></data>
+  <data name="Recordings_Eyebrow.Text" xml:space="preserve"><value>Local library</value></data>
+  <data name="Recordings_Title.Text" xml:space="preserve"><value>Recordings</value></data>
+  <data name="Recordings_Desc.Text" xml:space="preserve"><value>Your recently saved video and audio recordings.</value></data>
   <data name="Recordings_Search.PlaceholderText" xml:space="preserve"><value>Search recordings</value></data>
-  <data name="Recordings_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Recordings_OpenFolder.Content" xml:space="preserve"><value>Open folder</value></data>
   <data name="Recordings_Type_Full" xml:space="preserve"><value>Full</value></data>
   <data name="Recordings_Type_Region" xml:space="preserve"><value>Region</value></data>
   <data name="Recordings_Type_Window" xml:space="preserve"><value>Window</value></data>
   <data name="Recordings_Type_Audio" xml:space="preserve"><value>Audio</value></data>
-  <data name="Recordings_More" xml:space="preserve"><value>More</value></data>
+  <data name="Recordings_Play.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Play</value></data>
+  <data name="Recordings_Type_Video" xml:space="preserve"><value>Video</value></data>
+  <data name="Recordings_VideosCount" xml:space="preserve"><value>{0} videos</value></data>
+  <data name="Recordings_AudioCount" xml:space="preserve"><value>{0} audio</value></data>
+  <data name="Recordings_TotalSize" xml:space="preserve"><value>{0} total</value></data>
+  <data name="Recordings_Size_GB" xml:space="preserve"><value>{0:0.#} GB</value></data>
+  <data name="Recordings_Size_MB" xml:space="preserve"><value>{0:0.#} MB</value></data>
+  <data name="Recordings_Size_KB" xml:space="preserve"><value>{0:0.#} KB</value></data>
+  <data name="Recordings_Size_B" xml:space="preserve"><value>{0} B</value></data>
+  <data name="Recordings_Media_Audio" xml:space="preserve"><value>Audio</value></data>
+  <data name="Recordings_Media_Video" xml:space="preserve"><value>Video</value></data>
+  <data name="Recordings_DateToday" xml:space="preserve"><value>Today {0}</value></data>
+  <data name="Recordings_DateYesterday" xml:space="preserve"><value>Yesterday {0}</value></data>
+  <data name="Recordings_DateTimeFormat" xml:space="preserve"><value>MMM d, HH:mm</value></data>
+  <data name="Recordings_DateDuration" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Recordings_DurationUnknown" xml:space="preserve"><value>--:--</value></data>
+  <data name="Recordings_Empty.Text" xml:space="preserve"><value>No recordings yet. Completed captures will appear here.</value></data>
+  <data name="Recordings_Column_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Recordings_Column_Updated" xml:space="preserve"><value>Updated</value></data>
+  <data name="Recordings_Column_Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Recordings_Format_VideoAudio" xml:space="preserve"><value>{0} · {1} + {2}</value></data>
+  <data name="Recordings_Format_VideoOnly" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Recordings_Format_Audio" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>Unknown</value></data>
   <data name="Settings_Eyebrow" xml:space="preserve"><value>Preferences</value></data>
   <data name="Settings_AutoSave" xml:space="preserve"><value>Changes are saved automatically.</value></data>
   <data name="Settings_Group_Recording" xml:space="preserve"><value>Recording</value></data>
