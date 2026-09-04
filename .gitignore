@@ -71,3 +71,6 @@ __pycache__/
 
 # Reasonix attachments
 .reasonix/
+
+# Local design drafts (not part of the product repo)
+design/

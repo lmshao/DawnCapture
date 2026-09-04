@@ -15,13 +15,13 @@ public interface IRecordingService
     event EventHandler<string>? RecordingFailed;
 
     /// <summary>Lets the user pick a window and starts recording it. Returns whether recording started successfully.</summary>
-    Task<bool> PickAndStartWindowAsync();
+    Task<bool> PickAndStartWindowAsync(RecordingAudioOptions audioOptions);
 
     /// <summary>Records the selected display. Returns whether recording started successfully.</summary>
-    Task<bool> StartFullScreenAsync(MonitorDisplay display);
+    Task<bool> StartFullScreenAsync(MonitorDisplay display, RecordingAudioOptions audioOptions);
 
     /// <summary>Lets the user select a screen region and records the cropped area. Returns whether recording started successfully.</summary>
-    Task<bool> StartRegionAsync();
+    Task<bool> StartRegionAsync(RecordingAudioOptions audioOptions);
 
     Task StopAsync();
 

@@ -1,0 +1,23 @@
+namespace DawnCapture.Models;
+
+public sealed class RecordingAudioOptions
+{
+    public bool EnableMicrophone { get; init; }
+
+    public bool EnableSystemAudio { get; init; }
+
+    public int BitrateKbps { get; init; } = 192;
+
+    public int SampleRate { get; init; } = 48000;
+
+    public int Channels { get; init; } = 2;
+
+    public bool HasAnySource => EnableMicrophone || EnableSystemAudio;
+
+    public static int BitrateFromQualityIndex(int index) => index switch
+    {
+        0 => 128,
+        2 => 256,
+        _ => 192
+    };
+}

@@ -196,4 +196,12 @@
   <data name="DisplayDialog_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>Select a display</value></data>
   <data name="AppStatus_ChoosingDisplay" xml:space="preserve"><value>Choosing a display</value></data>
+  <data name="AppStatus_EnableOneAudio" xml:space="preserve"><value>Enable at least one audio source</value></data>
+  <data name="Failure_MicrophoneAccess" xml:space="preserve"><value>Microphone access was denied. Check Windows privacy settings.</value></data>
+  <data name="Failure_MicrophoneDevice" xml:space="preserve"><value>Unable to open the microphone device (0x{0:X}).</value></data>
+  <data name="Failure_SystemAudioDevice" xml:space="preserve"><value>Unable to open the system audio device (0x{0:X}).</value></data>
+  <data name="Failure_AudioFormat" xml:space="preserve"><value>Unable to read the audio device format (0x{0:X}).</value></data>
+  <data name="Failure_AudioInitialize" xml:space="preserve"><value>Unable to initialize audio capture (0x{0:X}).</value></data>
+  <data name="Failure_AudioCaptureClient" xml:space="preserve"><value>Unable to create the audio capture client (0x{0:X}).</value></data>
+  <data name="Failure_AudioStart" xml:space="preserve"><value>Unable to start audio capture (0x{0:X}).</value></data>
 </root>

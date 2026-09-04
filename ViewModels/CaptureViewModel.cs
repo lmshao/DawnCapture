@@ -262,6 +262,14 @@ public partial class CaptureViewModel : ObservableObject
     {
         if (_recordingService.State == RecordingState.Idle)
         {
+            if (SelectedMode != CaptureModeKind.AudioOnly && !MicrophoneEnabled && !SystemAudioEnabled)
+            {
+                _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_EnableOneAudio");
+                return;
+            }
+
+            var audioOptions = BuildAudioOptions();
+
             switch (SelectedMode)
             {
                 case CaptureModeKind.FullScreen:
@@ -272,14 +280,14 @@ public partial class CaptureViewModel : ObservableObject
                         return;
                     }
 
-                    Log.Info($"Recording requested: {SelectedDisplay.Name}, Handle=0x{SelectedDisplay.Handle:X}");
-                    await _recordingService.StartFullScreenAsync(SelectedDisplay);
+                    Log.Info($"Recording requested: {SelectedDisplay.Name}, Handle=0x{SelectedDisplay.Handle:X}, Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}");
+                    await _recordingService.StartFullScreenAsync(SelectedDisplay, audioOptions);
                     break;
                 case CaptureModeKind.Window:
-                    await _recordingService.PickAndStartWindowAsync();
+                    await _recordingService.PickAndStartWindowAsync(audioOptions);
                     break;
                 case CaptureModeKind.Region:
-                    await _recordingService.StartRegionAsync();
+                    await _recordingService.StartRegionAsync(audioOptions);
                     break;
                 case CaptureModeKind.AudioOnly:
                     // Audio-only recording is not implemented yet.
@@ -290,6 +298,16 @@ public partial class CaptureViewModel : ObservableObject
         {
             await _recordingService.StopAsync();
         }
+    }
+
+    private RecordingAudioOptions BuildAudioOptions()
+    {
+        return new RecordingAudioOptions
+        {
+            EnableMicrophone = MicrophoneEnabled,
+            EnableSystemAudio = SystemAudioEnabled,
+            BitrateKbps = RecordingAudioOptions.BitrateFromQualityIndex(AudioQualityIndex)
+        };
     }
 
     [RelayCommand]

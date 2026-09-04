@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DawnCapture.Models;
+using DawnCapture.Services.Audio;
 using DawnCapture.Views;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -43,7 +44,12 @@ public sealed class RecordingService : IRecordingService
     private Direct3D11CaptureFramePool? _framePool;
     private GraphicsCaptureSession? _session;
     private GraphicsCaptureItem? _item;
-    private Direct3D11CaptureFrame? _currentFrame;
+    private Direct3D11CaptureFrame? _pendingFrame;
+    private long _pendingFrameSequence;
+    private long _lastEmittedFrameSequence;
+    private TimeSpan _lastVideoPts;
+    private bool _hasLastVideoPts;
+    private TimeSpan _nextVideoOutputAt;
 
     private MediaStreamSource? _mediaStreamSource;
     private MediaTranscoder? _transcoder;
@@ -52,13 +58,16 @@ public sealed class RecordingService : IRecordingService
 
     private long _frameDuration = 333_333;
     private long _framesWritten;
-    private long _pauseTimestamp;
-    private IDirect3DSurface? _pauseSurface;
+    private int _startingStreamCount;
     private RectInt32? _cropRect;
     private RegionMarkerWindow? _regionMarker;
     private RecordingControlWindow? _controlWindow;
+    private IAudioCapturePipeline? _audioPipeline;
+    private RecordingAudioOptions _audioOptions = new();
+    private CancellationTokenSource? _audioCancellation;
     private bool _isRecording;
     private bool _isPaused;
+    private bool _isStopping;
 
     private RecordingState _state = RecordingState.Idle;
 
@@ -90,12 +99,14 @@ public sealed class RecordingService : IRecordingService
 
     public event EventHandler<string>? RecordingFailed;
 
-    public async Task<bool> PickAndStartWindowAsync()
+    public async Task<bool> PickAndStartWindowAsync(RecordingAudioOptions audioOptions)
     {
         if (State != RecordingState.Idle)
         {
             return false;
         }
+
+        _audioOptions = audioOptions;
 
         if (App.MainWindow is null)
         {
@@ -129,12 +140,14 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
-    public async Task<bool> StartFullScreenAsync(MonitorDisplay display)
+    public async Task<bool> StartFullScreenAsync(MonitorDisplay display, RecordingAudioOptions audioOptions)
     {
         if (State != RecordingState.Idle)
         {
             return false;
         }
+
+        _audioOptions = audioOptions;
 
         if (display.Handle == IntPtr.Zero)
         {
@@ -219,12 +232,14 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
-    public async Task<bool> StartRegionAsync()
+    public async Task<bool> StartRegionAsync(RecordingAudioOptions audioOptions)
     {
         if (State != RecordingState.Idle)
         {
             return false;
         }
+
+        _audioOptions = audioOptions;
 
         State = RecordingState.PickingSource;
         try
@@ -356,8 +371,9 @@ public sealed class RecordingService : IRecordingService
 
         State = RecordingState.Stopping;
         _stopwatch.Stop();
-        _isRecording = false;
+        _isStopping = true;
         _closedEvent.Set();
+        _audioPipeline?.BeginFlush();
 
         if (_transcodeTask is not null)
         {
@@ -371,6 +387,8 @@ public sealed class RecordingService : IRecordingService
             }
         }
 
+        _isRecording = false;
+        _isStopping = false;
         CleanupCapture();
         State = RecordingState.Idle;
         RestoreMainWindow();
@@ -391,6 +409,7 @@ public sealed class RecordingService : IRecordingService
 
         _isPaused = true;
         _stopwatch.Stop();
+        _audioPipeline?.SetPaused(true);
         State = RecordingState.Paused;
     }
 
@@ -402,9 +421,15 @@ public sealed class RecordingService : IRecordingService
         }
 
         _isPaused = false;
-        _pauseSurface?.Dispose();
-        _pauseSurface = null;
         _stopwatch.Start();
+        _audioPipeline?.SetPaused(false);
+        lock (_frameLock)
+        {
+            _nextVideoOutputAt = _stopwatch.Elapsed;
+            _pendingFrame?.Dispose();
+            _pendingFrame = null;
+        }
+
         State = RecordingState.Recording;
     }
 
@@ -422,6 +447,11 @@ public sealed class RecordingService : IRecordingService
             _closedEvent.Reset();
             _frameEvent.Reset();
 
+            lock (_frameLock)
+            {
+                ResetVideoPacingLocked();
+            }
+
             _framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
                 _winrtDevice!,
                 DirectXPixelFormat.B8G8R8A8UIntNormalized,
@@ -435,20 +465,43 @@ public sealed class RecordingService : IRecordingService
             _item = item;
             _item.Closed += OnItemClosed;
 
-            _session.StartCapture();
-
             var captureSize = crop is { } c
                 ? new SizeInt32 { Width = c.Width, Height = c.Height }
                 : item.Size;
 
-            if (!await CreateMediaObjectsAsync(captureSize))
+            if (!await CreateMediaObjectsAsync(captureSize, _audioOptions))
             {
                 CleanupCapture();
                 return false;
             }
 
-            _isRecording = true;
+            if (_audioOptions.HasAnySource)
+            {
+                _audioCancellation = new CancellationTokenSource();
+                _audioPipeline = new AudioCapturePipeline();
+            }
+
             _stopwatch.Restart();
+            _isRecording = true;
+
+            if (_audioPipeline is not null)
+            {
+                try
+                {
+                    await _audioPipeline.StartAsync(_audioOptions, _stopwatch, _audioCancellation!.Token);
+                }
+                catch (Exception ex)
+                {
+                    _isRecording = false;
+                    CleanupCapture();
+                    State = RecordingState.Idle;
+                    RaiseFailed(ex.Message);
+                    return false;
+                }
+            }
+
+            _session.StartCapture();
+
             State = RecordingState.Recording;
             return true;
         }
@@ -461,9 +514,9 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
-    private async Task<bool> CreateMediaObjectsAsync(SizeInt32 size)
+    private async Task<bool> CreateMediaObjectsAsync(SizeInt32 size, RecordingAudioOptions audioOptions)
     {
-        Log.Debug($"Creating media objects: OutputSize={size.Width}x{size.Height}, FrameRate={_settings.Current.FrameRate}, Bitrate={_settings.Current.BitrateKbps}Kbps");
+        Log.Debug($"Creating media objects: OutputSize={size.Width}x{size.Height}, FrameRate={_settings.Current.FrameRate}, Bitrate={_settings.Current.BitrateKbps}Kbps, AudioMic={audioOptions.EnableMicrophone}, AudioSystem={audioOptions.EnableSystemAudio}, AudioBitrate={audioOptions.BitrateKbps}Kbps");
         try
         {
             var videoProperties = VideoEncodingProperties.CreateUncompressed(
@@ -472,10 +525,22 @@ public sealed class RecordingService : IRecordingService
                 (uint)size.Height);
 
             var descriptor = new VideoStreamDescriptor(videoProperties);
-            _mediaStreamSource = new MediaStreamSource(descriptor)
+            AudioStreamDescriptor? audioDescriptor = null;
+            if (audioOptions.HasAnySource)
             {
-                BufferTime = TimeSpan.Zero
-            };
+                var pcmProperties = AudioEncodingProperties.CreatePcm(
+                    (uint)audioOptions.SampleRate,
+                    (uint)audioOptions.Channels,
+                    (uint)AudioFormat.BitsPerSample);
+                audioDescriptor = new AudioStreamDescriptor(pcmProperties);
+            }
+
+            _mediaStreamSource = audioDescriptor is null
+                ? new MediaStreamSource(descriptor)
+                : new MediaStreamSource(descriptor, audioDescriptor);
+
+            _startingStreamCount = 0;
+            _mediaStreamSource.BufferTime = TimeSpan.Zero;
             _mediaStreamSource.Starting += OnMediaStreamSourceStarting;
             _mediaStreamSource.SampleRequested += OnMediaStreamSourceSampleRequested;
 
@@ -487,6 +552,14 @@ public sealed class RecordingService : IRecordingService
             profile.Video.FrameRate.Denominator = 1;
             profile.Video.PixelAspectRatio.Numerator = 1;
             profile.Video.PixelAspectRatio.Denominator = 1;
+
+            if (audioOptions.HasAnySource)
+            {
+                profile.Audio = AudioEncodingProperties.CreateAac(
+                    (uint)audioOptions.SampleRate,
+                    (uint)audioOptions.Channels,
+                    (uint)(audioOptions.BitrateKbps * 1000));
+            }
 
             var folder = string.IsNullOrWhiteSpace(_settings.Current.OutputFolder)
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "DawnCapture")
@@ -583,10 +656,17 @@ public sealed class RecordingService : IRecordingService
             return;
         }
 
+        if (!_isRecording || _isPaused)
+        {
+            frame.Dispose();
+            return;
+        }
+
         lock (_frameLock)
         {
-            _currentFrame?.Dispose();
-            _currentFrame = frame;
+            _pendingFrame?.Dispose();
+            _pendingFrame = frame;
+            _pendingFrameSequence++;
         }
 
         _frameEvent.Set();
@@ -602,20 +682,25 @@ public sealed class RecordingService : IRecordingService
 
     private void OnMediaStreamSourceStarting(MediaStreamSource sender, MediaStreamSourceStartingEventArgs args)
     {
-        using var frame = WaitForNewFrame();
-        if (frame is not null)
-        {
-            args.Request.SetActualStartPosition(frame.SystemRelativeTime);
-        }
-        else
-        {
-            args.Request.SetActualStartPosition(TimeSpan.Zero);
-        }
+        _startingStreamCount++;
+        args.Request.SetActualStartPosition(TimeSpan.Zero);
     }
 
     private void OnMediaStreamSourceSampleRequested(MediaStreamSource sender, MediaStreamSourceSampleRequestedEventArgs args)
     {
-        if (!_isRecording)
+        if (!_isRecording && !_isStopping)
+        {
+            args.Request.Sample = null;
+            return;
+        }
+
+        if (args.Request.StreamDescriptor is AudioStreamDescriptor)
+        {
+            args.Request.Sample = _audioPipeline?.TryCreateSample();
+            return;
+        }
+
+        if (_isPaused && !_isStopping)
         {
             args.Request.Sample = null;
             return;
@@ -623,55 +708,39 @@ public sealed class RecordingService : IRecordingService
 
         try
         {
-            if (_isPaused && _pauseSurface is not null)
-            {
-                _pauseTimestamp += _frameDuration;
-                args.Request.Sample = MediaStreamSample.CreateFromDirect3D11Surface(
-                    _pauseSurface,
-                    TimeSpan.FromTicks(_pauseTimestamp));
-                _framesWritten++;
-                return;
-            }
-
-            using var frame = WaitForNewFrame();
-            if (frame is null)
+            if (!WaitForVideoSample(out var frame, out var timestamp, out var duration) || frame is null)
             {
                 args.Request.Sample = null;
                 return;
             }
 
-            var surface = frame.Surface;
-            var croppedSurface = default(IDirect3DSurface);
-
-            if (_cropRect is { } crop)
+            using (frame)
             {
-                croppedSurface = CropSurface(surface, crop);
-                if (croppedSurface is null)
+                var surface = frame.Surface;
+                var croppedSurface = default(IDirect3DSurface);
+
+                if (_cropRect is { } crop)
                 {
-                    args.Request.Sample = null;
-                    return;
+                    croppedSurface = CropSurface(surface, crop);
+                    if (croppedSurface is null)
+                    {
+                        args.Request.Sample = null;
+                        return;
+                    }
+
+                    surface = croppedSurface;
                 }
 
-                surface = croppedSurface;
-            }
+                var sample = MediaStreamSample.CreateFromDirect3D11Surface(surface, timestamp);
+                sample.Duration = duration;
+                args.Request.Sample = sample;
+                _framesWritten++;
 
-            var timestamp = frame.SystemRelativeTime;
-
-            if (_isPaused)
-            {
-                // Preserve the first frame after pausing for frozen frames to keep the timeline continuous.
-                _pauseSurface?.Dispose();
-                _pauseSurface = surface;
-                _pauseTimestamp = timestamp.Ticks;
-            }
-
-            args.Request.Sample = MediaStreamSample.CreateFromDirect3D11Surface(surface, timestamp);
-            _framesWritten++;
-
-            if (!_isPaused && croppedSurface is not null)
-            {
-                // The sample owns a surface reference, so release the extra reference held by this method.
-                croppedSurface.Dispose();
+                if (croppedSurface is not null)
+                {
+                    // The sample owns a surface reference, so release the extra reference held by this method.
+                    croppedSurface.Dispose();
+                }
             }
         }
         catch (Exception ex)
@@ -755,22 +824,138 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
-    private Direct3D11CaptureFrame? WaitForNewFrame()
+    private bool WaitForVideoSample(
+        out Direct3D11CaptureFrame? frame,
+        out TimeSpan timestamp,
+        out TimeSpan duration)
     {
-        _frameEvent.Reset();
-        var handles = new[] { _closedEvent, _frameEvent };
-        int signaled = WaitHandle.WaitAny(handles);
-        if (signaled != 1)
+        frame = null;
+        timestamp = default;
+        duration = default;
+        var targetInterval = TimeSpan.FromTicks(_frameDuration);
+
+        while (true)
         {
-            return null;
+            if (_closedEvent.WaitOne(0))
+            {
+                return false;
+            }
+
+            if (!_isRecording && !_isStopping)
+            {
+                return false;
+            }
+
+            var elapsed = _stopwatch.Elapsed;
+
+            if (!_isStopping && elapsed > _nextVideoOutputAt + targetInterval)
+            {
+                _nextVideoOutputAt = elapsed;
+            }
+
+            lock (_frameLock)
+            {
+                if (_isStopping)
+                {
+                    if (_pendingFrame is null)
+                    {
+                        return false;
+                    }
+
+                    return TryEmitVideoSampleLocked(
+                        elapsed,
+                        targetInterval,
+                        requireSchedule: false,
+                        out frame,
+                        out timestamp,
+                        out duration);
+                }
+
+                if (elapsed + TimeSpan.FromMilliseconds(2) < _nextVideoOutputAt)
+                {
+                    // Wait for the next target output slot on the master clock.
+                }
+                else if (_pendingFrame is null ||
+                         _pendingFrameSequence <= _lastEmittedFrameSequence)
+                {
+                    _nextVideoOutputAt += targetInterval;
+                    if (elapsed > _nextVideoOutputAt)
+                    {
+                        _nextVideoOutputAt = elapsed;
+                    }
+                }
+                else if (TryEmitVideoSampleLocked(
+                             elapsed,
+                             targetInterval,
+                             requireSchedule: true,
+                             out frame,
+                             out timestamp,
+                             out duration))
+                {
+                    return true;
+                }
+            }
+
+            if (WaitHandle.WaitAny(new[] { _closedEvent, _frameEvent }, 10) == 0)
+            {
+                return false;
+            }
+        }
+    }
+
+    private bool TryEmitVideoSampleLocked(
+        TimeSpan elapsed,
+        TimeSpan targetInterval,
+        bool requireSchedule,
+        out Direct3D11CaptureFrame? frame,
+        out TimeSpan timestamp,
+        out TimeSpan duration)
+    {
+        frame = null;
+        timestamp = default;
+        duration = targetInterval;
+
+        if (_pendingFrame is null || _pendingFrameSequence <= _lastEmittedFrameSequence)
+        {
+            return false;
         }
 
-        lock (_frameLock)
+        if (requireSchedule && elapsed + TimeSpan.FromMilliseconds(2) < _nextVideoOutputAt)
         {
-            var frame = _currentFrame;
-            _currentFrame = null;
-            return frame;
+            return false;
         }
+
+        frame = _pendingFrame;
+        _pendingFrame = null;
+        _lastEmittedFrameSequence = _pendingFrameSequence;
+
+        timestamp = elapsed;
+        duration = _hasLastVideoPts ? timestamp - _lastVideoPts : targetInterval;
+        if (duration <= TimeSpan.Zero)
+        {
+            duration = targetInterval;
+        }
+
+        _lastVideoPts = timestamp;
+        _hasLastVideoPts = true;
+        _nextVideoOutputAt = elapsed + targetInterval;
+        return true;
+    }
+
+    private void ResetVideoPacingLocked()
+    {
+        DrainVideoFramesLocked();
+        _pendingFrameSequence = 0;
+        _lastEmittedFrameSequence = 0;
+        _lastVideoPts = TimeSpan.Zero;
+        _hasLastVideoPts = false;
+        _nextVideoOutputAt = TimeSpan.Zero;
+    }
+
+    private void DrainVideoFramesLocked()
+    {
+        _pendingFrame?.Dispose();
+        _pendingFrame = null;
     }
 
     private static RectInt32 ClampAndMakeEven(RectInt32 region, SizeInt32 itemSize)
@@ -953,12 +1138,8 @@ public sealed class RecordingService : IRecordingService
 
         lock (_frameLock)
         {
-            _currentFrame?.Dispose();
-            _currentFrame = null;
+            DrainVideoFramesLocked();
         }
-
-        _pauseSurface?.Dispose();
-        _pauseSurface = null;
 
         if (_regionMarker is not null)
         {
@@ -1001,6 +1182,35 @@ public sealed class RecordingService : IRecordingService
 
             _outputStream = null;
         }
+
+        _audioCancellation?.Cancel();
+        _audioCancellation?.Dispose();
+        _audioCancellation = null;
+
+        if (_audioPipeline is not null)
+        {
+            try
+            {
+                _audioPipeline.Stop();
+                _audioPipeline.Dispose();
+            }
+            catch
+            {
+                // Ignore cleanup exceptions.
+            }
+
+            _audioPipeline = null;
+        }
+
+        if (_mediaStreamSource is not null)
+        {
+            _mediaStreamSource.Starting -= OnMediaStreamSourceStarting;
+            _mediaStreamSource.SampleRequested -= OnMediaStreamSourceSampleRequested;
+            _mediaStreamSource = null;
+        }
+
+        _transcodeTask = null;
+        _transcoder = null;
 
         _cropRect = null;
         _stopwatch.Reset();
