@@ -4,6 +4,7 @@ using DawnCapture.Models;
 using DawnCapture.Services;
 using DawnCapture.Views;
 using Microsoft.UI.Xaml.Media;
+using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -38,6 +39,13 @@ public partial class CaptureViewModel : ObservableObject
         ApplySelectedMode();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
+
+        if (!HasMicrophoneDevice)
+        {
+            MicrophoneEnabled = false;
+            MicrophoneUnavailable = true;
+            Log.Info("No microphone device detected; microphone option disabled.");
+        }
     }
 
     private readonly ISettingsService _settingsService;
@@ -82,6 +90,35 @@ public partial class CaptureViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _systemAudioEnabled = true;
+
+    [ObservableProperty]
+    private bool _microphoneUnavailable;
+
+    /// <summary>True when at least one active audio capture endpoint exists.</summary>
+    public bool HasMicrophoneDevice { get; } = DetectMicrophoneDevice();
+
+    private static bool DetectMicrophoneDevice()
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            return enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).Count > 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Microphone detection failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    partial void OnMicrophoneEnabledChanged(bool value)
+    {
+        if (value && !HasMicrophoneDevice)
+        {
+            MicrophoneEnabled = false;
+            MicrophoneUnavailable = true;
+        }
+    }
 
     [ObservableProperty]
     private bool _showCursor = true;

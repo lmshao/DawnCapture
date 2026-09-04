@@ -27,13 +27,24 @@ internal sealed class WasapiCaptureDevice : IDisposable
             return;
         }
 
-        _capture = _loopback
-            ? new WasapiLoopbackCapture()
-            : new WasapiCapture();
-
-        if (!TryStartAtTargetSampleRate())
+        try
         {
-            StartAtDeviceMixFormat();
+            _capture = _loopback
+                ? new WasapiLoopbackCapture()
+                : new WasapiCapture();
+
+            if (!TryStartAtTargetSampleRate())
+            {
+                StartAtDeviceMixFormat();
+            }
+        }
+        catch (Exception ex)
+        {
+            // No capture device available (e.g. no microphone attached).
+            // Degrade gracefully: the pipeline records other sources or silence.
+            Log.Info($"{(_loopback ? "Loopback" : "Microphone")} unavailable: {ex.Message}");
+            _capture?.Dispose();
+            _capture = null;
         }
     }
 

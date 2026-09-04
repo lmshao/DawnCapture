@@ -120,6 +120,7 @@
   <data name="Capture_SourceLabel_Video" xml:space="preserve"><value>声音与画面</value></data>
   <data name="Capture_SourceLabel_Audio" xml:space="preserve"><value>音频来源</value></data>
   <data name="Capture_Microphone" xml:space="preserve"><value>麦克风</value></data>
+  <data name="Capture_MicrophoneUnavailable" xml:space="preserve"><value>未识别到麦克风设备</value></data>
   <data name="Capture_SystemAudio" xml:space="preserve"><value>系统音频</value></data>
   <data name="Capture_ShowCursor" xml:space="preserve"><value>显示光标</value></data>
   <data name="Capture_Preview" xml:space="preserve"><value>预览</value></data>

@@ -1290,6 +1290,7 @@ public sealed class RecordingService : IRecordingService
 
     private void RaiseFailed(string message)
     {
+        Log.Error($"Recording failed: {message}");
         var handler = RecordingFailed;
         if (handler is null)
         {
