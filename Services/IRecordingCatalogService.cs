@@ -29,4 +29,9 @@ public interface IRecordingCatalogService
         int width,
         int height,
         CancellationToken cancellationToken = default);
+
+    Task UpdateDisplayNameAsync(
+        Guid recordingId,
+        string displayName,
+        CancellationToken cancellationToken = default);
 }

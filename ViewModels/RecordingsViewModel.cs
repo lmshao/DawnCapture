@@ -3,7 +3,10 @@ using CommunityToolkit.Mvvm.Input;
 using DawnCapture.Helpers;
 using DawnCapture.Models;
 using DawnCapture.Services;
+using DawnCapture.Views;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -181,6 +184,93 @@ public partial class RecordingsViewModel : ObservableObject
         {
             Log.Error($"Failed to play recording '{item.FilePath}'", ex);
         }
+    }
+
+    public async Task RenameRecordingAsync(RecordingListItem item)
+    {
+        if (item is null || !File.Exists(item.FilePath))
+        {
+            return;
+        }
+
+        string? newName = await RenameRecordingDialog.ShowAsync(item.FilePath, item.Name);
+        if (newName is null)
+        {
+            return;
+        }
+
+        if (await _libraryService.RenameRecordingAsync(item.RecordingId, item.FilePath, newName))
+        {
+            await RefreshAsync();
+        }
+        else
+        {
+            await ShowErrorAsync(LocalizationService.GetString("Recordings_RenameFailed"));
+        }
+    }
+
+    public async Task DeleteRecordingAsync(RecordingListItem item)
+    {
+        if (item is null || !File.Exists(item.FilePath))
+        {
+            return;
+        }
+
+        if (!await DeleteRecordingDialog.ConfirmAsync(item))
+        {
+            return;
+        }
+
+        if (await _libraryService.DeleteRecordingAsync(item.FilePath))
+        {
+            await RefreshAsync();
+        }
+        else
+        {
+            await ShowErrorAsync(LocalizationService.GetString("Recordings_DeleteFailed"));
+        }
+    }
+
+    public void RevealInFolder(RecordingListItem item)
+    {
+        if (item is null || !File.Exists(item.FilePath))
+        {
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{item.FilePath}\"")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to reveal recording '{item.FilePath}' in Explorer", ex);
+        }
+    }
+
+    private static async Task ShowErrorAsync(string message)
+    {
+        if (App.MainWindow?.Content?.XamlRoot is not { } xamlRoot)
+        {
+            return;
+        }
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = xamlRoot,
+            Title = LocalizationService.GetString("Recordings_ErrorTitle"),
+            Content = new TextBlock
+            {
+                Text = message,
+                TextWrapping = TextWrapping.WrapWholeWords
+            },
+            CloseButtonText = LocalizationService.GetString("Recordings_Ok")
+        };
+
+        await dialog.ShowAsync();
     }
 
     private void OnRecordingStateChanged(object? sender, RecordingState state)

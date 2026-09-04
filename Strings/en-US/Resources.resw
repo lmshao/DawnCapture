@@ -186,6 +186,26 @@
   <data name="Recordings_Format_VideoOnly" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Format_Audio" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Recordings_More.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>More</value></data>
+  <data name="Recordings_Action_Play.Text" xml:space="preserve"><value>Play</value></data>
+  <data name="Recordings_Action_Rename.Text" xml:space="preserve"><value>Rename</value></data>
+  <data name="Recordings_Action_Reveal.Text" xml:space="preserve"><value>Reveal in folder</value></data>
+  <data name="Recordings_Action_Delete.Text" xml:space="preserve"><value>Delete</value></data>
+  <data name="Recordings_RenameTitle" xml:space="preserve"><value>Rename recording</value></data>
+  <data name="Recordings_RenamePrimary" xml:space="preserve"><value>Rename</value></data>
+  <data name="Recordings_RenameEmpty" xml:space="preserve"><value>Enter a name for the recording.</value></data>
+  <data name="Recordings_RenameInvalidChars" xml:space="preserve"><value>This character is not allowed: "{0}".</value></data>
+  <data name="Recordings_RenameConflict" xml:space="preserve"><value>A file with this name already exists in the recordings folder.</value></data>
+  <data name="Recordings_RenameFailed" xml:space="preserve"><value>Failed to rename the file. Make sure it is not open in another app.</value></data>
+  <data name="Recordings_DeleteTitle" xml:space="preserve"><value>Delete recording?</value></data>
+  <data name="Recordings_DeleteMessage" xml:space="preserve"><value>"{0}" will be moved to the Recycle Bin.</value></data>
+  <data name="Recordings_DeleteRestoreHint" xml:space="preserve"><value>You can restore it from the Recycle Bin until it is emptied.</value></data>
+  <data name="Recordings_DeleteSize" xml:space="preserve"><value>File size: {0}</value></data>
+  <data name="Recordings_DeletePrimary" xml:space="preserve"><value>Delete</value></data>
+  <data name="Recordings_DeleteCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Recordings_DeleteFailed" xml:space="preserve"><value>Failed to move the file to the Recycle Bin. Make sure it is not open in another app.</value></data>
+  <data name="Recordings_ErrorTitle" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="Recordings_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="Settings_Eyebrow" xml:space="preserve"><value>Preferences</value></data>
   <data name="Settings_AutoSave" xml:space="preserve"><value>Changes are saved automatically.</value></data>
   <data name="Settings_Group_Recording" xml:space="preserve"><value>Recording</value></data>

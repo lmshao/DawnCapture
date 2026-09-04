@@ -83,6 +83,7 @@
                     <ColumnDefinition Width="*" MinWidth="180" />
                     <ColumnDefinition Width="128" />
                     <ColumnDefinition Width="72" />
+                    <ColumnDefinition Width="44" />
                 </Grid.ColumnDefinitions>
                 <Button
                     Grid.Column="1"
@@ -149,6 +150,7 @@
                                 <ColumnDefinition Width="*" MinWidth="180" />
                                 <ColumnDefinition Width="128" />
                                 <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="44" />
                             </Grid.ColumnDefinitions>
 
                             <!-- Thumbnail -->
@@ -227,8 +229,48 @@
                                 FontSize="11"
                                 Text="{x:Bind SizeLabel}" />
 
+                            <Button
+                                Grid.Column="4"
+                                Width="36"
+                                Height="36"
+                                Margin="0,0,10,0"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                ToolTipService.ToolTip="More"
+                                x:Uid="Recordings_More">
+                                <FontIcon FontSize="14" Glyph="&#xE712;" />
+                                <Button.Flyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem
+                                            Click="OnPlayMenuItemClick"
+                                            Icon="Play"
+                                            Tag="{x:Bind}"
+                                            x:Uid="Recordings_Action_Play" />
+                                        <MenuFlyoutItem
+                                            Click="OnRenameMenuItemClick"
+                                            Icon="Rename"
+                                            Tag="{x:Bind}"
+                                            x:Uid="Recordings_Action_Rename" />
+                                        <MenuFlyoutItem
+                                            Click="OnRevealMenuItemClick"
+                                            Icon="OpenFile"
+                                            Tag="{x:Bind}"
+                                            x:Uid="Recordings_Action_Reveal" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem
+                                            Click="OnDeleteMenuItemClick"
+                                            Icon="Delete"
+                                            Tag="{x:Bind}"
+                                            x:Uid="Recordings_Action_Delete" />
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+
                             <Border
-                                Grid.ColumnSpan="4"
+                                Grid.ColumnSpan="5"
                                 Margin="0,10,0,-10"
                                 VerticalAlignment="Bottom"
                                 BorderBrush="{StaticResource DawnStrokeBrush}"

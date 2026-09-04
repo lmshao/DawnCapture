@@ -14,8 +14,9 @@ namespace DawnCapture.Services;
 
 public sealed class RecordingCatalogService : IRecordingCatalogService
 {
-    private const string LegacyFilePrefix = "DawnCapture_";
-    private static readonly string[] SupportedExtensions = [".mp4", ".m4a", ".mp3", ".wav"];
+    // Only formats produced by the recorder today. Extend this list when new
+    // output formats are added to the capture pipeline.
+    private static readonly string[] SupportedExtensions = [".mp4", ".m4a"];
 
     private readonly object _sync = new();
     private bool _schemaInitialized;
@@ -136,6 +137,31 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         }, cancellationToken);
     }
 
+    public Task UpdateDisplayNameAsync(
+        Guid recordingId,
+        string displayName,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            EnsureSchema();
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                UPDATE recordings
+                SET display_name = $displayName,
+                    updated_at = $updatedAt
+                WHERE id = $id;
+                """;
+            command.Parameters.AddWithValue("$id", recordingId.ToString());
+            command.Parameters.AddWithValue("$displayName", displayName);
+            command.Parameters.AddWithValue("$updatedAt", DateTimeOffset.UtcNow.ToString("O"));
+            command.ExecuteNonQuery();
+        }, cancellationToken);
+    }
+
     private void SyncLibraryCore(string outputFolder, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -239,15 +265,20 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
             return;
         }
 
-        if (!IsImportCandidate(fileInfo.Name))
-        {
-            return;
-        }
-
         bool isAudio = IsAudioExtension(fileInfo.Extension);
         var mediaKind = isAudio ? RecordingMediaKind.Audio : RecordingMediaKind.Video;
         var probe = RecordingMediaProbe.ProbeAsync(fileInfo.FullName, mediaKind)
             .GetAwaiter().GetResult();
+
+        if (probe.DurationMs is null
+            && probe.Width is null
+            && probe.Height is null
+            && string.IsNullOrWhiteSpace(probe.VideoCodec)
+            && string.IsNullOrWhiteSpace(probe.AudioCodec))
+        {
+            // Not recognizable as media — outside the scope of this library.
+            return;
+        }
 
         var imported = BuildEntryFromFile(
             fileInfo,
@@ -301,7 +332,7 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         {
             try
             {
-                foreach (string path in Directory.EnumerateFiles(folder, $"{LegacyFilePrefix}*{extension}"))
+                foreach (string path in Directory.EnumerateFiles(folder, $"*{extension}"))
                 {
                     paths.Add(path);
                 }
@@ -340,11 +371,6 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         }
 
         transaction.Commit();
-    }
-
-    private static bool IsImportCandidate(string fileName)
-    {
-        return fileName.StartsWith(LegacyFilePrefix, StringComparison.OrdinalIgnoreCase);
     }
 
     private static RecordingCatalogEntry BuildEntryFromFile(

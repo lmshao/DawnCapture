@@ -186,6 +186,26 @@
   <data name="Recordings_Format_VideoOnly" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Format_Audio" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>未知</value></data>
+  <data name="Recordings_More.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>更多操作</value></data>
+  <data name="Recordings_Action_Play.Text" xml:space="preserve"><value>播放</value></data>
+  <data name="Recordings_Action_Rename.Text" xml:space="preserve"><value>重命名</value></data>
+  <data name="Recordings_Action_Reveal.Text" xml:space="preserve"><value>在文件夹中显示</value></data>
+  <data name="Recordings_Action_Delete.Text" xml:space="preserve"><value>删除</value></data>
+  <data name="Recordings_RenameTitle" xml:space="preserve"><value>重命名录像</value></data>
+  <data name="Recordings_RenamePrimary" xml:space="preserve"><value>重命名</value></data>
+  <data name="Recordings_RenameEmpty" xml:space="preserve"><value>请输入录像名称。</value></data>
+  <data name="Recordings_RenameInvalidChars" xml:space="preserve"><value>不允许使用该字符："{0}"。</value></data>
+  <data name="Recordings_RenameConflict" xml:space="preserve"><value>录像文件夹中已存在同名文件。</value></data>
+  <data name="Recordings_RenameFailed" xml:space="preserve"><value>重命名失败。请确认文件未被其他应用占用。</value></data>
+  <data name="Recordings_DeleteTitle" xml:space="preserve"><value>删除录像？</value></data>
+  <data name="Recordings_DeleteMessage" xml:space="preserve"><value>"{0}" 将被移入回收站。</value></data>
+  <data name="Recordings_DeleteRestoreHint" xml:space="preserve"><value>回收站清空之前，你可以随时将它恢复。</value></data>
+  <data name="Recordings_DeleteSize" xml:space="preserve"><value>文件大小：{0}</value></data>
+  <data name="Recordings_DeletePrimary" xml:space="preserve"><value>删除</value></data>
+  <data name="Recordings_DeleteCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Recordings_DeleteFailed" xml:space="preserve"><value>无法将文件移入回收站。请确认文件未被其他应用占用。</value></data>
+  <data name="Recordings_ErrorTitle" xml:space="preserve"><value>出现问题</value></data>
+  <data name="Recordings_Ok" xml:space="preserve"><value>确定</value></data>
   <data name="Settings_Eyebrow" xml:space="preserve"><value>偏好设置</value></data>
   <data name="Settings_AutoSave" xml:space="preserve"><value>更改会自动保存。</value></data>
   <data name="Settings_Group_Recording" xml:space="preserve"><value>录制</value></data>
