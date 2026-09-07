@@ -195,13 +195,21 @@ public partial class CaptureViewModel : ObservableObject
     [ObservableProperty]
     private string _audioCodecSummary = string.Empty;
 
-    [ObservableProperty]
-    private IReadOnlyList<string> _qualityOptions =
-        new[] { "Compact / 30 FPS", "Balanced / 30 FPS", "Smooth / 60 FPS" };
+    public string AudioOnlyModeLabel { get; } = LocalizationService.GetString("Capture_Mode_Audio");
 
-    [ObservableProperty]
-    private IReadOnlyList<string> _audioQualityOptions =
-        new[] { "Standard / 128 kbps", "High / 192 kbps", "Best / 256 kbps" };
+    public IReadOnlyList<string> QualityOptions { get; } =
+    [
+        LocalizationService.GetString("Quality_Option_Compact"),
+        LocalizationService.GetString("Quality_Option_Balanced"),
+        LocalizationService.GetString("Quality_Option_Smooth")
+    ];
+
+    public IReadOnlyList<string> AudioQualityOptions { get; } =
+    [
+        LocalizationService.GetString("AudioQuality_Option_Standard"),
+        LocalizationService.GetString("AudioQuality_Option_High"),
+        LocalizationService.GetString("AudioQuality_Option_Best")
+    ];
 
     [ObservableProperty]
     private int _qualityIndex = 1;
@@ -465,8 +473,8 @@ public partial class CaptureViewModel : ObservableObject
         ControllerSource = SelectedMode switch
         {
             CaptureModeKind.AudioOnly => LocalizationService.GetString("Capture_Source_AudioOnly"),
-            CaptureModeKind.Region when HasSource => "Selected region / 1280 x 720",
-            CaptureModeKind.Window when HasSource => "Visual Studio Code / 1600 x 900",
+            CaptureModeKind.Region when HasSource => LocalizationService.GetString("Capture_Preview_RegionPlaceholder"),
+            CaptureModeKind.Window when HasSource => ControllerSource,
             CaptureModeKind.FullScreen when HasSource => $"{SelectedDisplay?.Name} / {SelectedDisplay?.Resolution}",
             _ => LocalizationService.GetString("Capture_Source_None")
         };
@@ -503,7 +511,7 @@ public partial class CaptureViewModel : ObservableObject
         }
         else if (SelectedMode == CaptureModeKind.Window)
         {
-            PreviewLabel = HasSource ? "Visual Studio Code / 1600 x 900" : LocalizationService.GetString("Capture_Preview_NoWindow");
+            PreviewLabel = HasSource ? ControllerSource : LocalizationService.GetString("Capture_Preview_NoWindow");
             PreviewCaption = HasSource
                 ? LocalizationService.GetString("Capture_Preview_WindowCaption")
                 : LocalizationService.GetString("Capture_Preview_WindowPickerHint");
@@ -515,7 +523,7 @@ public partial class CaptureViewModel : ObservableObject
         }
         else if (SelectedMode == CaptureModeKind.Region)
         {
-            PreviewLabel = HasSource ? "Selected region / 1280 x 720 / X 640 / Y 310" : LocalizationService.GetString("Capture_Preview_NoRegion");
+            PreviewLabel = HasSource ? LocalizationService.GetString("Capture_Preview_RegionDetail") : LocalizationService.GetString("Capture_Preview_NoRegion");
             PreviewCaption = HasSource
                 ? LocalizationService.GetString("Capture_Preview_RegionCaption")
                 : LocalizationService.GetString("Capture_Preview_SelectRegionFirst");

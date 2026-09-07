@@ -22,7 +22,7 @@ public partial class MainViewModel : ObservableObject
     private string _appStatusText = LocalizationService.GetString("Status_Ready");
 
     [ObservableProperty]
-    private string _storageLabel = "Storage";
+    private string _storageLabel = LocalizationService.GetString("Storage_Label");
 
     [ObservableProperty]
     private string _storageAvailable = string.Empty;

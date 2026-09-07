@@ -108,22 +108,15 @@
   <data name="Capture_Desc_Default" xml:space="preserve"><value>Choose a source, review the settings, and start recording.</value></data>
   <data name="Capture_Desc_NoSource" xml:space="preserve"><value>Select a source now, or Start recording will open the selector.</value></data>
   <data name="Capture_Desc_Recording" xml:space="preserve"><value>Use the floating controller to pause or stop.</value></data>
-  <data name="Capture_ModeSection" xml:space="preserve"><value>Capture mode</value></data>
   <data name="Capture_Mode_FullScreen" xml:space="preserve"><value>Full screen</value></data>
   <data name="Capture_Mode_FullScreen_Desc" xml:space="preserve"><value>Capture the entire display</value></data>
   <data name="Capture_Mode_Window" xml:space="preserve"><value>Window</value></data>
   <data name="Capture_Mode_Window_Desc" xml:space="preserve"><value>Choose an application window</value></data>
   <data name="Capture_Mode_Region" xml:space="preserve"><value>Region</value></data>
   <data name="Capture_Mode_Region_Desc" xml:space="preserve"><value>Select part of the screen</value></data>
-  <data name="Capture_Mode_Audio" xml:space="preserve"><value>Audio only</value></data>
   <data name="Capture_Mode_Audio_Desc" xml:space="preserve"><value>Record sound without video</value></data>
   <data name="Capture_SourceLabel_Video" xml:space="preserve"><value>Sound and picture</value></data>
   <data name="Capture_SourceLabel_Audio" xml:space="preserve"><value>Audio sources</value></data>
-  <data name="Capture_Microphone" xml:space="preserve"><value>Microphone</value></data>
-  <data name="Capture_MicrophoneUnavailable" xml:space="preserve"><value>No microphone detected</value></data>
-  <data name="Capture_SystemAudio" xml:space="preserve"><value>System audio</value></data>
-  <data name="Capture_ShowCursor" xml:space="preserve"><value>Show cursor</value></data>
-  <data name="Capture_Preview" xml:space="preserve"><value>Preview</value></data>
   <data name="Capture_Preview_ChooseDisplay" xml:space="preserve"><value>Choose a display</value></data>
   <data name="Capture_Preview_NoWindow" xml:space="preserve"><value>No window selected</value></data>
   <data name="Capture_Preview_NoRegion" xml:space="preserve"><value>No region selected</value></data>
@@ -146,7 +139,6 @@
   <data name="Capture_EmptyRegion_Desc" xml:space="preserve"><value>Draw a precise capture area in the transparent region picker.</value></data>
   <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>Audio only / AAC-LC / M4A</value></data>
   <data name="Capture_Source_None" xml:space="preserve"><value>No source</value></data>
-  <data name="Dock_SaveTo" xml:space="preserve"><value>Save to</value></data>
   <data name="Dock_Quality" xml:space="preserve"><value>Quality</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>Audio quality</value></data>
   <data name="Dock_Codec_Avc" xml:space="preserve"><value>Compatible / H.264 AVC</value></data>
@@ -207,33 +199,9 @@
   <data name="Recordings_DeleteFailed" xml:space="preserve"><value>Failed to move the file to the Recycle Bin. Make sure it is not open in another app.</value></data>
   <data name="Recordings_ErrorTitle" xml:space="preserve"><value>Something went wrong</value></data>
   <data name="Recordings_Ok" xml:space="preserve"><value>OK</value></data>
-  <data name="Settings_Eyebrow" xml:space="preserve"><value>Preferences</value></data>
-  <data name="Settings_AutoSave" xml:space="preserve"><value>Changes are saved automatically.</value></data>
-  <data name="Settings_Group_Recording" xml:space="preserve"><value>Recording</value></data>
-  <data name="Settings_Group_General" xml:space="preserve"><value>General</value></data>
-  <data name="Settings_OutputFolder_Desc" xml:space="preserve"><value>Where completed recordings are saved</value></data>
-  <data name="Settings_FrameRate" xml:space="preserve"><value>Frame rate</value></data>
-  <data name="Settings_FrameRate_Desc" xml:space="preserve"><value>Higher values create larger files</value></data>
-  <data name="Settings_Quality" xml:space="preserve"><value>Quality</value></data>
-  <data name="Settings_Quality_Desc" xml:space="preserve"><value>Balanced works well for most recordings</value></data>
-  <data name="Settings_VideoCodec" xml:space="preserve"><value>Video codec</value></data>
-  <data name="Settings_VideoCodec_Desc" xml:space="preserve"><value>Choose compatibility or smaller files</value></data>
-  <data name="Settings_Codec_Avc_Status" xml:space="preserve"><value>Works with nearly every player, editor, browser, and upload service.</value></data>
-  <data name="Settings_AudioQuality" xml:space="preserve"><value>Audio quality</value></data>
-  <data name="Settings_AudioQuality_Desc" xml:space="preserve"><value>AAC-LC in an M4A file for audio-only recordings</value></data>
-  <data name="Settings_CaptureCursor_Desc" xml:space="preserve"><value>Show the pointer in recorded video</value></data>
-  <data name="Settings_Countdown" xml:space="preserve"><value>Recording countdown</value></data>
-  <data name="Settings_Countdown_Desc" xml:space="preserve"><value>Show a three-second countdown before recording</value></data>
-  <data name="Settings_Notification" xml:space="preserve"><value>Completion notification</value></data>
-  <data name="Settings_Notification_Desc" xml:space="preserve"><value>Show a Windows notification after saving</value></data>
-  <data name="Settings_Language_Desc" xml:space="preserve"><value>Restart the app after changing this setting</value></data>
-  <data name="Common_Browse" xml:space="preserve"><value>Browse...</value></data>
   <data name="About_Version" xml:space="preserve"><value>DawnCapture {0}</value></data>
   <data name="About_Title" xml:space="preserve"><value>Capture the moments that matter.</value></data>
   <data name="About_Author" xml:space="preserve"><value>Created by SHAO Liming · {0}</value></data>
-  <data name="About_Licenses" xml:space="preserve"><value>Open source licenses</value></data>
-  <data name="FolderFlyout_Open" xml:space="preserve"><value>Open folder</value></data>
-  <data name="FolderFlyout_Change" xml:space="preserve"><value>Change folder</value></data>
   <data name="DisplayDialog_Title" xml:space="preserve"><value>Choose a display</value></data>
   <data name="DisplayDialog_Desc" xml:space="preserve"><value>Select the display to capture. Your current source stays active until you confirm.</value></data>
   <data name="DisplayDialog_Use" xml:space="preserve"><value>Use display</value></data>
@@ -248,4 +216,60 @@
   <data name="Failure_AudioInitialize" xml:space="preserve"><value>Unable to initialize audio capture (0x{0:X}).</value></data>
   <data name="Failure_AudioCaptureClient" xml:space="preserve"><value>Unable to create the audio capture client (0x{0:X}).</value></data>
   <data name="Failure_AudioStart" xml:space="preserve"><value>Unable to start audio capture (0x{0:X}).</value></data>
+  <data name="Capture_ModeSection.Text" xml:space="preserve"><value>Capture mode</value></data>
+  <data name="Capture_Microphone.Text" xml:space="preserve"><value>Microphone</value></data>
+  <data name="Capture_MicrophoneUnavailable.Text" xml:space="preserve"><value>No microphone detected</value></data>
+  <data name="Capture_SystemAudio.Text" xml:space="preserve"><value>System audio</value></data>
+  <data name="Capture_ShowCursor.Text" xml:space="preserve"><value>Show cursor</value></data>
+  <data name="Capture_Preview.Text" xml:space="preserve"><value>Preview</value></data>
+  <data name="Capture_Mode_Audio" xml:space="preserve"><value>Audio only</value></data>
+  <data name="Capture_AudioFormatDetail.Text" xml:space="preserve"><value>AAC-LC / M4A / 48 kHz stereo</value></data>
+  <data name="Capture_MicrophoneOn.Text" xml:space="preserve"><value>Microphone on</value></data>
+  <data name="Capture_SystemAudioOn.Text" xml:space="preserve"><value>System audio on</value></data>
+  <data name="Dock_SaveTo.Text" xml:space="preserve"><value>Save to</value></data>
+  <data name="FolderFlyout_Open.Text" xml:space="preserve"><value>Open folder</value></data>
+  <data name="FolderFlyout_Change.Text" xml:space="preserve"><value>Change folder</value></data>
+  <data name="Settings_Eyebrow.Text" xml:space="preserve"><value>Preferences</value></data>
+  <data name="Settings_AutoSave.Text" xml:space="preserve"><value>Changes are saved automatically.</value></data>
+  <data name="Settings_Group_Recording.Text" xml:space="preserve"><value>Recording</value></data>
+  <data name="Settings_OutputFolder.Text" xml:space="preserve"><value>Output folder</value></data>
+  <data name="Settings_OutputFolder_Desc.Text" xml:space="preserve"><value>Where completed recordings are saved</value></data>
+  <data name="Settings_FrameRate.Text" xml:space="preserve"><value>Frame rate</value></data>
+  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>Higher values create larger files</value></data>
+  <data name="Settings_Quality.Text" xml:space="preserve"><value>Quality</value></data>
+  <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>Balanced works well for most recordings</value></data>
+  <data name="Settings_VideoCodec.Text" xml:space="preserve"><value>Video codec</value></data>
+  <data name="Settings_VideoCodec_Desc.Text" xml:space="preserve"><value>Choose compatibility or smaller files</value></data>
+  <data name="Settings_Codec_Avc_Status.Text" xml:space="preserve"><value>Works with nearly every player, editor, browser, and upload service.</value></data>
+  <data name="Settings_AudioQuality.Text" xml:space="preserve"><value>Audio quality</value></data>
+  <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>AAC-LC in an M4A file for audio-only recordings</value></data>
+  <data name="Settings_CaptureCursor.Text" xml:space="preserve"><value>Capture cursor</value></data>
+  <data name="Settings_CaptureCursor_Desc.Text" xml:space="preserve"><value>Show the pointer in recorded video</value></data>
+  <data name="Settings_Group_General.Text" xml:space="preserve"><value>General</value></data>
+  <data name="Settings_Countdown.Text" xml:space="preserve"><value>Recording countdown</value></data>
+  <data name="Settings_Countdown_Desc.Text" xml:space="preserve"><value>Show a three-second countdown before recording</value></data>
+  <data name="Settings_Notification.Text" xml:space="preserve"><value>Completion notification</value></data>
+  <data name="Settings_Notification_Desc.Text" xml:space="preserve"><value>Show a Windows notification after saving</value></data>
+  <data name="Settings_Language_Desc.Text" xml:space="preserve"><value>Restart the app after changing this setting</value></data>
+  <data name="Quality_Option_Compact" xml:space="preserve"><value>Compact / 30 FPS</value></data>
+  <data name="Quality_Option_Balanced" xml:space="preserve"><value>Balanced / 30 FPS</value></data>
+  <data name="Quality_Option_Smooth" xml:space="preserve"><value>Smooth / 60 FPS</value></data>
+  <data name="AudioQuality_Option_Standard" xml:space="preserve"><value>Standard / 128 kbps</value></data>
+  <data name="AudioQuality_Option_High" xml:space="preserve"><value>High / 192 kbps</value></data>
+  <data name="AudioQuality_Option_Best" xml:space="preserve"><value>Best / 256 kbps</value></data>
+  <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>Selected region / 1280 x 720</value></data>
+  <data name="Capture_Preview_RegionDetail" xml:space="preserve"><value>Selected region / 1280 x 720 / X 640 / Y 310</value></data>
+  <data name="Common_Browse.Content" xml:space="preserve"><value>Browse...</value></data>
+  <data name="About_Licenses.Content" xml:space="preserve"><value>Open source licenses</value></data>
+  <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
+  <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
+  <data name="Settings_FrameRate_Custom.Content" xml:space="preserve"><value>Custom</value></data>
+  <data name="Settings_Quality_Compact.Content" xml:space="preserve"><value>Compact</value></data>
+  <data name="Settings_Quality_Balanced.Content" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Settings_Quality_High.Content" xml:space="preserve"><value>High quality</value></data>
+  <data name="Settings_Codec_Avc.Content" xml:space="preserve"><value>Compatible / H.264 AVC</value></data>
+  <data name="Settings_Codec_Hevc.Content" xml:space="preserve"><value>Smaller files / H.265 HEVC</value></data>
+  <data name="Settings_Audio_128.Content" xml:space="preserve"><value>Standard / 128 kbps</value></data>
+  <data name="Settings_Audio_192.Content" xml:space="preserve"><value>High / 192 kbps</value></data>
+  <data name="Settings_Audio_256.Content" xml:space="preserve"><value>Best / 256 kbps</value></data>
 </root>

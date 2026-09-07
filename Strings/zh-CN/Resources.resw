@@ -108,22 +108,15 @@
   <data name="Capture_Desc_Default" xml:space="preserve"><value>选择来源，确认设置，然后开始录制。</value></data>
   <data name="Capture_Desc_NoSource" xml:space="preserve"><value>请先选择来源；直接点「开始录制」也会打开选择器。</value></data>
   <data name="Capture_Desc_Recording" xml:space="preserve"><value>使用浮动控制条暂停或停止。</value></data>
-  <data name="Capture_ModeSection" xml:space="preserve"><value>录制模式</value></data>
   <data name="Capture_Mode_FullScreen" xml:space="preserve"><value>全屏</value></data>
   <data name="Capture_Mode_FullScreen_Desc" xml:space="preserve"><value>录制整个显示器</value></data>
   <data name="Capture_Mode_Window" xml:space="preserve"><value>窗口</value></data>
   <data name="Capture_Mode_Window_Desc" xml:space="preserve"><value>选择应用程序窗口</value></data>
   <data name="Capture_Mode_Region" xml:space="preserve"><value>区域</value></data>
   <data name="Capture_Mode_Region_Desc" xml:space="preserve"><value>选择屏幕的一部分</value></data>
-  <data name="Capture_Mode_Audio" xml:space="preserve"><value>仅音频</value></data>
   <data name="Capture_Mode_Audio_Desc" xml:space="preserve"><value>只录声音，不录画面</value></data>
   <data name="Capture_SourceLabel_Video" xml:space="preserve"><value>声音与画面</value></data>
   <data name="Capture_SourceLabel_Audio" xml:space="preserve"><value>音频来源</value></data>
-  <data name="Capture_Microphone" xml:space="preserve"><value>麦克风</value></data>
-  <data name="Capture_MicrophoneUnavailable" xml:space="preserve"><value>未识别到麦克风设备</value></data>
-  <data name="Capture_SystemAudio" xml:space="preserve"><value>系统音频</value></data>
-  <data name="Capture_ShowCursor" xml:space="preserve"><value>显示光标</value></data>
-  <data name="Capture_Preview" xml:space="preserve"><value>预览</value></data>
   <data name="Capture_Preview_ChooseDisplay" xml:space="preserve"><value>选择显示器</value></data>
   <data name="Capture_Preview_NoWindow" xml:space="preserve"><value>未选择窗口</value></data>
   <data name="Capture_Preview_NoRegion" xml:space="preserve"><value>未选择区域</value></data>
@@ -146,7 +139,6 @@
   <data name="Capture_EmptyRegion_Desc" xml:space="preserve"><value>在透明区域选择器中框选精确录制区域。</value></data>
   <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>仅音频 / AAC-LC / M4A</value></data>
   <data name="Capture_Source_None" xml:space="preserve"><value>无来源</value></data>
-  <data name="Dock_SaveTo" xml:space="preserve"><value>保存到</value></data>
   <data name="Dock_Quality" xml:space="preserve"><value>画质</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>音质</value></data>
   <data name="Dock_Codec_Avc" xml:space="preserve"><value>兼容 / H.264 AVC</value></data>
@@ -207,33 +199,9 @@
   <data name="Recordings_DeleteFailed" xml:space="preserve"><value>无法将文件移入回收站。请确认文件未被其他应用占用。</value></data>
   <data name="Recordings_ErrorTitle" xml:space="preserve"><value>出现问题</value></data>
   <data name="Recordings_Ok" xml:space="preserve"><value>确定</value></data>
-  <data name="Settings_Eyebrow" xml:space="preserve"><value>偏好设置</value></data>
-  <data name="Settings_AutoSave" xml:space="preserve"><value>更改会自动保存。</value></data>
-  <data name="Settings_Group_Recording" xml:space="preserve"><value>录制</value></data>
-  <data name="Settings_Group_General" xml:space="preserve"><value>常规</value></data>
-  <data name="Settings_OutputFolder_Desc" xml:space="preserve"><value>已完成录像的保存位置</value></data>
-  <data name="Settings_FrameRate" xml:space="preserve"><value>帧率</value></data>
-  <data name="Settings_FrameRate_Desc" xml:space="preserve"><value>数值越高，文件越大</value></data>
-  <data name="Settings_Quality" xml:space="preserve"><value>画质</value></data>
-  <data name="Settings_Quality_Desc" xml:space="preserve"><value>均衡适合大多数录制</value></data>
-  <data name="Settings_VideoCodec" xml:space="preserve"><value>视频编解码器</value></data>
-  <data name="Settings_VideoCodec_Desc" xml:space="preserve"><value>选择兼容性或小文件</value></data>
-  <data name="Settings_Codec_Avc_Status" xml:space="preserve"><value>几乎适用于所有播放器、编辑器、浏览器和上传服务。</value></data>
-  <data name="Settings_AudioQuality" xml:space="preserve"><value>音频质量</value></data>
-  <data name="Settings_AudioQuality_Desc" xml:space="preserve"><value>纯音频录制使用 M4A 容器中的 AAC-LC</value></data>
-  <data name="Settings_CaptureCursor_Desc" xml:space="preserve"><value>在录像中显示鼠标指针</value></data>
-  <data name="Settings_Countdown" xml:space="preserve"><value>录制倒计时</value></data>
-  <data name="Settings_Countdown_Desc" xml:space="preserve"><value>录制开始前显示 3 秒倒计时</value></data>
-  <data name="Settings_Notification" xml:space="preserve"><value>完成通知</value></data>
-  <data name="Settings_Notification_Desc" xml:space="preserve"><value>保存后显示 Windows 通知</value></data>
-  <data name="Settings_Language_Desc" xml:space="preserve"><value>更改此设置后需重启应用</value></data>
-  <data name="Common_Browse" xml:space="preserve"><value>浏览...</value></data>
   <data name="About_Version" xml:space="preserve"><value>DawnCapture {0}</value></data>
   <data name="About_Title" xml:space="preserve"><value>记录重要时刻。</value></data>
   <data name="About_Author" xml:space="preserve"><value>作者：SHAO Liming · {0}</value></data>
-  <data name="About_Licenses" xml:space="preserve"><value>开源许可</value></data>
-  <data name="FolderFlyout_Open" xml:space="preserve"><value>打开文件夹</value></data>
-  <data name="FolderFlyout_Change" xml:space="preserve"><value>更改文件夹</value></data>
   <data name="DisplayDialog_Title" xml:space="preserve"><value>选择显示器</value></data>
   <data name="DisplayDialog_Desc" xml:space="preserve"><value>选择要录制的显示器。确认前当前来源保持不变。</value></data>
   <data name="DisplayDialog_Use" xml:space="preserve"><value>使用此显示器</value></data>
@@ -248,4 +216,60 @@
   <data name="Failure_AudioInitialize" xml:space="preserve"><value>无法初始化音频采集 (0x{0:X})。</value></data>
   <data name="Failure_AudioCaptureClient" xml:space="preserve"><value>无法创建音频采集客户端 (0x{0:X})。</value></data>
   <data name="Failure_AudioStart" xml:space="preserve"><value>无法启动音频采集 (0x{0:X})。</value></data>
+  <data name="Capture_ModeSection.Text" xml:space="preserve"><value>录制模式</value></data>
+  <data name="Capture_Microphone.Text" xml:space="preserve"><value>麦克风</value></data>
+  <data name="Capture_MicrophoneUnavailable.Text" xml:space="preserve"><value>未识别到麦克风设备</value></data>
+  <data name="Capture_SystemAudio.Text" xml:space="preserve"><value>系统音频</value></data>
+  <data name="Capture_ShowCursor.Text" xml:space="preserve"><value>显示光标</value></data>
+  <data name="Capture_Preview.Text" xml:space="preserve"><value>预览</value></data>
+  <data name="Capture_Mode_Audio" xml:space="preserve"><value>仅音频</value></data>
+  <data name="Capture_AudioFormatDetail.Text" xml:space="preserve"><value>AAC-LC / M4A / 48 kHz 立体声</value></data>
+  <data name="Capture_MicrophoneOn.Text" xml:space="preserve"><value>麦克风已开启</value></data>
+  <data name="Capture_SystemAudioOn.Text" xml:space="preserve"><value>系统音频已开启</value></data>
+  <data name="Dock_SaveTo.Text" xml:space="preserve"><value>保存到</value></data>
+  <data name="FolderFlyout_Open.Text" xml:space="preserve"><value>打开文件夹</value></data>
+  <data name="FolderFlyout_Change.Text" xml:space="preserve"><value>更改文件夹</value></data>
+  <data name="Settings_Eyebrow.Text" xml:space="preserve"><value>偏好设置</value></data>
+  <data name="Settings_AutoSave.Text" xml:space="preserve"><value>更改会自动保存。</value></data>
+  <data name="Settings_Group_Recording.Text" xml:space="preserve"><value>录制</value></data>
+  <data name="Settings_OutputFolder.Text" xml:space="preserve"><value>输出文件夹</value></data>
+  <data name="Settings_OutputFolder_Desc.Text" xml:space="preserve"><value>已完成录像的保存位置</value></data>
+  <data name="Settings_FrameRate.Text" xml:space="preserve"><value>帧率</value></data>
+  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>数值越高，文件越大</value></data>
+  <data name="Settings_Quality.Text" xml:space="preserve"><value>画质</value></data>
+  <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>均衡适合大多数录制</value></data>
+  <data name="Settings_VideoCodec.Text" xml:space="preserve"><value>视频编解码器</value></data>
+  <data name="Settings_VideoCodec_Desc.Text" xml:space="preserve"><value>选择兼容性或小文件</value></data>
+  <data name="Settings_Codec_Avc_Status.Text" xml:space="preserve"><value>几乎适用于所有播放器、编辑器、浏览器和上传服务。</value></data>
+  <data name="Settings_AudioQuality.Text" xml:space="preserve"><value>音频质量</value></data>
+  <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>纯音频录制使用 M4A 容器中的 AAC-LC</value></data>
+  <data name="Settings_CaptureCursor.Text" xml:space="preserve"><value>录制光标</value></data>
+  <data name="Settings_CaptureCursor_Desc.Text" xml:space="preserve"><value>在录像中显示鼠标指针</value></data>
+  <data name="Settings_Group_General.Text" xml:space="preserve"><value>常规</value></data>
+  <data name="Settings_Countdown.Text" xml:space="preserve"><value>录制倒计时</value></data>
+  <data name="Settings_Countdown_Desc.Text" xml:space="preserve"><value>录制开始前显示 3 秒倒计时</value></data>
+  <data name="Settings_Notification.Text" xml:space="preserve"><value>完成通知</value></data>
+  <data name="Settings_Notification_Desc.Text" xml:space="preserve"><value>保存后显示 Windows 通知</value></data>
+  <data name="Settings_Language_Desc.Text" xml:space="preserve"><value>更改此设置后需重启应用</value></data>
+  <data name="Quality_Option_Compact" xml:space="preserve"><value>紧凑 / 30 FPS</value></data>
+  <data name="Quality_Option_Balanced" xml:space="preserve"><value>均衡 / 30 FPS</value></data>
+  <data name="Quality_Option_Smooth" xml:space="preserve"><value>流畅 / 60 FPS</value></data>
+  <data name="AudioQuality_Option_Standard" xml:space="preserve"><value>标准 / 128 kbps</value></data>
+  <data name="AudioQuality_Option_High" xml:space="preserve"><value>高 / 192 kbps</value></data>
+  <data name="AudioQuality_Option_Best" xml:space="preserve"><value>最佳 / 256 kbps</value></data>
+  <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>已选区域 / 1280 x 720</value></data>
+  <data name="Capture_Preview_RegionDetail" xml:space="preserve"><value>已选区域 / 1280 x 720 / X 640 / Y 310</value></data>
+  <data name="Common_Browse.Content" xml:space="preserve"><value>浏览...</value></data>
+  <data name="About_Licenses.Content" xml:space="preserve"><value>开源许可</value></data>
+  <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
+  <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
+  <data name="Settings_FrameRate_Custom.Content" xml:space="preserve"><value>自定义</value></data>
+  <data name="Settings_Quality_Compact.Content" xml:space="preserve"><value>紧凑</value></data>
+  <data name="Settings_Quality_Balanced.Content" xml:space="preserve"><value>均衡</value></data>
+  <data name="Settings_Quality_High.Content" xml:space="preserve"><value>高画质</value></data>
+  <data name="Settings_Codec_Avc.Content" xml:space="preserve"><value>兼容 / H.264 AVC</value></data>
+  <data name="Settings_Codec_Hevc.Content" xml:space="preserve"><value>更小文件 / H.265 HEVC</value></data>
+  <data name="Settings_Audio_128.Content" xml:space="preserve"><value>标准 / 128 kbps</value></data>
+  <data name="Settings_Audio_192.Content" xml:space="preserve"><value>高 / 192 kbps</value></data>
+  <data name="Settings_Audio_256.Content" xml:space="preserve"><value>最佳 / 256 kbps</value></data>
 </root>

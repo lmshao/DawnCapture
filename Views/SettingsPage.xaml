@@ -82,9 +82,9 @@
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
                             SelectedIndex="{x:Bind ViewModel.FrameRateIndex, Mode=TwoWay}">
-                            <ComboBoxItem Content="30 FPS" />
-                            <ComboBoxItem Content="60 FPS" />
-                            <ComboBoxItem Content="Custom" />
+                            <ComboBoxItem x:Uid="Settings_FrameRate_30" Content="30 FPS" />
+                            <ComboBoxItem x:Uid="Settings_FrameRate_60" Content="60 FPS" />
+                            <ComboBoxItem x:Uid="Settings_FrameRate_Custom" Content="Custom" />
                         </ComboBox>
                     </Grid>
                     <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
@@ -106,9 +106,9 @@
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
                             SelectedIndex="{x:Bind ViewModel.QualityIndex, Mode=TwoWay}">
-                            <ComboBoxItem Content="Compact" />
-                            <ComboBoxItem Content="Balanced" />
-                            <ComboBoxItem Content="High quality" />
+                            <ComboBoxItem x:Uid="Settings_Quality_Compact" Content="Compact" />
+                            <ComboBoxItem x:Uid="Settings_Quality_Balanced" Content="Balanced" />
+                            <ComboBoxItem x:Uid="Settings_Quality_High" Content="High quality" />
                         </ComboBox>
                     </Grid>
                     <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
@@ -128,8 +128,8 @@
                         </StackPanel>
                         <StackPanel Grid.Column="1" Spacing="6">
                             <ComboBox HorizontalAlignment="Stretch" SelectedIndex="{x:Bind ViewModel.CodecIndex, Mode=TwoWay}">
-                                <ComboBoxItem Content="Compatible / H.264 AVC" />
-                                <ComboBoxItem Content="Smaller files / H.265 HEVC" />
+                                <ComboBoxItem x:Uid="Settings_Codec_Avc" Content="Compatible / H.264 AVC" />
+                                <ComboBoxItem x:Uid="Settings_Codec_Hevc" Content="Smaller files / H.265 HEVC" />
                             </ComboBox>
                             <TextBlock
                                 Foreground="{StaticResource DawnTextFaintBrush}"
@@ -158,9 +158,9 @@
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
                             SelectedIndex="{x:Bind ViewModel.AudioQualityIndex, Mode=TwoWay}">
-                            <ComboBoxItem Content="Standard / 128 kbps" />
-                            <ComboBoxItem Content="High / 192 kbps" />
-                            <ComboBoxItem Content="Best / 256 kbps" />
+                            <ComboBoxItem x:Uid="Settings_Audio_128" Content="Standard / 128 kbps" />
+                            <ComboBoxItem x:Uid="Settings_Audio_192" Content="High / 192 kbps" />
+                            <ComboBoxItem x:Uid="Settings_Audio_256" Content="Best / 256 kbps" />
                         </ComboBox>
                     </Grid>
                     <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
