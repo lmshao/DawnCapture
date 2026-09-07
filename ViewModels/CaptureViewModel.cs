@@ -12,6 +12,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics;
 using Windows.Graphics.Capture;
 
 namespace DawnCapture.ViewModels;
@@ -59,6 +60,7 @@ public partial class CaptureViewModel : ObservableObject
     private readonly IRecordingService _recordingService;
     private bool _suppressSettingsSave;
     private CancellationTokenSource? _windowThumbnailCts;
+    private CancellationTokenSource? _regionThumbnailCts;
 
     public ObservableCollection<MonitorDisplay> Monitors { get; } = new();
 
@@ -226,6 +228,18 @@ public partial class CaptureViewModel : ObservableObject
     private bool _showRegionPreview;
 
     [ObservableProperty]
+    private RegionCaptureTarget? _selectedRegion;
+
+    [ObservableProperty]
+    private ImageSource? _regionThumbnail;
+
+    [ObservableProperty]
+    private bool _isLoadingRegionThumbnail;
+
+    [ObservableProperty]
+    private string _regionBadge = string.Empty;
+
+    [ObservableProperty]
     private bool _showWindowPreview;
 
     [ObservableProperty]
@@ -325,7 +339,20 @@ public partial class CaptureViewModel : ObservableObject
             ClearSelectedWindow();
         }
 
+        if (value != CaptureModeKind.Region)
+        {
+            ClearSelectedRegion();
+        }
+
         ApplySelectedMode();
+        UpdateHeaderCopy();
+        UpdatePreviewCopy();
+    }
+
+    partial void OnSelectedRegionChanged(RegionCaptureTarget? value)
+    {
+        RegionBadge = value?.Resolution ?? string.Empty;
+        SyncHasSource();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
     }
@@ -357,7 +384,7 @@ public partial class CaptureViewModel : ObservableObject
         {
             CaptureModeKind.FullScreen => SelectedDisplay != null,
             CaptureModeKind.Window => SelectedWindow != null,
-            CaptureModeKind.Region => true,
+            CaptureModeKind.Region => SelectedRegion != null,
             CaptureModeKind.AudioOnly => true,
             _ => false
         };
@@ -450,7 +477,16 @@ public partial class CaptureViewModel : ObservableObject
                     await _recordingService.StartWindowAsync(SelectedWindow.Item, audioOptions);
                     break;
                 case CaptureModeKind.Region:
-                    await _recordingService.StartRegionAsync(audioOptions);
+                    if (SelectedRegion is null)
+                    {
+                        Log.Info("Recording blocked: no region selected.");
+                        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_SelectRegion");
+                        return;
+                    }
+
+                    Log.Info($"Recording requested: region {SelectedRegion.Resolution} @({SelectedRegion.ScreenBounds.X},{SelectedRegion.ScreenBounds.Y})");
+                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_RegionRecordingHint");
+                    await _recordingService.StartRegionAsync(SelectedRegion.ScreenBounds, audioOptions);
                     break;
                 case CaptureModeKind.AudioOnly:
                     // Audio-only recording is not implemented yet.
@@ -539,6 +575,12 @@ public partial class CaptureViewModel : ObservableObject
             return;
         }
 
+        if (SelectedMode == CaptureModeKind.Region)
+        {
+            await PickRegionAsync();
+            return;
+        }
+
         if (SelectedMode != CaptureModeKind.FullScreen || Monitors.Count <= 1)
         {
             return;
@@ -565,7 +607,76 @@ public partial class CaptureViewModel : ObservableObject
         if (SelectedMode == CaptureModeKind.Window)
         {
             await PickWindowAsync();
+            return;
         }
+
+        if (SelectedMode == CaptureModeKind.Region)
+        {
+            await PickRegionAsync();
+        }
+    }
+
+    private async Task PickRegionAsync()
+    {
+        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_ChoosingRegion");
+        var region = await RegionPickerHelper.PickRegionAsync();
+        _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+
+        if (region is null)
+        {
+            return;
+        }
+
+        await CommitRegionAsync(region.Value);
+    }
+
+    private async Task CommitRegionAsync(RectInt32 screenBounds)
+    {
+        ClearSelectedRegion();
+
+        var target = new RegionCaptureTarget(screenBounds);
+        SelectedRegion = target;
+        Log.Info($"Region committed: {target.Summary}");
+
+        _regionThumbnailCts?.Cancel();
+        _regionThumbnailCts?.Dispose();
+        _regionThumbnailCts = new CancellationTokenSource();
+        var cts = _regionThumbnailCts;
+        IsLoadingRegionThumbnail = true;
+        RegionThumbnail = null;
+
+        try
+        {
+            var thumbnail = await RegionPreviewHelper.CaptureThumbnailAsync(screenBounds, cancellationToken: cts.Token);
+            if (!cts.IsCancellationRequested && ReferenceEquals(SelectedRegion, target))
+            {
+                RegionThumbnail = thumbnail;
+                if (thumbnail is null)
+                {
+                    Log.Info($"Region preview thumbnail unavailable for {target.Summary}.");
+                }
+            }
+        }
+        finally
+        {
+            if (!cts.IsCancellationRequested)
+            {
+                IsLoadingRegionThumbnail = false;
+            }
+        }
+    }
+
+    private void ClearSelectedRegion()
+    {
+        _regionThumbnailCts?.Cancel();
+        _regionThumbnailCts?.Dispose();
+        _regionThumbnailCts = null;
+
+        SelectedRegion = null;
+        RegionThumbnail = null;
+        RegionBadge = string.Empty;
+        IsLoadingRegionThumbnail = false;
+        SyncHasSource();
     }
 
     private async Task PickWindowAsync()
@@ -693,7 +804,7 @@ public partial class CaptureViewModel : ObservableObject
         ControllerSource = SelectedMode switch
         {
             CaptureModeKind.AudioOnly => LocalizationService.GetString("Capture_Source_AudioOnly"),
-            CaptureModeKind.Region when HasSource => LocalizationService.GetString("Capture_Preview_RegionPlaceholder"),
+            CaptureModeKind.Region when HasSource => SelectedRegion?.Summary ?? LocalizationService.GetString("Capture_Preview_RegionPlaceholder"),
             CaptureModeKind.Window when HasSource => $"{SelectedWindow?.DisplayName} / {SelectedWindow?.Resolution}",
             CaptureModeKind.FullScreen when HasSource => $"{SelectedDisplay?.Name} / {SelectedDisplay?.Resolution}",
             _ => LocalizationService.GetString("Capture_Source_None")
@@ -749,10 +860,20 @@ public partial class CaptureViewModel : ObservableObject
         }
         else if (SelectedMode == CaptureModeKind.Region)
         {
-            PreviewLabel = HasSource ? LocalizationService.GetString("Capture_Preview_RegionDetail") : LocalizationService.GetString("Capture_Preview_NoRegion");
+            PreviewLabel = HasSource
+                ? string.Format(
+                    LocalizationService.GetString("Capture_Preview_RegionDetailFormat"),
+                    SelectedRegion?.Resolution,
+                    SelectedRegion?.ScreenBounds.X,
+                    SelectedRegion?.ScreenBounds.Y)
+                : LocalizationService.GetString("Capture_Preview_NoRegion");
             PreviewCaption = HasSource
                 ? LocalizationService.GetString("Capture_Preview_RegionCaption")
                 : LocalizationService.GetString("Capture_Preview_SelectRegionFirst");
+            if (IsRecording)
+            {
+                PreviewCaption = LocalizationService.GetString("Capture_Preview_RegionRecordingHint");
+            }
             ShowPreviewAction = HasSource;
             PreviewActionLabel = LocalizationService.GetString("Capture_Action_EditRegion");
             EmptySourceTitle = LocalizationService.GetString("Capture_EmptyRegion_Title");

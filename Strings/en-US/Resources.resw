@@ -266,7 +266,11 @@
   <data name="AudioQuality_Option_High" xml:space="preserve"><value>High / 192 kbps</value></data>
   <data name="AudioQuality_Option_Best" xml:space="preserve"><value>Best / 256 kbps</value></data>
   <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>Selected region / 1280 x 720</value></data>
-  <data name="Capture_Preview_RegionDetail" xml:space="preserve"><value>Selected region / 1280 x 720 / X 640 / Y 310</value></data>
+  <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>Selected region / {0} / X {1} / Y {2}</value></data>
+  <data name="AppStatus_SelectRegion" xml:space="preserve"><value>Select a recording region</value></data>
+  <data name="AppStatus_ChoosingRegion" xml:space="preserve"><value>Choosing a region</value></data>
+  <data name="AppStatus_RegionRecordingHint" xml:space="preserve"><value>Do not change the region during recording</value></data>
+  <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>Keep the selected region unchanged while recording.</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>Browse...</value></data>
   <data name="About_Licenses.Content" xml:space="preserve"><value>Open source licenses</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>

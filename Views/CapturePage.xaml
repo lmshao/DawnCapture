@@ -272,22 +272,42 @@
                             </Border>
                         </Grid>
 
-                        <!-- Region preview fills the outline, matching UX .region-preview -->
-                        <Border
-                            Background="#EBE7F5"
-                            BorderBrush="#8B5CF6"
-                            BorderThickness="2"
-                            CornerRadius="5"
+                        <!-- Region preview: thumbnail from selected screen bounds -->
+                        <Grid
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
                             Visibility="{x:Bind ViewModel.ShowRegionPreview, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                             <Border
+                                Background="{StaticResource DawnSurfaceMutedBrush}"
+                                BorderBrush="#8B5CF6"
+                                BorderThickness="2"
+                                CornerRadius="4">
+                                <Image
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    Source="{x:Bind ViewModel.RegionThumbnail, Mode=OneWay}"
+                                    Stretch="Uniform" />
+                            </Border>
+                            <ProgressRing
+                                Width="32"
+                                Height="32"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
+                                IsActive="{x:Bind ViewModel.IsLoadingRegionThumbnail, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.IsLoadingRegionThumbnail, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            <Border
+                                Margin="8"
                                 Padding="7,4"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"
                                 Background="#24282D"
                                 CornerRadius="4">
-                                <TextBlock FontSize="10" Foreground="White" Text="1280 x 720" />
+                                <TextBlock
+                                    FontSize="10"
+                                    Foreground="White"
+                                    Text="{x:Bind ViewModel.RegionBadge, Mode=OneWay}" />
                             </Border>
-                        </Border>
+                        </Grid>
 
                         <!-- Window preview: thumbnail from selected capture target -->
                         <Grid

@@ -266,7 +266,11 @@
   <data name="AudioQuality_Option_High" xml:space="preserve"><value>高 / 192 kbps</value></data>
   <data name="AudioQuality_Option_Best" xml:space="preserve"><value>最佳 / 256 kbps</value></data>
   <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>已选区域 / 1280 x 720</value></data>
-  <data name="Capture_Preview_RegionDetail" xml:space="preserve"><value>已选区域 / 1280 x 720 / X 640 / Y 310</value></data>
+  <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>已选区域 / {0} / X {1} / Y {2}</value></data>
+  <data name="AppStatus_SelectRegion" xml:space="preserve"><value>请选择录制区域</value></data>
+  <data name="AppStatus_ChoosingRegion" xml:space="preserve"><value>正在选择区域</value></data>
+  <data name="AppStatus_RegionRecordingHint" xml:space="preserve"><value>录制过程中请勿更改选区</value></data>
+  <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>录制期间请保持选区不变。</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>浏览...</value></data>
   <data name="About_Licenses.Content" xml:space="preserve"><value>开源许可</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>

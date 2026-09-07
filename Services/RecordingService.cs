@@ -204,36 +204,30 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
-    public async Task<bool> StartRegionAsync(RecordingAudioOptions audioOptions)
+    public async Task<bool> StartRegionAsync(RectInt32 screenRegion, RecordingAudioOptions audioOptions)
     {
         if (State != RecordingState.Idle)
         {
             return false;
         }
 
-        _audioOptions = audioOptions;
+        if (screenRegion.Width <= 0 || screenRegion.Height <= 0)
+        {
+            RaiseFailed(LocalizationService.GetString("Failure_CreateRegionCapture"));
+            return false;
+        }
 
+        _audioOptions = audioOptions;
         State = RecordingState.PickingSource;
+
         try
         {
-            var virtualBounds = GetVirtualScreenBounds();
-            Log.Debug($"Region recording: VirtualScreen={virtualBounds.Width}x{virtualBounds.Height} @({virtualBounds.X},{virtualBounds.Y})");
-            var regionWindow = new RegionPickerWindow(virtualBounds);
-            var region = await regionWindow.PickAsync();
-            if (region is null)
-            {
-                Log.Debug("Region selection canceled.");
-                regionWindow.Close();
-                State = RecordingState.Idle;
-                return false;
-            }
-
-            Log.Debug($"Region selected: {region.Value.Width}x{region.Value.Height} @({region.Value.X},{region.Value.Y})");
+            Log.Debug($"Region recording: {screenRegion.Width}x{screenRegion.Height} @({screenRegion.X},{screenRegion.Y})");
 
             var point = new NativePoint
             {
-                X = region.Value.X + region.Value.Width / 2,
-                Y = region.Value.Y + region.Value.Height / 2
+                X = screenRegion.X + screenRegion.Width / 2,
+                Y = screenRegion.Y + screenRegion.Height / 2
             };
             var monitor = MonitorFromPoint(point, 2 /* MONITOR_DEFAULTTONEAREST */);
             var monitorBounds = GetMonitorBounds(monitor);
@@ -241,7 +235,6 @@ public sealed class RecordingService : IRecordingService
             var item = CreateCaptureItemForMonitor(monitor);
             if (item is null || monitorBounds is null)
             {
-                regionWindow.Close();
                 RaiseFailed(LocalizationService.GetString("Failure_CreateRegionCapture"));
                 State = RecordingState.Idle;
                 return false;
@@ -249,85 +242,28 @@ public sealed class RecordingService : IRecordingService
 
             var crop = new RectInt32
             {
-                X = region.Value.X - monitorBounds.Value.X,
-                Y = region.Value.Y - monitorBounds.Value.Y,
-                Width = region.Value.Width,
-                Height = region.Value.Height
+                X = screenRegion.X - monitorBounds.Value.X,
+                Y = screenRegion.Y - monitorBounds.Value.Y,
+                Width = screenRegion.Width,
+                Height = screenRegion.Height
             };
             crop = ClampAndMakeEven(crop, item.Size);
             Log.Debug($"Crop region: {crop.Width}x{crop.Height} @({crop.X},{crop.Y}), CaptureSize={item.Size.Width}x{item.Size.Height}");
             _currentSourceKind = RecordingSourceKind.Region;
 
-            _regionMarker = new RegionMarkerWindow(region.Value);
-
-            // Show the REC control above the selection and start recording when it is clicked.
-            var control = new RecordingControlWindow(() => Elapsed);
-            _controlWindow = control;
-
-            var started = false;
-            var tcs = new TaskCompletionSource<bool>();
-
-            control.StartRequested += async () =>
+            if (!await StartCaptureAsync(item, crop))
             {
-                try
-                {
-                    started = await StartCaptureAsync(item, crop);
-                    if (started)
-                    {
-                        control.ShowRecording();
-                    }
-                    else
-                    {
-                        control.CloseWindow();
-                    }
-                }
-                catch
-                {
-                    control.CloseWindow();
-                }
-            };
+                return false;
+            }
 
-            control.StopRequested += async () =>
-            {
-                try
-                {
-                    await StopAsync();
-                }
-                finally
-                {
-                    control.CloseWindow();
-                }
-            };
-
-            control.CancelRequested += () =>
-            {
-                if (!started)
-                {
-                    control.CloseWindow();
-                }
-            };
-
-            control.Closed += (_, _) =>
-            {
-                if (!started)
-                {
-                    _regionMarker?.Close();
-                    _regionMarker = null;
-                    if (State == RecordingState.PickingSource)
-                    {
-                        State = RecordingState.Idle;
-                    }
-                }
-
-                tcs.TrySetResult(started);
-            };
-
-            control.ShowWaiting(region.Value, dpiScale);
-            return await tcs.Task;
+            _regionMarker = new RegionMarkerWindow(screenRegion);
+            AttachRecordingControlWindow(screenRegion, dpiScale);
+            MinimizeMainWindow();
+            return true;
         }
         catch (Exception ex)
         {
-            Log.Error("StartCaptureAsync failed", ex);
+            Log.Error("StartRegionAsync failed", ex);
             CleanupCapture();
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
@@ -1116,47 +1052,6 @@ public sealed class RecordingService : IRecordingService
         }
 
         return 1.0;
-    }
-
-    private static RectInt32 GetVirtualScreenBounds()
-    {
-        var monitors = new List<RectInt32>();
-        EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, delegate(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect rcMonitor, IntPtr data)
-        {
-            monitors.Add(new RectInt32
-            {
-                X = rcMonitor.Left,
-                Y = rcMonitor.Top,
-                Width = rcMonitor.Right - rcMonitor.Left,
-                Height = rcMonitor.Bottom - rcMonitor.Top
-            });
-            return true;
-        }, IntPtr.Zero);
-
-        if (monitors.Count == 0)
-        {
-            return new RectInt32 { X = 0, Y = 0, Width = 1920, Height = 1080 };
-        }
-
-        int left = int.MaxValue;
-        int top = int.MaxValue;
-        int right = int.MinValue;
-        int bottom = int.MinValue;
-        foreach (var monitor in monitors)
-        {
-            left = Math.Min(left, monitor.X);
-            top = Math.Min(top, monitor.Y);
-            right = Math.Max(right, monitor.X + monitor.Width);
-            bottom = Math.Max(bottom, monitor.Y + monitor.Height);
-        }
-
-        return new RectInt32
-        {
-            X = left,
-            Y = top,
-            Width = right - left,
-            Height = bottom - top
-        };
     }
 
     private static GraphicsCaptureItem? CreateCaptureItemForMonitor(IntPtr hMonitor)

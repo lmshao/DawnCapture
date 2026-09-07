@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using DawnCapture.Models;
+using Windows.Graphics;
 using Windows.Graphics.Capture;
 
 namespace DawnCapture.Services;
@@ -24,8 +25,8 @@ public interface IRecordingService
     /// <summary>Records the selected display. Returns whether recording started successfully.</summary>
     Task<bool> StartFullScreenAsync(MonitorDisplay display, RecordingAudioOptions audioOptions);
 
-    /// <summary>Lets the user select a screen region and records the cropped area. Returns whether recording started successfully.</summary>
-    Task<bool> StartRegionAsync(RecordingAudioOptions audioOptions);
+    /// <summary>Records the pre-selected screen region. Returns whether recording started successfully.</summary>
+    Task<bool> StartRegionAsync(RectInt32 screenRegion, RecordingAudioOptions audioOptions);
 
     Task StopAsync();
 
