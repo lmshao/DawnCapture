@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DawnCapture.Helpers;
 using DawnCapture.Models;
 using DawnCapture.Services;
 using DawnCapture.Views;
@@ -34,9 +35,8 @@ public partial class CaptureViewModel : ObservableObject
         RecordButtonLabel = LocalizationService.GetString("Dock_StartRecording");
         VideoQualityLabel = LocalizationService.GetString("Dock_Quality");
         AudioQualityLabel = LocalizationService.GetString("Dock_AudioQuality");
-        VideoCodecSummary = LocalizationService.GetString("Dock_Codec_Avc");
-        AudioCodecSummary = LocalizationService.GetString("Dock_Codec_Audio");
-        _showCursor = _settingsService.Current.CaptureCursor;
+        _settingsService.SettingsChanged += OnSettingsChanged;
+        ApplyFromSettings(_settingsService.Current);
         InitializeMonitors();
         ApplySelectedMode();
         UpdateHeaderCopy();
@@ -54,6 +54,7 @@ public partial class CaptureViewModel : ObservableObject
     private readonly MainViewModel _mainViewModel;
     private readonly IMonitorService _monitorService;
     private readonly IRecordingService _recordingService;
+    private bool _suppressSettingsSave;
 
     public ObservableCollection<MonitorDisplay> Monitors { get; } = new();
 
@@ -115,6 +116,11 @@ public partial class CaptureViewModel : ObservableObject
 
     partial void OnShowCursorChanged(bool value)
     {
+        if (_suppressSettingsSave)
+        {
+            return;
+        }
+
         if (_settingsService.Current.CaptureCursor == value)
         {
             return;
@@ -122,6 +128,55 @@ public partial class CaptureViewModel : ObservableObject
 
         _settingsService.Current.CaptureCursor = value;
         _settingsService.Save();
+    }
+
+    partial void OnQualityIndexChanged(int value)
+    {
+        if (_suppressSettingsSave)
+        {
+            return;
+        }
+
+        RecordingSettingsHelper.ApplyCaptureQualityPreset(_settingsService.Current, value);
+        _settingsService.Save();
+    }
+
+    partial void OnAudioQualityIndexChanged(int value)
+    {
+        if (_suppressSettingsSave)
+        {
+            return;
+        }
+
+        _settingsService.Current.AudioQualityIndex = value;
+        _settingsService.Save();
+    }
+
+    private void OnSettingsChanged(object? sender, EventArgs e) =>
+        ApplyFromSettings(_settingsService.Current);
+
+    private void ApplyFromSettings(AppSettings settings)
+    {
+        _suppressSettingsSave = true;
+        try
+        {
+            ShowCursor = settings.CaptureCursor;
+            QualityIndex = RecordingSettingsHelper.GetCaptureQualityIndex(settings);
+            AudioQualityIndex = settings.AudioQualityIndex;
+            UpdateCodecSummaries(settings.VideoCodecIndex);
+        }
+        finally
+        {
+            _suppressSettingsSave = false;
+        }
+    }
+
+    private void UpdateCodecSummaries(int codecIndex)
+    {
+        VideoCodecSummary = codecIndex == 1
+            ? LocalizationService.GetString("Dock_Codec_Hevc")
+            : LocalizationService.GetString("Dock_Codec_Avc");
+        AudioCodecSummary = LocalizationService.GetString("Dock_Codec_Audio");
     }
 
     partial void OnMicrophoneEnabledChanged(bool value)
@@ -328,6 +383,17 @@ public partial class CaptureViewModel : ObservableObject
 
             var audioOptions = BuildAudioOptions();
 
+            if (_settingsService.Current.CountdownEnabled)
+            {
+                for (int seconds = 3; seconds >= 1; seconds--)
+                {
+                    _mainViewModel.AppStatusText = string.Format(
+                        LocalizationService.GetString("Status_Countdown"),
+                        seconds);
+                    await Task.Delay(1000);
+                }
+            }
+
             switch (SelectedMode)
             {
                 case CaptureModeKind.FullScreen:
@@ -364,7 +430,8 @@ public partial class CaptureViewModel : ObservableObject
         {
             EnableMicrophone = MicrophoneEnabled,
             EnableSystemAudio = SystemAudioEnabled,
-            BitrateKbps = RecordingAudioOptions.BitrateFromQualityIndex(AudioQualityIndex)
+            BitrateKbps = RecordingAudioOptions.BitrateFromQualityIndex(
+                _settingsService.Current.AudioQualityIndex)
         };
     }
 

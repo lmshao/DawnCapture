@@ -15,4 +15,14 @@ public sealed class AppSettings
     public bool CaptureCursor { get; set; } = true;
 
     public string Language { get; set; } = "system";
+
+    public int QualityIndex { get; set; } = 1;
+
+    public int AudioQualityIndex { get; set; } = 1;
+
+    public int VideoCodecIndex { get; set; }
+
+    public bool CountdownEnabled { get; set; } = true;
+
+    public bool NotificationEnabled { get; set; } = true;
 }

@@ -20,6 +20,8 @@ public sealed class SettingsService : ISettingsService
 
     public AppSettings Current { get; private set; } = new();
 
+    public event EventHandler? SettingsChanged;
+
     public void Load()
     {
         try
@@ -52,6 +54,7 @@ public sealed class SettingsService : ISettingsService
 
             var json = JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_filePath, json);
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
         }
         catch
         {

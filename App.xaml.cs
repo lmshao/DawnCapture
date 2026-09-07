@@ -6,6 +6,7 @@ using DawnCapture.Services;
 using DawnCapture.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppNotifications;
 
 namespace DawnCapture;
 
@@ -14,13 +15,13 @@ public partial class App : Application
     public App()
     {
         var settingsService = new SettingsService();
-        LocalizationService.ApplyLanguage(settingsService.Current.Language);
 
         Log.Init();
         Log.Info("Application startup initialization started.");
         Log.Info($"Log file: {Log.FilePath}");
 
         InitializeComponent();
+        LocalizationService.ApplyLanguage(settingsService.Current.Language);
 
         UnhandledException += (_, e) =>
         {
@@ -77,12 +78,25 @@ public partial class App : Application
 
             MainWindow = Ioc.Default.GetRequiredService<MainWindow>();
             MainWindow.Activate();
+            TryRegisterNotifications();
             Log.Info("Main window activated.");
         }
         catch (Exception ex)
         {
             Log.Error("OnLaunched failed", ex);
             throw;
+        }
+    }
+
+    private static void TryRegisterNotifications()
+    {
+        try
+        {
+            AppNotificationManager.Default.Register();
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"App notification registration skipped: {ex.Message}");
         }
     }
 }

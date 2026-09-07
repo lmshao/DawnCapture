@@ -67,6 +67,8 @@
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ Stop</value></data>
   <data name="About_Description" xml:space="preserve"><value>A fast, lightweight, privacy-friendly screen and audio recorder built for Windows 11. Your recordings always stay on your device.</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Status_Countdown" xml:space="preserve"><value>Starting in {0}…</value></data>
+  <data name="Notification_RecordingSaved" xml:space="preserve"><value>Recording saved</value></data>
   <data name="Status_StartingFullScreen" xml:space="preserve"><value>Starting full-screen recording…</value></data>
   <data name="Status_StartingWindow" xml:space="preserve"><value>Starting window recording…</value></data>
   <data name="Status_SelectingRegion" xml:space="preserve"><value>Selecting a recording region…</value></data>
@@ -84,9 +86,7 @@
   <data name="Failure_NoFrames" xml:space="preserve"><value>No video frames were written. Make sure the capture target is still visible.</value></data>
   <data name="Window_RegionPickerTitle" xml:space="preserve"><value>Select Recording Region</value></data>
   <data name="Window_RecordingControlTitle" xml:space="preserve"><value>Recording Controls</value></data>
-  <data name="Language_System" xml:space="preserve"><value>Use system language</value></data>
-  <data name="Language_Chinese" xml:space="preserve"><value>Chinese (Simplified)</value></data>
-  <data name="Language_English" xml:space="preserve"><value>English</value></data>
+  <data name="Language_System" xml:space="preserve"><value>System default</value></data>
   <data name="RegionPicker_ToolbarHint.Text" xml:space="preserve"><value>Drag inside to move · Drag handles to resize · Enter to confirm</value></data>
   <data name="RegionPicker_Cancel.Content" xml:space="preserve"><value>Cancel</value></data>
   <data name="RegionPicker_Confirm.Content" xml:space="preserve"><value>Confirm</value></data>
@@ -142,6 +142,7 @@
   <data name="Dock_Quality" xml:space="preserve"><value>Quality</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>Audio quality</value></data>
   <data name="Dock_Codec_Avc" xml:space="preserve"><value>Compatible / H.264 AVC</value></data>
+  <data name="Dock_Codec_Hevc" xml:space="preserve"><value>Smaller files / H.265 HEVC</value></data>
   <data name="Dock_Codec_Audio" xml:space="preserve"><value>AAC-LC / M4A</value></data>
   <data name="Dock_StartRecording" xml:space="preserve"><value>Start recording</value></data>
   <data name="Dock_StopRecording" xml:space="preserve"><value>Stop recording</value></data>

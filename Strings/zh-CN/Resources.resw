@@ -67,6 +67,8 @@
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ 停止</value></data>
   <data name="About_Description" xml:space="preserve"><value>一款快速、轻量、注重隐私的 Windows 11 屏幕与音频录制工具。你的录像始终保存在本机。</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>准备就绪</value></data>
+  <data name="Status_Countdown" xml:space="preserve"><value>{0} 秒后开始录制…</value></data>
+  <data name="Notification_RecordingSaved" xml:space="preserve"><value>录像已保存</value></data>
   <data name="Status_StartingFullScreen" xml:space="preserve"><value>正在开始全屏录制…</value></data>
   <data name="Status_StartingWindow" xml:space="preserve"><value>正在开始窗口录制…</value></data>
   <data name="Status_SelectingRegion" xml:space="preserve"><value>正在选择录制区域…</value></data>
@@ -85,8 +87,6 @@
   <data name="Window_RegionPickerTitle" xml:space="preserve"><value>选择录制区域</value></data>
   <data name="Window_RecordingControlTitle" xml:space="preserve"><value>录制控制</value></data>
   <data name="Language_System" xml:space="preserve"><value>跟随系统</value></data>
-  <data name="Language_Chinese" xml:space="preserve"><value>简体中文</value></data>
-  <data name="Language_English" xml:space="preserve"><value>英语</value></data>
   <data name="RegionPicker_ToolbarHint.Text" xml:space="preserve"><value>框内拖拽移动 · 控制点拉伸 · Enter 确认</value></data>
   <data name="RegionPicker_Cancel.Content" xml:space="preserve"><value>取消</value></data>
   <data name="RegionPicker_Confirm.Content" xml:space="preserve"><value>确认</value></data>
@@ -142,6 +142,7 @@
   <data name="Dock_Quality" xml:space="preserve"><value>画质</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>音质</value></data>
   <data name="Dock_Codec_Avc" xml:space="preserve"><value>兼容 / H.264 AVC</value></data>
+  <data name="Dock_Codec_Hevc" xml:space="preserve"><value>更小文件 / H.265 HEVC</value></data>
   <data name="Dock_Codec_Audio" xml:space="preserve"><value>AAC-LC / M4A</value></data>
   <data name="Dock_StartRecording" xml:space="preserve"><value>开始录制</value></data>
   <data name="Dock_StopRecording" xml:space="preserve"><value>停止录制</value></data>

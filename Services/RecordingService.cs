@@ -441,11 +441,16 @@ public sealed class RecordingService : IRecordingService
                 sourceKind,
                 new RecordingEncodingInfo
                 {
-                    VideoCodec = "H.264",
+                    VideoCodec = RecordingSettingsHelper.VideoCodecLabel(_settings.Current.VideoCodecIndex),
                     AudioCodec = _audioOptions.HasAnySource ? "AAC" : null,
                     FrameRate = _settings.Current.FrameRate,
                     BitrateKbps = _settings.Current.BitrateKbps
                 });
+
+            if (_settings.Current.NotificationEnabled)
+            {
+                RecordingNotificationHelper.TryShowSaved(outputPath);
+            }
         }
         catch (Exception ex)
         {
@@ -606,6 +611,11 @@ public sealed class RecordingService : IRecordingService
             profile.Video.FrameRate.Denominator = 1;
             profile.Video.PixelAspectRatio.Numerator = 1;
             profile.Video.PixelAspectRatio.Denominator = 1;
+
+            if (_settings.Current.VideoCodecIndex == 1)
+            {
+                profile.Video.Subtype = MediaEncodingSubtypes.Hevc;
+            }
 
             if (audioOptions.HasAnySource)
             {
