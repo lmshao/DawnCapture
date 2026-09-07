@@ -210,6 +210,13 @@
   <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>请选择显示器</value></data>
   <data name="AppStatus_ChoosingDisplay" xml:space="preserve"><value>正在选择显示器</value></data>
   <data name="AppStatus_EnableOneAudio" xml:space="preserve"><value>请至少启用一个音频来源</value></data>
+  <data name="AppStatus_SelectWindow" xml:space="preserve"><value>请选择窗口</value></data>
+  <data name="AppStatus_ChoosingWindow" xml:space="preserve"><value>正在选择窗口</value></data>
+  <data name="AppStatus_WindowClosed" xml:space="preserve"><value>所选窗口已关闭</value></data>
+  <data name="AppStatus_WindowRecordingHint" xml:space="preserve"><value>录制过程中请勿调整窗口大小</value></data>
+  <data name="AppStatus_WindowResizedDuringRecording" xml:space="preserve"><value>录制过程中窗口尺寸已变化，可能出现黑边或边缘裁切</value></data>
+  <data name="Failure_CreateWindowComposite" xml:space="preserve"><value>无法准备窗口捕获帧缓冲区。</value></data>
+  <data name="Capture_Preview_WindowRecordingHint" xml:space="preserve"><value>录制期间请保持窗口尺寸不变。</value></data>
   <data name="Failure_MicrophoneAccess" xml:space="preserve"><value>麦克风权限被拒绝，请在 Windows 隐私设置中允许访问。</value></data>
   <data name="Failure_MicrophoneDevice" xml:space="preserve"><value>无法打开麦克风设备 (0x{0:X})。</value></data>
   <data name="Failure_SystemAudioDevice" xml:space="preserve"><value>无法打开系统音频设备 (0x{0:X})。</value></data>

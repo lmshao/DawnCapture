@@ -32,7 +32,8 @@ public sealed partial class CapturePage : Page
                 UpdateOutlineBrush();
             }
             else if (e.PropertyName == nameof(CaptureViewModel.HasSource) ||
-                     e.PropertyName == nameof(CaptureViewModel.SelectedDisplay))
+                     e.PropertyName == nameof(CaptureViewModel.SelectedDisplay) ||
+                     e.PropertyName == nameof(CaptureViewModel.SelectedWindow))
             {
                 UpdateOutlineBrush();
             }

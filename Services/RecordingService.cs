@@ -72,6 +72,13 @@ public sealed class RecordingService : IRecordingService
     private bool _isStopping;
     private string? _currentOutputPath;
     private RecordingSourceKind _currentSourceKind = RecordingSourceKind.Screen;
+    private SizeInt32 _windowEncodeSize;
+    private SizeInt32 _poolContentSize;
+    private bool _windowLetterboxActive;
+    private bool _windowResizeWarned;
+    private ID3D11Texture2D? _windowCompositeTexture;
+    private ID3D11RenderTargetView? _windowCompositeRtv;
+    private IDirect3DSurface? _windowCompositeSurface;
 
     private RecordingState _state = RecordingState.Idle;
 
@@ -104,7 +111,9 @@ public sealed class RecordingService : IRecordingService
 
     public event EventHandler<string>? RecordingFailed;
 
-    public async Task<bool> PickAndStartWindowAsync(RecordingAudioOptions audioOptions)
+    public event EventHandler<string>? RecordingNotice;
+
+    public async Task<bool> StartWindowAsync(GraphicsCaptureItem item, RecordingAudioOptions audioOptions)
     {
         if (State != RecordingState.Idle)
         {
@@ -112,30 +121,23 @@ public sealed class RecordingService : IRecordingService
         }
 
         _audioOptions = audioOptions;
-
-        if (App.MainWindow is null)
-        {
-            RaiseFailed(LocalizationService.GetString("Failure_MainWindowUnavailable"));
-            return false;
-        }
-
         State = RecordingState.PickingSource;
+
         try
         {
-            var picker = new GraphicsCapturePicker();
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+            var bounds = WindowCaptureHelper.GetWindowBounds(item);
+            var dpiScale = WindowCaptureHelper.GetWindowDpiScale(item);
+            Log.Debug($"Window recording: DisplayName={item.DisplayName}, Bounds={bounds.Width}x{bounds.Height} @({bounds.X},{bounds.Y})");
+            _currentSourceKind = RecordingSourceKind.Window;
 
-            var item = await picker.PickSingleItemAsync();
-            if (item is null)
+            if (!await StartCaptureAsync(item, null))
             {
-                State = RecordingState.Idle;
                 return false;
             }
 
-            Log.Debug($"Window recording: DisplayName={item.DisplayName}, Size={item.Size.Width}x{item.Size.Height}");
-            _currentSourceKind = RecordingSourceKind.Window;
-            return await StartCaptureAsync(item, null);
+            AttachRecordingControlWindow(bounds, dpiScale);
+            MinimizeMainWindow();
+            return true;
         }
         catch (Exception ex)
         {
@@ -188,44 +190,7 @@ public sealed class RecordingService : IRecordingService
                 return false;
             }
 
-            var control = new RecordingControlWindow(() => Elapsed);
-            _controlWindow = control;
-
-            control.StopRequested += async () =>
-            {
-                try
-                {
-                    await StopAsync();
-                }
-                finally
-                {
-                    control.CloseWindow();
-                }
-            };
-
-            control.PauseRequested += () =>
-            {
-                if (State == RecordingState.Recording)
-                {
-                    Pause();
-                    control.ShowPaused();
-                }
-                else if (State == RecordingState.Paused)
-                {
-                    Resume();
-                    control.ShowRecording();
-                }
-            };
-
-            control.Closed += (_, _) =>
-            {
-                if (State is RecordingState.Recording or RecordingState.Paused)
-                {
-                    _ = StopAsync();
-                }
-            };
-
-            control.ShowRecordingTopLeft(bounds, dpiScale);
+            AttachRecordingControlWindow(bounds, dpiScale);
             Log.Debug($"Full-screen control shown at ({bounds.X + 12},{bounds.Y + 12}).");
             MinimizeMainWindow();
             return true;
@@ -528,6 +493,25 @@ public sealed class RecordingService : IRecordingService
                 ? new SizeInt32 { Width = c.Width, Height = c.Height }
                 : item.Size;
 
+            if (_currentSourceKind == RecordingSourceKind.Window)
+            {
+                _windowLetterboxActive = true;
+                _windowEncodeSize = captureSize;
+                _poolContentSize = item.Size;
+                _windowResizeWarned = false;
+                if (!EnsureWindowCompositeResources(_windowEncodeSize))
+                {
+                    CleanupCapture();
+                    State = RecordingState.Idle;
+                    RaiseFailed(LocalizationService.GetString("Failure_CreateWindowComposite"));
+                    return false;
+                }
+            }
+            else
+            {
+                _windowLetterboxActive = false;
+            }
+
             if (!await CreateMediaObjectsAsync(captureSize, _audioOptions))
             {
                 CleanupCapture();
@@ -725,6 +709,47 @@ public sealed class RecordingService : IRecordingService
             return;
         }
 
+        if (_windowLetterboxActive)
+        {
+            var contentSize = frame.ContentSize;
+            if (contentSize.Width <= 0 || contentSize.Height <= 0)
+            {
+                frame.Dispose();
+                return;
+            }
+
+            if (contentSize.Width != _poolContentSize.Width ||
+                contentSize.Height != _poolContentSize.Height)
+            {
+                if (!_windowResizeWarned)
+                {
+                    _windowResizeWarned = true;
+                    RaiseNotice(LocalizationService.GetString("AppStatus_WindowResizedDuringRecording"));
+                }
+
+                frame.Dispose();
+                try
+                {
+                    if (_winrtDevice is not null)
+                    {
+                        sender.Recreate(
+                            _winrtDevice,
+                            DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                            2,
+                            contentSize);
+                        _poolContentSize = contentSize;
+                        Log.Debug($"Window capture pool recreated: {contentSize.Width}x{contentSize.Height}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Info($"Window capture pool recreate failed: {ex.Message}");
+                }
+
+                return;
+            }
+        }
+
         lock (_frameLock)
         {
             _pendingFrame?.Dispose();
@@ -781,8 +806,20 @@ public sealed class RecordingService : IRecordingService
             {
                 var surface = frame.Surface;
                 var croppedSurface = default(IDirect3DSurface);
+                var compositeSurface = default(IDirect3DSurface);
 
-                if (_cropRect is { } crop)
+                if (_windowLetterboxActive)
+                {
+                    compositeSurface = CompositeWindowFrame(surface, frame.ContentSize);
+                    if (compositeSurface is null)
+                    {
+                        args.Request.Sample = null;
+                        return;
+                    }
+
+                    surface = compositeSurface;
+                }
+                else if (_cropRect is { } crop)
                 {
                     croppedSurface = CropSurface(surface, crop);
                     if (croppedSurface is null)
@@ -1277,7 +1314,109 @@ public sealed class RecordingService : IRecordingService
         _currentOutputPath = null;
 
         _cropRect = null;
+        ReleaseWindowCompositeResources();
+        _windowLetterboxActive = false;
+        _windowResizeWarned = false;
         _stopwatch.Reset();
+    }
+
+    private bool EnsureWindowCompositeResources(SizeInt32 encodeSize)
+    {
+        if (_d3dDevice is null || _d3dContext is null)
+        {
+            return false;
+        }
+
+        ReleaseWindowCompositeResources();
+
+        var description = new Texture2DDescription
+        {
+            Width = (uint)encodeSize.Width,
+            Height = (uint)encodeSize.Height,
+            MipLevels = 1,
+            ArraySize = 1,
+            Format = Format.B8G8R8A8_UNorm,
+            SampleDescription = new SampleDescription(1, 0),
+            Usage = ResourceUsage.Default,
+            BindFlags = BindFlags.ShaderResource | BindFlags.RenderTarget,
+            CPUAccessFlags = CpuAccessFlags.None,
+            MiscFlags = ResourceOptionFlags.None
+        };
+
+        _windowCompositeTexture = _d3dDevice.CreateTexture2D(description);
+        _windowCompositeRtv = _d3dDevice.CreateRenderTargetView(_windowCompositeTexture);
+
+        using var dxgiSurface = _windowCompositeTexture.QueryInterface<IDXGISurface>();
+        int hr = CreateDirect3D11SurfaceFromDXGISurface(dxgiSurface.NativePointer, out var pWinrtSurface);
+        if (hr != 0)
+        {
+            ReleaseWindowCompositeResources();
+            return false;
+        }
+
+        _windowCompositeSurface = WinRT.MarshalInterface<IDirect3DSurface>.FromAbi(pWinrtSurface);
+        Marshal.Release(pWinrtSurface);
+        return true;
+    }
+
+    private IDirect3DSurface? CompositeWindowFrame(IDirect3DSurface sourceSurface, SizeInt32 contentSize)
+    {
+        if (_d3dDevice is null ||
+            _d3dContext is null ||
+            _windowCompositeTexture is null ||
+            _windowCompositeRtv is null ||
+            _windowCompositeSurface is null)
+        {
+            return null;
+        }
+
+        if (contentSize.Width <= 0 || contentSize.Height <= 0)
+        {
+            return null;
+        }
+
+        var pSource = GetTexture2DPointer(sourceSurface);
+        if (pSource == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        using var source = new ID3D11Texture2D(pSource);
+        var sourceDesc = source.Description;
+
+        int copyWidth = Math.Min(contentSize.Width, (int)sourceDesc.Width);
+        int copyHeight = Math.Min(contentSize.Height, (int)sourceDesc.Height);
+        copyWidth = Math.Min(copyWidth, _windowEncodeSize.Width);
+        copyHeight = Math.Min(copyHeight, _windowEncodeSize.Height);
+        if (copyWidth <= 0 || copyHeight <= 0)
+        {
+            return null;
+        }
+
+        _d3dContext.ClearRenderTargetView(_windowCompositeRtv, new Color4(0f, 0f, 0f, 1f));
+
+        var box = new Box(0, 0, 0, copyWidth, copyHeight, 1);
+        _d3dContext.CopySubresourceRegion(
+            _windowCompositeTexture,
+            0,
+            0,
+            0,
+            0,
+            source,
+            0,
+            box);
+
+        return _windowCompositeSurface;
+    }
+
+    private void ReleaseWindowCompositeResources()
+    {
+        _windowCompositeSurface?.Dispose();
+        _windowCompositeSurface = null;
+        _windowCompositeRtv?.Dispose();
+        _windowCompositeRtv = null;
+        _windowCompositeTexture?.Dispose();
+        _windowCompositeTexture = null;
     }
 
     private void RaiseStateChanged(RecordingState value)
@@ -1315,6 +1454,67 @@ public sealed class RecordingService : IRecordingService
         {
             handler(this, message);
         }
+    }
+
+    private void RaiseNotice(string message)
+    {
+        Log.Info($"Recording notice: {message}");
+        var handler = RecordingNotice;
+        if (handler is null)
+        {
+            return;
+        }
+
+        if (_dispatcherQueue is not null)
+        {
+            _dispatcherQueue.TryEnqueue(() => handler(this, message));
+        }
+        else
+        {
+            handler(this, message);
+        }
+    }
+
+    private void AttachRecordingControlWindow(RectInt32 bounds, double dpiScale)
+    {
+        var control = new RecordingControlWindow(() => Elapsed);
+        _controlWindow = control;
+
+        control.StopRequested += async () =>
+        {
+            try
+            {
+                await StopAsync();
+            }
+            finally
+            {
+                control.CloseWindow();
+            }
+        };
+
+        control.PauseRequested += () =>
+        {
+            if (State == RecordingState.Recording)
+            {
+                Pause();
+                control.ShowPaused();
+            }
+            else if (State == RecordingState.Paused)
+            {
+                Resume();
+                control.ShowRecording();
+            }
+        };
+
+        control.Closed += (_, _) =>
+        {
+            if (State is RecordingState.Recording or RecordingState.Paused)
+            {
+                _ = StopAsync();
+            }
+        };
+
+        control.ShowRecordingTopLeft(bounds, dpiScale);
     }
 
     private static void MinimizeMainWindow()

@@ -10,7 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics.Capture;
 
 namespace DawnCapture.ViewModels;
 
@@ -29,6 +31,7 @@ public partial class CaptureViewModel : ObservableObject
 
         _recordingService.StateChanged += OnRecordingStateChanged;
         _recordingService.RecordingFailed += OnRecordingFailed;
+        _recordingService.RecordingNotice += OnRecordingNotice;
 
         DestinationFolderSummary = _mainViewModel.OutputFolderSummary;
         _mainViewModel.PropertyChanged += OnMainViewModelPropertyChanged;
@@ -55,6 +58,7 @@ public partial class CaptureViewModel : ObservableObject
     private readonly IMonitorService _monitorService;
     private readonly IRecordingService _recordingService;
     private bool _suppressSettingsSave;
+    private CancellationTokenSource? _windowThumbnailCts;
 
     public ObservableCollection<MonitorDisplay> Monitors { get; } = new();
 
@@ -225,6 +229,18 @@ public partial class CaptureViewModel : ObservableObject
     private bool _showWindowPreview;
 
     [ObservableProperty]
+    private WindowCaptureTarget? _selectedWindow;
+
+    [ObservableProperty]
+    private ImageSource? _windowThumbnail;
+
+    [ObservableProperty]
+    private bool _isLoadingWindowThumbnail;
+
+    [ObservableProperty]
+    private string _windowBadge = string.Empty;
+
+    [ObservableProperty]
     private string _emptySourceTitle = string.Empty;
 
     [ObservableProperty]
@@ -304,7 +320,20 @@ public partial class CaptureViewModel : ObservableObject
 
     partial void OnSelectedModeChanged(CaptureModeKind value)
     {
+        if (value != CaptureModeKind.Window)
+        {
+            ClearSelectedWindow();
+        }
+
         ApplySelectedMode();
+        UpdateHeaderCopy();
+        UpdatePreviewCopy();
+    }
+
+    partial void OnSelectedWindowChanged(WindowCaptureTarget? value)
+    {
+        WindowBadge = value?.Resolution ?? string.Empty;
+        SyncHasSource();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
     }
@@ -327,7 +356,7 @@ public partial class CaptureViewModel : ObservableObject
         HasSource = SelectedMode switch
         {
             CaptureModeKind.FullScreen => SelectedDisplay != null,
-            CaptureModeKind.Window => false,
+            CaptureModeKind.Window => SelectedWindow != null,
             CaptureModeKind.Region => true,
             CaptureModeKind.AudioOnly => true,
             _ => false
@@ -365,6 +394,7 @@ public partial class CaptureViewModel : ObservableObject
             : LocalizationService.GetString("Dock_StartRecording");
         ShowController = value;
         UpdateHeaderCopy();
+        UpdatePreviewCopy();
     }
 
     [RelayCommand]
@@ -408,7 +438,16 @@ public partial class CaptureViewModel : ObservableObject
                     await _recordingService.StartFullScreenAsync(SelectedDisplay, audioOptions);
                     break;
                 case CaptureModeKind.Window:
-                    await _recordingService.PickAndStartWindowAsync(audioOptions);
+                    if (SelectedWindow is null)
+                    {
+                        Log.Info("Recording blocked: no window selected.");
+                        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_SelectWindow");
+                        return;
+                    }
+
+                    Log.Info($"Recording requested: {SelectedWindow.DisplayName} ({SelectedWindow.Resolution}), Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}");
+                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_WindowRecordingHint");
+                    await _recordingService.StartWindowAsync(SelectedWindow.Item, audioOptions);
                     break;
                 case CaptureModeKind.Region:
                     await _recordingService.StartRegionAsync(audioOptions);
@@ -475,6 +514,11 @@ public partial class CaptureViewModel : ObservableObject
         _mainViewModel.AppStatusText = message;
     }
 
+    private void OnRecordingNotice(object? sender, string message)
+    {
+        _mainViewModel.AppStatusText = message;
+    }
+
     [RelayCommand]
     private void SelectDisplay(MonitorDisplay? display)
     {
@@ -489,6 +533,12 @@ public partial class CaptureViewModel : ObservableObject
     [RelayCommand]
     private async Task PreviewActionAsync()
     {
+        if (SelectedMode == CaptureModeKind.Window)
+        {
+            await PickWindowAsync();
+            return;
+        }
+
         if (SelectedMode != CaptureModeKind.FullScreen || Monitors.Count <= 1)
         {
             return;
@@ -510,9 +560,91 @@ public partial class CaptureViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ChooseSource()
+    private async Task ChooseSourceAsync()
     {
-        // UI shell only.
+        if (SelectedMode == CaptureModeKind.Window)
+        {
+            await PickWindowAsync();
+        }
+    }
+
+    private async Task PickWindowAsync()
+    {
+        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_ChoosingWindow");
+        var item = await WindowCaptureHelper.PickWindowAsync();
+        _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+
+        if (item is null)
+        {
+            return;
+        }
+
+        await CommitWindowAsync(item);
+    }
+
+    private async Task CommitWindowAsync(GraphicsCaptureItem item)
+    {
+        ClearSelectedWindow();
+
+        var target = new WindowCaptureTarget(item);
+        target.Closed += OnSelectedWindowClosed;
+        SelectedWindow = target;
+        Log.Info($"Window committed: {target.DisplayName} ({target.Resolution})");
+
+        _windowThumbnailCts?.Cancel();
+        _windowThumbnailCts?.Dispose();
+        _windowThumbnailCts = new CancellationTokenSource();
+        var cts = _windowThumbnailCts;
+        IsLoadingWindowThumbnail = true;
+        WindowThumbnail = null;
+
+        try
+        {
+            var thumbnail = await WindowPreviewHelper.CaptureThumbnailAsync(item, cancellationToken: cts.Token);
+            if (!cts.IsCancellationRequested && ReferenceEquals(SelectedWindow, target))
+            {
+                WindowThumbnail = thumbnail;
+                if (thumbnail is null)
+                {
+                    Log.Info($"Window preview thumbnail unavailable for {target.DisplayName}.");
+                }
+            }
+        }
+        finally
+        {
+            if (!cts.IsCancellationRequested)
+            {
+                IsLoadingWindowThumbnail = false;
+            }
+        }
+    }
+
+    private void OnSelectedWindowClosed(object? sender, EventArgs e)
+    {
+        Log.Info("Selected window closed.");
+        ClearSelectedWindow();
+        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_WindowClosed");
+        UpdateHeaderCopy();
+        UpdatePreviewCopy();
+    }
+
+    private void ClearSelectedWindow()
+    {
+        _windowThumbnailCts?.Cancel();
+        _windowThumbnailCts?.Dispose();
+        _windowThumbnailCts = null;
+
+        if (SelectedWindow is not null)
+        {
+            SelectedWindow.Closed -= OnSelectedWindowClosed;
+            SelectedWindow.Dispose();
+        }
+
+        SelectedWindow = null;
+        WindowThumbnail = null;
+        WindowBadge = string.Empty;
+        IsLoadingWindowThumbnail = false;
+        SyncHasSource();
     }
 
     [RelayCommand]
@@ -562,7 +694,7 @@ public partial class CaptureViewModel : ObservableObject
         {
             CaptureModeKind.AudioOnly => LocalizationService.GetString("Capture_Source_AudioOnly"),
             CaptureModeKind.Region when HasSource => LocalizationService.GetString("Capture_Preview_RegionPlaceholder"),
-            CaptureModeKind.Window when HasSource => ControllerSource,
+            CaptureModeKind.Window when HasSource => $"{SelectedWindow?.DisplayName} / {SelectedWindow?.Resolution}",
             CaptureModeKind.FullScreen when HasSource => $"{SelectedDisplay?.Name} / {SelectedDisplay?.Resolution}",
             _ => LocalizationService.GetString("Capture_Source_None")
         };
@@ -599,10 +731,16 @@ public partial class CaptureViewModel : ObservableObject
         }
         else if (SelectedMode == CaptureModeKind.Window)
         {
-            PreviewLabel = HasSource ? ControllerSource : LocalizationService.GetString("Capture_Preview_NoWindow");
+            PreviewLabel = HasSource
+                ? $"{SelectedWindow?.DisplayName} / {SelectedWindow?.Resolution}"
+                : LocalizationService.GetString("Capture_Preview_NoWindow");
             PreviewCaption = HasSource
                 ? LocalizationService.GetString("Capture_Preview_WindowCaption")
                 : LocalizationService.GetString("Capture_Preview_WindowPickerHint");
+            if (IsRecording)
+            {
+                PreviewCaption = LocalizationService.GetString("Capture_Preview_WindowRecordingHint");
+            }
             ShowPreviewAction = HasSource;
             PreviewActionLabel = LocalizationService.GetString("Capture_Action_ChangeWindow");
             EmptySourceTitle = LocalizationService.GetString("Capture_EmptyWindow_Title");

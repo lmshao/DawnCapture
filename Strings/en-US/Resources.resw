@@ -210,6 +210,13 @@
   <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>Select a display</value></data>
   <data name="AppStatus_ChoosingDisplay" xml:space="preserve"><value>Choosing a display</value></data>
   <data name="AppStatus_EnableOneAudio" xml:space="preserve"><value>Enable at least one audio source</value></data>
+  <data name="AppStatus_SelectWindow" xml:space="preserve"><value>Select a window</value></data>
+  <data name="AppStatus_ChoosingWindow" xml:space="preserve"><value>Choosing a window</value></data>
+  <data name="AppStatus_WindowClosed" xml:space="preserve"><value>The selected window was closed</value></data>
+  <data name="AppStatus_WindowRecordingHint" xml:space="preserve"><value>Do not resize the window during recording</value></data>
+  <data name="AppStatus_WindowResizedDuringRecording" xml:space="preserve"><value>Window size changed during recording; black bars or cropped edges may appear</value></data>
+  <data name="Failure_CreateWindowComposite" xml:space="preserve"><value>Unable to prepare the window capture frame buffer.</value></data>
+  <data name="Capture_Preview_WindowRecordingHint" xml:space="preserve"><value>Keep the window size unchanged while recording.</value></data>
   <data name="Failure_MicrophoneAccess" xml:space="preserve"><value>Microphone access was denied. Check Windows privacy settings.</value></data>
   <data name="Failure_MicrophoneDevice" xml:space="preserve"><value>Unable to open the microphone device (0x{0:X}).</value></data>
   <data name="Failure_SystemAudioDevice" xml:space="preserve"><value>Unable to open the system audio device (0x{0:X}).</value></data>

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using DawnCapture.Models;
+using Windows.Graphics.Capture;
 
 namespace DawnCapture.Services;
 
@@ -14,8 +15,11 @@ public interface IRecordingService
 
     event EventHandler<string>? RecordingFailed;
 
-    /// <summary>Lets the user pick a window and starts recording it. Returns whether recording started successfully.</summary>
-    Task<bool> PickAndStartWindowAsync(RecordingAudioOptions audioOptions);
+    /// <summary>Non-fatal recording notices such as resize warnings.</summary>
+    event EventHandler<string>? RecordingNotice;
+
+    /// <summary>Records the selected window. Returns whether recording started successfully.</summary>
+    Task<bool> StartWindowAsync(GraphicsCaptureItem item, RecordingAudioOptions audioOptions);
 
     /// <summary>Records the selected display. Returns whether recording started successfully.</summary>
     Task<bool> StartFullScreenAsync(MonitorDisplay display, RecordingAudioOptions audioOptions);

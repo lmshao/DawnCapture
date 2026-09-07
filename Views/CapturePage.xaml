@@ -289,41 +289,42 @@
                             </Border>
                         </Border>
 
-                        <!-- Window preview fills the outline, matching UX .window-preview -->
-                        <Border
-                            Background="{ThemeResource LayerFillColorDefaultBrush}"
-                            BorderBrush="{StaticResource DawnStrokeStrongBrush}"
-                            BorderThickness="1"
-                            CornerRadius="6"
+                        <!-- Window preview: thumbnail from selected capture target -->
+                        <Grid
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
                             Visibility="{x:Bind ViewModel.ShowWindowPreview, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="28" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-                                <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1">
-                                    <TextBlock
-                                        Margin="10,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="10"
-                                        Foreground="{StaticResource DawnTextMutedBrush}"
-                                        Text="{x:Bind ViewModel.PreviewLabel, Mode=OneWay}" />
-                                </Border>
-                                <Grid Grid.Row="1">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="0.22*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Background="{StaticResource DawnSurfaceMutedBrush}" BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,1,0" />
-                                    <Border
-                                        Grid.Column="1"
-                                        Margin="13"
-                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                        BorderBrush="{StaticResource DawnStrokeBrush}"
-                                        BorderThickness="1" />
-                                </Grid>
-                            </Grid>
-                        </Border>
+                            <Border
+                                Background="{StaticResource DawnSurfaceMutedBrush}"
+                                BorderBrush="{StaticResource DawnStrokeStrongBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                                <Image
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    Source="{x:Bind ViewModel.WindowThumbnail, Mode=OneWay}"
+                                    Stretch="Uniform" />
+                            </Border>
+                            <ProgressRing
+                                Width="32"
+                                Height="32"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsActive="{x:Bind ViewModel.IsLoadingWindowThumbnail, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.IsLoadingWindowThumbnail, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            <Border
+                                Margin="8"
+                                Padding="7,4"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"
+                                Background="#24282D"
+                                CornerRadius="4">
+                                <TextBlock
+                                    FontSize="10"
+                                    Foreground="White"
+                                    Text="{x:Bind ViewModel.WindowBadge, Mode=OneWay}" />
+                            </Border>
+                        </Grid>
                         </Grid>
                     </Border>
 
