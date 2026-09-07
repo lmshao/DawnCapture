@@ -35,6 +35,7 @@ public partial class CaptureViewModel : ObservableObject
         AudioQualityLabel = LocalizationService.GetString("Dock_AudioQuality");
         VideoCodecSummary = LocalizationService.GetString("Dock_Codec_Avc");
         AudioCodecSummary = LocalizationService.GetString("Dock_Codec_Audio");
+        _showCursor = _settingsService.Current.CaptureCursor;
         InitializeMonitors();
         ApplySelectedMode();
         UpdateHeaderCopy();
@@ -109,6 +110,17 @@ public partial class CaptureViewModel : ObservableObject
             Log.Info($"Microphone detection failed: {ex.Message}");
             return false;
         }
+    }
+
+    partial void OnShowCursorChanged(bool value)
+    {
+        if (_settingsService.Current.CaptureCursor == value)
+        {
+            return;
+        }
+
+        _settingsService.Current.CaptureCursor = value;
+        _settingsService.Save();
     }
 
     partial void OnMicrophoneEnabledChanged(bool value)

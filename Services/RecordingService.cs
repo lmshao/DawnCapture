@@ -512,6 +512,7 @@ public sealed class RecordingService : IRecordingService
 
             _session = _framePool.CreateCaptureSession(item);
             _session.IsCursorCaptureEnabled = _settings.Current.CaptureCursor;
+            Log.Debug($"Cursor capture enabled: {_session.IsCursorCaptureEnabled}");
             _framePool.FrameArrived += OnFrameArrived;
 
             _item = item;

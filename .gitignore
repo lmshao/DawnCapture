@@ -60,6 +60,9 @@ reasonix.toml
 # VS Code
 .vscode/
 
+# Cursor IDE local rules and agent state
+.cursor/
+
 # Windows thumbnail / OS junk
 Thumbs.db
 Desktop.ini
