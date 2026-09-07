@@ -12,6 +12,9 @@ public interface IRecordingService
 
     TimeSpan Elapsed { get; }
 
+    /// <summary>Smoothed audio peak level in the range 0..1 for UI metering.</summary>
+    double AudioMeterLevel { get; }
+
     event EventHandler<RecordingState>? StateChanged;
 
     event EventHandler<string>? RecordingFailed;
@@ -27,6 +30,9 @@ public interface IRecordingService
 
     /// <summary>Records the pre-selected screen region. Returns whether recording started successfully.</summary>
     Task<bool> StartRegionAsync(RectInt32 screenRegion, RecordingAudioOptions audioOptions);
+
+    /// <summary>Records microphone and/or system audio to an M4A file.</summary>
+    Task<bool> StartAudioOnlyAsync(RecordingAudioOptions audioOptions);
 
     Task StopAsync();
 

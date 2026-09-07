@@ -35,4 +35,14 @@ public partial class RecordingListItem : ObservableObject
 
     [ObservableProperty]
     private bool _hasThumbnail;
+
+    public bool ShowVideoThumbnail => !IsAudio && HasThumbnail;
+
+    public bool ShowVideoPlaceholder => !IsAudio && !HasThumbnail;
+
+    partial void OnHasThumbnailChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowVideoThumbnail));
+        OnPropertyChanged(nameof(ShowVideoPlaceholder));
+    }
 }

@@ -7,7 +7,8 @@ public enum RecordingSourceKind
 {
     Screen,
     Window,
-    Region
+    Region,
+    Audio
 }
 
 public sealed class RecordingSource

@@ -23,7 +23,11 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
     private Stopwatch? _clock;
     private volatile bool _flushMode;
 
+    private volatile float _peakLevel;
+
     public bool HasAudio { get; private set; }
+
+    public double PeakLevel => _peakLevel;
 
     public async Task StartAsync(RecordingAudioOptions options, Stopwatch clock, CancellationToken cancellationToken)
     {
@@ -180,6 +184,7 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
                     }
 
                     Buffer.BlockCopy(stereoScratch, 0, mixBuffer, 0, mixBuffer.Length);
+                    _peakLevel = Math.Max(_peakLevel * 0.7f, ComputePeak(stereoScratch));
                     _outputQueue.Enqueue((mixBuffer, nextChunkAt));
                     mixBuffer = new byte[AudioFormat.BytesPerChunk];
 
@@ -202,6 +207,21 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
                 _running = false;
             }
         }
+    }
+
+    private static float ComputePeak(short[] samples)
+    {
+        float peak = 0;
+        for (int i = 0; i < samples.Length; i++)
+        {
+            float normalized = Math.Abs(samples[i] / 32768f);
+            if (normalized > peak)
+            {
+                peak = normalized;
+            }
+        }
+
+        return peak;
     }
 
     private static void AppendDeviceFrames(WasapiCaptureDevice? device, MonoResampleBuffer? resampler)

@@ -128,6 +128,7 @@
   <data name="Capture_Preview_RegionCaption" xml:space="preserve"><value>Only the selected portion of the display will be recorded.</value></data>
   <data name="Capture_Preview_AudioSummary" xml:space="preserve"><value>Microphone + system audio</value></data>
   <data name="Capture_Preview_AudioLevels" xml:space="preserve"><value>Live levels / AAC-LC / M4A / 48 kHz stereo.</value></data>
+  <data name="Capture_Preview_AudioRecording" xml:space="preserve"><value>Recording live audio levels</value></data>
   <data name="Capture_Action_ChangeDisplay" xml:space="preserve"><value>Change display</value></data>
   <data name="Capture_Action_ChooseWindow" xml:space="preserve"><value>Choose window</value></data>
   <data name="Capture_Action_SelectRegion" xml:space="preserve"><value>Select region</value></data>
@@ -232,7 +233,16 @@
   <data name="Capture_Preview.Text" xml:space="preserve"><value>Preview</value></data>
   <data name="Capture_Mode_Audio" xml:space="preserve"><value>Audio only</value></data>
   <data name="Capture_AudioFormatDetail.Text" xml:space="preserve"><value>AAC-LC / M4A / 48 kHz stereo</value></data>
-  <data name="Capture_MicrophoneOn.Text" xml:space="preserve"><value>Microphone on</value></data>
+  <data name="Capture_MicrophoneOn" xml:space="preserve"><value>Microphone on</value></data>
+  <data name="Capture_SystemAudioUnavailable.Text" xml:space="preserve"><value>No playback device detected</value></data>
+  <data name="Capture_MicrophoneOff.Text" xml:space="preserve"><value>Microphone off</value></data>
+  <data name="Capture_SystemAudioOff.Text" xml:space="preserve"><value>System audio off</value></data>
+  <data name="Capture_Preview_AudioSummary_Mic" xml:space="preserve"><value>Microphone only</value></data>
+  <data name="Capture_Preview_AudioSummary_System" xml:space="preserve"><value>System audio only</value></data>
+  <data name="Capture_Preview_AudioSummary_None" xml:space="preserve"><value>No audio source selected</value></data>
+  <data name="Failure_NoAudioSamples" xml:space="preserve"><value>No audio samples were written. Check your audio devices and source toggles.</value></data>
+  <data name="AppStatus_NoAudioDevices" xml:space="preserve"><value>No audio input or playback device is available</value></data>
+  <data name="AppStatus_AudioRecordingHint" xml:space="preserve"><value>Recording audio</value></data>
   <data name="Capture_SystemAudioOn.Text" xml:space="preserve"><value>System audio on</value></data>
   <data name="Dock_SaveTo.Text" xml:space="preserve"><value>Save to</value></data>
   <data name="FolderFlyout_Open.Text" xml:space="preserve"><value>Open folder</value></data>

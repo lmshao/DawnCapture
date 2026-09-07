@@ -50,6 +50,7 @@
                         HorizontalAlignment="Right"
                         OffContent=""
                         OnContent=""
+                        IsEnabled="{x:Bind ViewModel.MicrophoneToggleEnabled, Mode=OneWay}"
                         IsOn="{x:Bind ViewModel.MicrophoneEnabled, Mode=TwoWay}" />
                 </Grid>
                 <TextBlock
@@ -65,8 +66,16 @@
                         HorizontalAlignment="Right"
                         OffContent=""
                         OnContent=""
+                        IsEnabled="{x:Bind ViewModel.SystemAudioToggleEnabled, Mode=OneWay}"
                         IsOn="{x:Bind ViewModel.SystemAudioEnabled, Mode=TwoWay}" />
                 </Grid>
+                <TextBlock
+                    Margin="8,-4,8,4"
+                    FontSize="11"
+                    Foreground="{StaticResource DawnTextFaintBrush}"
+                    Text="No playback device detected"
+                    Visibility="{x:Bind ViewModel.SystemAudioUnavailable, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                    x:Uid="Capture_SystemAudioUnavailable" />
                 <Grid
                     Height="39"
                     Padding="8,0"
@@ -126,11 +135,15 @@
                         BorderThickness="1"
                         CornerRadius="7">
                         <Grid>
-                        <StackPanel
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="18"
+                        <!-- Audio-only preview -->
+                        <Grid
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
                             Visibility="{x:Bind ViewModel.ShowAudioPreview, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="18">
                             <StackPanel HorizontalAlignment="Center" Spacing="4">
                                 <TextBlock HorizontalAlignment="Center" FontWeight="SemiBold" Text="{x:Bind ViewModel.AudioOnlyModeLabel, Mode=OneWay}" />
                                 <TextBlock
@@ -140,39 +153,50 @@
                                     x:Uid="Capture_AudioFormatDetail"
                                     Text="AAC-LC / M4A / 48 kHz stereo" />
                             </StackPanel>
-                            <StackPanel
-                                Width="430"
-                                MaxWidth="430"
-                                Height="82"
-                                HorizontalAlignment="Center"
-                                Orientation="Horizontal"
-                                Spacing="5">
-                                <Border Width="5" Height="20" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="34" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="56" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="30" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="67" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="44" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="77" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="38" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="59" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="31" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="72" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="48" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="26" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="52" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="36" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                                <Border Width="5" Height="21" CornerRadius="3" Background="{StaticResource DawnAccentBrush}" />
-                            </StackPanel>
+                            <Grid Height="82" HorizontalAlignment="Center">
+                                <ItemsRepeater
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Bottom"
+                                    ItemsSource="{x:Bind ViewModel.AudioWaveformBars, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Orientation="Horizontal" Spacing="5" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="models:AudioWaveformBar">
+                                            <Grid Width="5" Height="82">
+                                                <Border
+                                                    Width="5"
+                                                    VerticalAlignment="Bottom"
+                                                    CornerRadius="3"
+                                                    Background="{StaticResource DawnAccentBrush}"
+                                                    Height="{x:Bind Height, Mode=OneWay}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </Grid>
                             <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="8">
-                                <Border Padding="8,4" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="1" CornerRadius="12">
-                                    <TextBlock FontSize="10" Foreground="{StaticResource DawnTextMutedBrush}" x:Uid="Capture_MicrophoneOn" Text="Microphone on" />
+                                <Border
+                                    Padding="8,4"
+                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                    BorderBrush="{StaticResource DawnStrokeBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Visibility="{x:Bind ViewModel.ShowMicrophoneStatusBadge, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock FontSize="10" Foreground="{StaticResource DawnTextMutedBrush}" Text="{x:Bind ViewModel.MicrophoneStatusBadge, Mode=OneWay}" />
                                 </Border>
-                                <Border Padding="8,4" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="1" CornerRadius="12">
-                                    <TextBlock FontSize="10" Foreground="{StaticResource DawnTextMutedBrush}" x:Uid="Capture_SystemAudioOn" Text="System audio on" />
+                                <Border
+                                    Padding="8,4"
+                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                    BorderBrush="{StaticResource DawnStrokeBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Visibility="{x:Bind ViewModel.ShowSystemAudioStatusBadge, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock FontSize="10" Foreground="{StaticResource DawnTextMutedBrush}" Text="{x:Bind ViewModel.SystemAudioStatusBadge, Mode=OneWay}" />
                                 </Border>
                             </StackPanel>
-                        </StackPanel>
+                            </StackPanel>
+                        </Grid>
 
                         <StackPanel
                             HorizontalAlignment="Center"

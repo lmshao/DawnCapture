@@ -4,8 +4,8 @@ using DawnCapture.Helpers;
 using DawnCapture.Models;
 using DawnCapture.Services;
 using DawnCapture.Views;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -46,12 +46,36 @@ public partial class CaptureViewModel : ObservableObject
         UpdateHeaderCopy();
         UpdatePreviewCopy();
 
+        InitializeAudioDevices();
+        InitializeWaveformBars();
+    }
+
+    private void InitializeWaveformBars()
+    {
+        AudioWaveformBars.Clear();
+        foreach (double height in DefaultWaveformHeights)
+        {
+            AudioWaveformBars.Add(new AudioWaveformBar(height));
+        }
+    }
+
+    private void InitializeAudioDevices()
+    {
         if (!HasMicrophoneDevice)
         {
             MicrophoneEnabled = false;
             MicrophoneUnavailable = true;
             Log.Info("No microphone device detected; microphone option disabled.");
         }
+
+        if (!HasSystemAudioDevice)
+        {
+            SystemAudioEnabled = false;
+            SystemAudioUnavailable = true;
+            Log.Info("No playback device detected; system audio option disabled.");
+        }
+
+        UpdateAudioStatusBadges();
     }
 
     private readonly ISettingsService _settingsService;
@@ -61,6 +85,12 @@ public partial class CaptureViewModel : ObservableObject
     private bool _suppressSettingsSave;
     private CancellationTokenSource? _windowThumbnailCts;
     private CancellationTokenSource? _regionThumbnailCts;
+    private DispatcherTimer? _waveformTimer;
+    private double _waveformPhase;
+
+    private static readonly double[] DefaultWaveformHeights = AudioWaveformHelper.DefaultHeights;
+
+    public ObservableCollection<AudioWaveformBar> AudioWaveformBars { get; } = new();
 
     public ObservableCollection<MonitorDisplay> Monitors { get; } = new();
 
@@ -103,22 +133,28 @@ public partial class CaptureViewModel : ObservableObject
     [ObservableProperty]
     private bool _microphoneUnavailable;
 
-    /// <summary>True when at least one active audio capture endpoint exists.</summary>
-    public bool HasMicrophoneDevice { get; } = DetectMicrophoneDevice();
+    [ObservableProperty]
+    private bool _systemAudioUnavailable;
 
-    private static bool DetectMicrophoneDevice()
-    {
-        try
-        {
-            using var enumerator = new MMDeviceEnumerator();
-            return enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).Count > 0;
-        }
-        catch (Exception ex)
-        {
-            Log.Info($"Microphone detection failed: {ex.Message}");
-            return false;
-        }
-    }
+    [ObservableProperty]
+    private string _microphoneStatusBadge = string.Empty;
+
+    [ObservableProperty]
+    private string _systemAudioStatusBadge = string.Empty;
+
+    [ObservableProperty]
+    private bool _showMicrophoneStatusBadge;
+
+    [ObservableProperty]
+    private bool _showSystemAudioStatusBadge;
+
+    public bool HasMicrophoneDevice { get; } = AudioDeviceHelper.HasActiveCaptureDevice();
+
+    public bool HasSystemAudioDevice { get; } = AudioDeviceHelper.HasActiveRenderDevice();
+
+    public bool MicrophoneToggleEnabled => HasMicrophoneDevice;
+
+    public bool SystemAudioToggleEnabled => HasSystemAudioDevice;
 
     partial void OnShowCursorChanged(bool value)
     {
@@ -190,8 +226,67 @@ public partial class CaptureViewModel : ObservableObject
         if (value && !HasMicrophoneDevice)
         {
             MicrophoneEnabled = false;
-            MicrophoneUnavailable = true;
         }
+
+        UpdateAudioStatusBadges();
+        if (SelectedMode == CaptureModeKind.AudioOnly)
+        {
+            UpdatePreviewCopy();
+        }
+    }
+
+    partial void OnSystemAudioEnabledChanged(bool value)
+    {
+        if (value && !HasSystemAudioDevice)
+        {
+            SystemAudioEnabled = false;
+        }
+
+        UpdateAudioStatusBadges();
+        if (SelectedMode == CaptureModeKind.AudioOnly)
+        {
+            UpdatePreviewCopy();
+        }
+    }
+
+    private void UpdateAudioStatusBadges()
+    {
+        ShowMicrophoneStatusBadge = HasMicrophoneDevice;
+        ShowSystemAudioStatusBadge = HasSystemAudioDevice;
+        MicrophoneStatusBadge = MicrophoneEnabled
+            ? LocalizationService.GetString("Capture_MicrophoneOn")
+            : LocalizationService.GetString("Capture_MicrophoneOff");
+        SystemAudioStatusBadge = SystemAudioEnabled
+            ? LocalizationService.GetString("Capture_SystemAudioOn")
+            : LocalizationService.GetString("Capture_SystemAudioOff");
+    }
+
+    private string BuildAudioSourceSummary()
+    {
+        bool mic = MicrophoneEnabled && HasMicrophoneDevice;
+        bool sys = SystemAudioEnabled && HasSystemAudioDevice;
+        if (mic && sys)
+        {
+            return LocalizationService.GetString("Capture_Preview_AudioSummary");
+        }
+
+        if (mic)
+        {
+            return LocalizationService.GetString("Capture_Preview_AudioSummary_Mic");
+        }
+
+        if (sys)
+        {
+            return LocalizationService.GetString("Capture_Preview_AudioSummary_System");
+        }
+
+        return LocalizationService.GetString("Capture_Preview_AudioSummary_None");
+    }
+
+    private bool HasAnyAudioSourceEnabled()
+    {
+        return (MicrophoneEnabled && HasMicrophoneDevice)
+            || (SystemAudioEnabled && HasSystemAudioDevice);
     }
 
     [ObservableProperty]
@@ -422,6 +517,76 @@ public partial class CaptureViewModel : ObservableObject
         ShowController = value;
         UpdateHeaderCopy();
         UpdatePreviewCopy();
+
+        if (value && SelectedMode == CaptureModeKind.AudioOnly)
+        {
+            StartWaveformAnimation();
+        }
+        else if (!value)
+        {
+            StopWaveformAnimation();
+        }
+    }
+
+    partial void OnIsPausedChanged(bool value)
+    {
+        UpdatePreviewCopy();
+    }
+
+    private void StartWaveformAnimation()
+    {
+        if (SelectedMode != CaptureModeKind.AudioOnly)
+        {
+            return;
+        }
+
+        _waveformPhase = 0;
+        _waveformTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+        _waveformTimer.Tick -= OnWaveformTimerTick;
+        _waveformTimer.Tick += OnWaveformTimerTick;
+        _waveformTimer.Start();
+    }
+
+    private void StopWaveformAnimation()
+    {
+        if (_waveformTimer is not null)
+        {
+            _waveformTimer.Tick -= OnWaveformTimerTick;
+            _waveformTimer.Stop();
+        }
+
+        ResetWaveformBars();
+    }
+
+    private void ResetWaveformBars()
+    {
+        for (int i = 0; i < AudioWaveformBars.Count && i < DefaultWaveformHeights.Length; i++)
+        {
+            AudioWaveformBars[i].Height = DefaultWaveformHeights[i];
+        }
+    }
+
+    private void OnWaveformTimerTick(object? sender, object e)
+    {
+        if (SelectedMode != CaptureModeKind.AudioOnly || !IsRecording)
+        {
+            StopWaveformAnimation();
+            return;
+        }
+
+        double peak = IsPaused ? 0 : _recordingService.AudioMeterLevel;
+        _waveformPhase += 0.22;
+
+        for (int i = 0; i < AudioWaveformBars.Count; i++)
+        {
+            double wobble = 0.4 + (0.6 * Math.Abs(Math.Sin(_waveformPhase + (i * 0.65))));
+            double target = IsPaused
+                ? DefaultWaveformHeights[i] * 0.35
+                : Math.Max(8, (peak * 77 * wobble) + (peak > 0.02 ? 0 : DefaultWaveformHeights[i] * 0.18));
+
+            AudioWaveformBar bar = AudioWaveformBars[i];
+            bar.Height += (target - bar.Height) * 0.35;
+        }
     }
 
     [RelayCommand]
@@ -432,7 +597,13 @@ public partial class CaptureViewModel : ObservableObject
     {
         if (_recordingService.State == RecordingState.Idle)
         {
-            if (SelectedMode != CaptureModeKind.AudioOnly && !MicrophoneEnabled && !SystemAudioEnabled)
+            if (!HasMicrophoneDevice && !HasSystemAudioDevice)
+            {
+                _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_NoAudioDevices");
+                return;
+            }
+
+            if (!HasAnyAudioSourceEnabled())
             {
                 _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_EnableOneAudio");
                 return;
@@ -489,7 +660,9 @@ public partial class CaptureViewModel : ObservableObject
                     await _recordingService.StartRegionAsync(SelectedRegion.ScreenBounds, audioOptions);
                     break;
                 case CaptureModeKind.AudioOnly:
-                    // Audio-only recording is not implemented yet.
+                    Log.Info($"Recording requested: audio-only, Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}");
+                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_AudioRecordingHint");
+                    await _recordingService.StartAudioOnlyAsync(audioOptions);
                     break;
             }
         }
@@ -503,8 +676,8 @@ public partial class CaptureViewModel : ObservableObject
     {
         return new RecordingAudioOptions
         {
-            EnableMicrophone = MicrophoneEnabled,
-            EnableSystemAudio = SystemAudioEnabled,
+            EnableMicrophone = MicrophoneEnabled && HasMicrophoneDevice,
+            EnableSystemAudio = SystemAudioEnabled && HasSystemAudioDevice,
             BitrateKbps = RecordingAudioOptions.BitrateFromQualityIndex(
                 _settingsService.Current.AudioQualityIndex)
         };
@@ -634,7 +807,14 @@ public partial class CaptureViewModel : ObservableObject
     {
         ClearSelectedRegion();
 
-        var target = new RegionCaptureTarget(screenBounds);
+        var normalized = RegionBoundsHelper.NormalizeForEncoding(screenBounds);
+        if (normalized.Width != screenBounds.Width || normalized.Height != screenBounds.Height)
+        {
+            Log.Info(
+                $"Region normalized for encoding: {screenBounds.Width}x{screenBounds.Height} -> {normalized.Width}x{normalized.Height}");
+        }
+
+        var target = new RegionCaptureTarget(normalized);
         SelectedRegion = target;
         Log.Info($"Region committed: {target.Summary}");
 
@@ -647,7 +827,7 @@ public partial class CaptureViewModel : ObservableObject
 
         try
         {
-            var thumbnail = await RegionPreviewHelper.CaptureThumbnailAsync(screenBounds, cancellationToken: cts.Token);
+            var thumbnail = await RegionPreviewHelper.CaptureThumbnailAsync(normalized, cancellationToken: cts.Token);
             if (!cts.IsCancellationRequested && ReferenceEquals(SelectedRegion, target))
             {
                 RegionThumbnail = thumbnail;
@@ -812,14 +992,19 @@ public partial class CaptureViewModel : ObservableObject
 
         if (SelectedMode == CaptureModeKind.AudioOnly)
         {
-            PreviewLabel = LocalizationService.GetString("Capture_Preview_AudioSummary");
-            PreviewCaption = LocalizationService.GetString("Capture_Preview_AudioLevels");
+            PreviewLabel = BuildAudioSourceSummary();
+            PreviewCaption = IsRecording
+                ? IsPaused
+                    ? LocalizationService.GetString("Status_Paused")
+                    : LocalizationService.GetString("Capture_Preview_AudioRecording")
+                : LocalizationService.GetString("Capture_Preview_AudioLevels");
             ShowPreviewAction = false;
             ShowMonitorGrid = false;
             ShowDisplayPreview = false;
             ShowEmptySource = false;
             ShowRegionPreview = false;
             ShowWindowPreview = false;
+            UpdateAudioStatusBadges();
             return;
         }
 

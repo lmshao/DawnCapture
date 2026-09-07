@@ -20,4 +20,7 @@ public interface IAudioCapturePipeline : IDisposable
     void BeginFlush();
 
     MediaStreamSample? TryCreateSample();
+
+    /// <summary>Smoothed audio peak level in the range 0..1.</summary>
+    double PeakLevel { get; }
 }

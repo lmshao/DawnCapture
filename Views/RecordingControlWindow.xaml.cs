@@ -107,6 +107,14 @@ public sealed partial class RecordingControlWindow : Window
         Activate();
     }
 
+    public void ShowRecordingFloating(double dpiScale = 1.0)
+    {
+        _dpiScale = dpiScale;
+        ShowRecording();
+        PositionFloatingTopLeft();
+        Activate();
+    }
+
     public void CloseWindow()
     {
         try
@@ -150,6 +158,20 @@ public sealed partial class RecordingControlWindow : Window
         {
             X = bounds.X + ToPixels(marginDip),
             Y = bounds.Y + ToPixels(marginDip),
+            Width = ToPixels(WindowWidthDip),
+            Height = ToPixels(WindowHeightDip)
+        });
+    }
+
+    private void PositionFloatingTopLeft()
+    {
+        var screen = ScreenBoundsHelper.GetVirtualScreenBounds();
+        const int marginDip = 12;
+
+        AppWindow.MoveAndResize(new RectInt32
+        {
+            X = screen.X + ToPixels(marginDip),
+            Y = screen.Y + ToPixels(marginDip),
             Width = ToPixels(WindowWidthDip),
             Height = ToPixels(WindowHeightDip)
         });

@@ -57,9 +57,11 @@ public sealed class RecordingService : IRecordingService
     private MediaTranscoder? _transcoder;
     private IRandomAccessStream? _outputStream;
     private Task? _transcodeTask;
+    private MediaEncodingProfile? _audioEncodingProfile;
 
     private long _frameDuration = 333_333;
     private long _framesWritten;
+    private long _audioSamplesWritten;
     private int _startingStreamCount;
     private RectInt32? _cropRect;
     private RegionMarkerWindow? _regionMarker;
@@ -106,6 +108,8 @@ public sealed class RecordingService : IRecordingService
     }
 
     public TimeSpan Elapsed => _stopwatch.Elapsed;
+
+    public double AudioMeterLevel => _audioPipeline?.PeakLevel ?? 0;
 
     public event EventHandler<RecordingState>? StateChanged;
 
@@ -256,14 +260,82 @@ public sealed class RecordingService : IRecordingService
                 return false;
             }
 
-            _regionMarker = new RegionMarkerWindow(screenRegion);
-            AttachRecordingControlWindow(screenRegion, dpiScale);
+            var recordedRegion = new RectInt32
+            {
+                X = monitorBounds.Value.X + crop.X,
+                Y = monitorBounds.Value.Y + crop.Y,
+                Width = crop.Width,
+                Height = crop.Height
+            };
+            _regionMarker = new RegionMarkerWindow(recordedRegion);
+            AttachRecordingControlWindow(recordedRegion, dpiScale);
             MinimizeMainWindow();
             return true;
         }
         catch (Exception ex)
         {
             Log.Error("StartRegionAsync failed", ex);
+            CleanupCapture();
+            State = RecordingState.Idle;
+            RaiseFailed(ex.Message);
+            return false;
+        }
+    }
+
+    public async Task<bool> StartAudioOnlyAsync(RecordingAudioOptions audioOptions)
+    {
+        if (State != RecordingState.Idle)
+        {
+            return false;
+        }
+
+        if (!audioOptions.HasAnySource)
+        {
+            RaiseFailed(LocalizationService.GetString("AppStatus_EnableOneAudio"));
+            return false;
+        }
+
+        _audioOptions = audioOptions;
+        _currentSourceKind = RecordingSourceKind.Audio;
+
+        try
+        {
+            Log.Debug(
+                $"Audio-only recording: Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}, Bitrate={audioOptions.BitrateKbps}kbps");
+
+            if (!await PrepareAudioOnlyMediaObjectsAsync(audioOptions))
+            {
+                State = RecordingState.Idle;
+                return false;
+            }
+
+            _audioCancellation = new CancellationTokenSource();
+            _audioPipeline = new AudioCapturePipeline();
+
+            _stopwatch.Restart();
+            _isRecording = true;
+
+            try
+            {
+                await _audioPipeline.StartAsync(_audioOptions, _stopwatch, _audioCancellation.Token);
+            }
+            catch (Exception ex)
+            {
+                _isRecording = false;
+                CleanupCapture();
+                State = RecordingState.Idle;
+                RaiseFailed(ex.Message);
+                return false;
+            }
+
+            StartAudioOnlyTranscode();
+            State = RecordingState.Recording;
+            AttachAudioRecordingControlWindow();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error("StartAudioOnlyAsync failed", ex);
             CleanupCapture();
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
@@ -299,6 +371,8 @@ public sealed class RecordingService : IRecordingService
         string? completedOutputPath = _currentOutputPath;
         TimeSpan recordedDuration = _stopwatch.Elapsed;
         RecordingSourceKind sourceKind = _currentSourceKind;
+        long framesWritten = _framesWritten;
+        long audioSamplesWritten = _audioSamplesWritten;
 
         _isRecording = false;
         _isStopping = false;
@@ -306,10 +380,21 @@ public sealed class RecordingService : IRecordingService
         State = RecordingState.Idle;
         RestoreMainWindow();
 
-        Log.Info($"Recording stopped: {_framesWritten} frames written.");
-        if (_framesWritten == 0)
+        bool isAudioOnly = sourceKind == RecordingSourceKind.Audio;
+        if (isAudioOnly)
         {
-            RaiseFailed(LocalizationService.GetString("Failure_NoFrames"));
+            Log.Info($"Audio-only recording stopped: {audioSamplesWritten} audio samples written.");
+        }
+        else
+        {
+            Log.Info($"Recording stopped: {framesWritten} frames written.");
+        }
+
+        bool hasOutput = isAudioOnly ? audioSamplesWritten > 0 : framesWritten > 0;
+        if (!hasOutput)
+        {
+            RaiseFailed(LocalizationService.GetString(
+                isAudioOnly ? "Failure_NoAudioSamples" : "Failure_NoFrames"));
         }
         else
         {
@@ -338,14 +423,18 @@ public sealed class RecordingService : IRecordingService
                 outputPath,
                 new DateTimeOffset(recordedUtc),
                 duration,
-                RecordingMediaKind.Video,
+                sourceKind == RecordingSourceKind.Audio ? RecordingMediaKind.Audio : RecordingMediaKind.Video,
                 sourceKind,
                 new RecordingEncodingInfo
                 {
-                    VideoCodec = RecordingSettingsHelper.VideoCodecLabel(_settings.Current.VideoCodecIndex),
+                    VideoCodec = sourceKind == RecordingSourceKind.Audio
+                        ? null
+                        : RecordingSettingsHelper.VideoCodecLabel(_settings.Current.VideoCodecIndex),
                     AudioCodec = _audioOptions.HasAnySource ? "AAC" : null,
-                    FrameRate = _settings.Current.FrameRate,
-                    BitrateKbps = _settings.Current.BitrateKbps
+                    FrameRate = sourceKind == RecordingSourceKind.Audio ? null : _settings.Current.FrameRate,
+                    BitrateKbps = sourceKind == RecordingSourceKind.Audio
+                        ? _audioOptions.BitrateKbps
+                        : _settings.Current.BitrateKbps
                 });
 
             if (_settings.Current.NotificationEnabled)
@@ -586,6 +675,85 @@ public sealed class RecordingService : IRecordingService
         }
     }
 
+    private async Task<bool> PrepareAudioOnlyMediaObjectsAsync(RecordingAudioOptions audioOptions)
+    {
+        Log.Debug(
+            $"Creating audio-only media objects: AudioMic={audioOptions.EnableMicrophone}, AudioSystem={audioOptions.EnableSystemAudio}, AudioBitrate={audioOptions.BitrateKbps}Kbps");
+        try
+        {
+            _framesWritten = 0;
+            _audioSamplesWritten = 0;
+            _isPaused = false;
+            _closedEvent.Reset();
+
+            var pcmProperties = AudioEncodingProperties.CreatePcm(
+                (uint)audioOptions.SampleRate,
+                (uint)audioOptions.Channels,
+                (uint)AudioFormat.BitsPerSample);
+            var audioDescriptor = new AudioStreamDescriptor(pcmProperties);
+
+            _mediaStreamSource = new MediaStreamSource(audioDescriptor);
+            _startingStreamCount = 0;
+            _mediaStreamSource.BufferTime = TimeSpan.Zero;
+            _mediaStreamSource.Starting += OnMediaStreamSourceStarting;
+            _mediaStreamSource.SampleRequested += OnMediaStreamSourceSampleRequested;
+
+            var profile = MediaEncodingProfile.CreateM4a(AudioEncodingQuality.High);
+            profile.Audio = AudioEncodingProperties.CreateAac(
+                (uint)audioOptions.SampleRate,
+                (uint)audioOptions.Channels,
+                (uint)(audioOptions.BitrateKbps * 1000));
+            _audioEncodingProfile = profile;
+
+            var folder = OutputFolderHelper.Resolve(_settings.Current.OutputFolder);
+            Directory.CreateDirectory(folder);
+            var outputPath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}.m4a");
+            _currentOutputPath = outputPath;
+
+            File.Create(outputPath).Dispose();
+            var outputFile = await StorageFile.GetFileFromPathAsync(outputPath);
+            _outputStream = await outputFile.OpenAsync(FileAccessMode.ReadWrite);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            RaiseFailed(ex.Message);
+            return false;
+        }
+    }
+
+    private void StartAudioOnlyTranscode()
+    {
+        if (_mediaStreamSource is null || _outputStream is null || _audioEncodingProfile is null)
+        {
+            Log.Error("StartAudioOnlyTranscode called before audio media objects were prepared.");
+            RaiseFailed(LocalizationService.GetString("Failure_NoAudioSamples"));
+            return;
+        }
+
+        _transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
+
+        _transcodeTask = Task.Run(async () =>
+        {
+            var prepared = await _transcoder.PrepareMediaStreamSourceTranscodeAsync(
+                _mediaStreamSource,
+                _outputStream,
+                _audioEncodingProfile);
+            await prepared.TranscodeAsync();
+        });
+
+        _ = _transcodeTask.ContinueWith(
+            t =>
+            {
+                if (t.IsFaulted && t.Exception is not null)
+                {
+                    RaiseFailed(t.Exception.GetBaseException().Message);
+                }
+            },
+            TaskScheduler.Default);
+    }
+
     private void EnsureDevice()
     {
         if (_winrtDevice is not null)
@@ -721,6 +889,11 @@ public sealed class RecordingService : IRecordingService
         if (args.Request.StreamDescriptor is AudioStreamDescriptor)
         {
             args.Request.Sample = _audioPipeline?.TryCreateSample();
+            if (args.Request.Sample is not null)
+            {
+                _audioSamplesWritten++;
+            }
+
             return;
         }
 
@@ -1001,14 +1174,8 @@ public sealed class RecordingService : IRecordingService
 
         int x = Math.Clamp(region.X, 0, maxX);
         int y = Math.Clamp(region.Y, 0, maxY);
-        int width = Math.Clamp(region.Width, 2, itemSize.Width - x);
-        int height = Math.Clamp(region.Height, 2, itemSize.Height - y);
-
-        // H.264 encoders generally require even dimensions.
-        width &= ~1;
-        height &= ~1;
-        width = Math.Max(2, width);
-        height = Math.Max(2, height);
+        int width = RegionBoundsHelper.NormalizeDimension(Math.Clamp(region.Width, RegionBoundsHelper.MinimumEncodeSize, itemSize.Width - x));
+        int height = RegionBoundsHelper.NormalizeDimension(Math.Clamp(region.Height, RegionBoundsHelper.MinimumEncodeSize, itemSize.Height - y));
 
         return new RectInt32
         {
@@ -1206,6 +1373,7 @@ public sealed class RecordingService : IRecordingService
 
         _transcodeTask = null;
         _transcoder = null;
+        _audioEncodingProfile = null;
         _currentOutputPath = null;
 
         _cropRect = null;
@@ -1410,6 +1578,65 @@ public sealed class RecordingService : IRecordingService
         };
 
         control.ShowRecordingTopLeft(bounds, dpiScale);
+    }
+
+    private void AttachAudioRecordingControlWindow()
+    {
+        var control = new RecordingControlWindow(() => Elapsed);
+        _controlWindow = control;
+
+        control.StopRequested += async () =>
+        {
+            try
+            {
+                await StopAsync();
+            }
+            finally
+            {
+                control.CloseWindow();
+            }
+        };
+
+        control.PauseRequested += () =>
+        {
+            if (State == RecordingState.Recording)
+            {
+                Pause();
+                control.ShowPaused();
+            }
+            else if (State == RecordingState.Paused)
+            {
+                Resume();
+                control.ShowRecording();
+            }
+        };
+
+        control.Closed += (_, _) =>
+        {
+            if (State is RecordingState.Recording or RecordingState.Paused)
+            {
+                _ = StopAsync();
+            }
+        };
+
+        control.ShowRecordingFloating(GetMainWindowDpiScale());
+    }
+
+    private static double GetMainWindowDpiScale()
+    {
+        try
+        {
+            if (App.MainWindow?.Content is FrameworkElement root)
+            {
+                return root.XamlRoot?.RasterizationScale ?? 1.0;
+            }
+        }
+        catch
+        {
+            // Fall back to 100% scaling.
+        }
+
+        return 1.0;
     }
 
     private static void MinimizeMainWindow()
