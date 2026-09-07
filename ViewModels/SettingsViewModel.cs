@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.UI.Xaml;
+using System.Threading.Tasks;
 
 namespace DawnCapture.ViewModels;
 
@@ -25,6 +26,8 @@ public partial class SettingsViewModel : ObservableObject
         _captureCursor = _settingsService.Current.CaptureCursor;
         _selectedLanguage = Languages.FirstOrDefault(
             option => option.Code == _settingsService.Current.Language) ?? Languages[0];
+
+        _mainViewModel.OutputFolderChanged += (_, path) => OutputFolder = path;
     }
 
     public IReadOnlyList<LanguageOption> Languages { get; } =
@@ -67,8 +70,12 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnOutputFolderChanged(string value)
     {
         OutputFolderDisplay = PathDisplayHelper.MiddleEllipsis(value, 44);
+        if (string.Equals(value, _settingsService.Current.OutputFolder, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         PersistSettings();
-        _mainViewModel.RefreshStorage();
     }
 
     partial void OnFrameRateIndexChanged(int value) => PersistSettings();
@@ -94,9 +101,25 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void BrowseFolder()
+    private async Task BrowseFolderAsync()
     {
-        // UI shell: folder picker dialog in a later step.
+        string? pickedPath = await OutputFolderHelper.PickFolderAsync(OutputFolder);
+        if (pickedPath is null)
+        {
+            return;
+        }
+
+        var result = await _mainViewModel.ChangeOutputFolderAsync(pickedPath);
+        if (result.ErrorMessage is not null)
+        {
+            await DialogHelper.ShowErrorAsync(result.ErrorMessage);
+            return;
+        }
+
+        if (!result.IsUnchanged)
+        {
+            OutputFolder = _mainViewModel.OutputFolderFull;
+        }
     }
 
     private void PersistSettings()

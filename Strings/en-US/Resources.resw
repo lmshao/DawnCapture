@@ -272,4 +272,9 @@
   <data name="Settings_Audio_128.Content" xml:space="preserve"><value>Standard / 128 kbps</value></data>
   <data name="Settings_Audio_192.Content" xml:space="preserve"><value>High / 192 kbps</value></data>
   <data name="Settings_Audio_256.Content" xml:space="preserve"><value>Best / 256 kbps</value></data>
+  <data name="OutputFolder_DefaultSummary" xml:space="preserve"><value>Videos / DawnCapture</value></data>
+  <data name="OutputFolder_InvalidPath" xml:space="preserve"><value>That folder path is not valid.</value></data>
+  <data name="OutputFolder_NotWritable" xml:space="preserve"><value>DawnCapture cannot write to that folder. Choose a different location or check permissions.</value></data>
+  <data name="OutputFolder_OpenFailed" xml:space="preserve"><value>Unable to open the output folder in File Explorer.</value></data>
+  <data name="OutputFolder_SyncFailed" xml:space="preserve"><value>The folder was saved, but the recordings library could not be refreshed.</value></data>
 </root>

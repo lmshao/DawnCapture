@@ -364,8 +364,8 @@
                 <Button x:Name="SaveToButton" MinWidth="220" HorizontalAlignment="Left" HorizontalContentAlignment="Stretch">
                     <Button.Flyout>
                         <MenuFlyout x:Name="FolderFlyout">
-                            <MenuFlyoutItem Text="Open folder" x:Uid="FolderFlyout_Open" />
-                            <MenuFlyoutItem Text="Change folder" x:Uid="FolderFlyout_Change" />
+                            <MenuFlyoutItem Command="{x:Bind ViewModel.OpenOutputFolderCommand}" x:Uid="FolderFlyout_Open" Text="Open folder" />
+                            <MenuFlyoutItem Command="{x:Bind ViewModel.ChangeOutputFolderCommand}" x:Uid="FolderFlyout_Change" Text="Change folder" />
                         </MenuFlyout>
                     </Button.Flyout>
                     <Grid ColumnSpacing="12">

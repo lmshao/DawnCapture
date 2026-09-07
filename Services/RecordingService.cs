@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DawnCapture.Models;
 using DawnCapture.Services.Audio;
 using DawnCapture.Views;
+using DawnCapture.Helpers;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Vortice.Direct3D;
@@ -614,9 +615,7 @@ public sealed class RecordingService : IRecordingService
                     (uint)(audioOptions.BitrateKbps * 1000));
             }
 
-            var folder = string.IsNullOrWhiteSpace(_settings.Current.OutputFolder)
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "DawnCapture")
-                : _settings.Current.OutputFolder;
+            var folder = OutputFolderHelper.Resolve(_settings.Current.OutputFolder);
 
             Directory.CreateDirectory(folder);
             var outputPath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}.mp4");

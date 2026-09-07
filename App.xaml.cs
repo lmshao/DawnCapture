@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.DependencyInjection;
+using DawnCapture.Helpers;
 using DawnCapture.Services;
 using DawnCapture.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,7 +73,7 @@ public partial class App : Application
 
             var settingsService = Ioc.Default.GetRequiredService<ISettingsService>();
             var catalogService = Ioc.Default.GetRequiredService<IRecordingCatalogService>();
-            await catalogService.SyncLibraryAsync(settingsService.Current.OutputFolder);
+            await catalogService.SyncLibraryAsync(OutputFolderHelper.Resolve(settingsService));
 
             MainWindow = Ioc.Default.GetRequiredService<MainWindow>();
             MainWindow.Activate();

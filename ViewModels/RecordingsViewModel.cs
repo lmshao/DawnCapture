@@ -23,19 +23,23 @@ public partial class RecordingsViewModel : ObservableObject
     private readonly IRecordingLibraryService _libraryService;
     private readonly IRecordingCatalogService _catalogService;
     private readonly IRecordingService _recordingService;
+    private readonly MainViewModel _mainViewModel;
     private List<RecordingListItem> _allRecordings = [];
     private CancellationTokenSource? _thumbnailLoadCts;
 
     public RecordingsViewModel(
         IRecordingLibraryService libraryService,
         IRecordingCatalogService catalogService,
-        IRecordingService recordingService)
+        IRecordingService recordingService,
+        MainViewModel mainViewModel)
     {
         _libraryService = libraryService;
         _catalogService = catalogService;
         _recordingService = recordingService;
+        _mainViewModel = mainViewModel;
         Recordings = new ObservableCollection<RecordingListItem>();
         _recordingService.StateChanged += OnRecordingStateChanged;
+        _mainViewModel.OutputFolderChanged += (_, _) => _ = RefreshAsync();
     }
 
     public ObservableCollection<RecordingListItem> Recordings { get; }
@@ -148,20 +152,17 @@ public partial class RecordingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OpenFolder()
+    private async Task OpenFolderAsync()
     {
         string folder = _libraryService.GetOutputFolder();
         try
         {
-            Directory.CreateDirectory(folder);
-            Process.Start(new ProcessStartInfo("explorer.exe", folder)
-            {
-                UseShellExecute = true
-            });
+            OutputFolderHelper.OpenInExplorer(folder);
         }
         catch (Exception ex)
         {
             Log.Error($"Failed to open recordings folder '{folder}'", ex);
+            await DialogHelper.ShowErrorAsync(LocalizationService.GetString("OutputFolder_OpenFailed"));
         }
     }
 
@@ -253,24 +254,7 @@ public partial class RecordingsViewModel : ObservableObject
 
     private static async Task ShowErrorAsync(string message)
     {
-        if (App.MainWindow?.Content?.XamlRoot is not { } xamlRoot)
-        {
-            return;
-        }
-
-        var dialog = new ContentDialog
-        {
-            XamlRoot = xamlRoot,
-            Title = LocalizationService.GetString("Recordings_ErrorTitle"),
-            Content = new TextBlock
-            {
-                Text = message,
-                TextWrapping = TextWrapping.WrapWholeWords
-            },
-            CloseButtonText = LocalizationService.GetString("Recordings_Ok")
-        };
-
-        await dialog.ShowAsync();
+        await DialogHelper.ShowErrorAsync(message);
     }
 
     private void OnRecordingStateChanged(object? sender, RecordingState state)

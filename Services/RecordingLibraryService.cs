@@ -161,15 +161,7 @@ public sealed class RecordingLibraryService : IRecordingLibraryService
 
     private string ResolveOutputFolder()
     {
-        string folder = _settingsService.Current.OutputFolder;
-        if (string.IsNullOrWhiteSpace(folder))
-        {
-            folder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
-                "DawnCapture");
-        }
-
-        return folder;
+        return OutputFolderHelper.Resolve(_settingsService);
     }
 
     private static async Task<RecordingListItem?> TryCreateListItemAsync(RecordingCatalogEntry entry)

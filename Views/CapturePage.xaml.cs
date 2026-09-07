@@ -44,7 +44,6 @@ public sealed partial class CapturePage : Page
         };
 
         ViewModel.RecordButtonLabel = LocalizationService.GetString("Dock_StartRecording");
-        SaveToButton.Click += (_, _) => FolderFlyout.ShowAt(SaveToButton);
         UpdateModeSelection();
         UpdateOutlineBrush();
     }

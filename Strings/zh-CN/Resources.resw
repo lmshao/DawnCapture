@@ -272,4 +272,9 @@
   <data name="Settings_Audio_128.Content" xml:space="preserve"><value>标准 / 128 kbps</value></data>
   <data name="Settings_Audio_192.Content" xml:space="preserve"><value>高 / 192 kbps</value></data>
   <data name="Settings_Audio_256.Content" xml:space="preserve"><value>最佳 / 256 kbps</value></data>
+  <data name="OutputFolder_DefaultSummary" xml:space="preserve"><value>视频 / DawnCapture</value></data>
+  <data name="OutputFolder_InvalidPath" xml:space="preserve"><value>该文件夹路径无效。</value></data>
+  <data name="OutputFolder_NotWritable" xml:space="preserve"><value>DawnCapture 无法写入该文件夹。请选择其他位置或检查权限。</value></data>
+  <data name="OutputFolder_OpenFailed" xml:space="preserve"><value>无法在文件资源管理器中打开输出文件夹。</value></data>
+  <data name="OutputFolder_SyncFailed" xml:space="preserve"><value>文件夹已保存，但录像库未能刷新。</value></data>
 </root>

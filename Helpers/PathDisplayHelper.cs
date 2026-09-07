@@ -31,11 +31,11 @@ public static class PathDisplayHelper
         return compact.Length <= maxLength ? compact : root + "…\\" + parts[^1];
     }
 
-    public static string CompactFolderSummary(string path, string defaultFolder)
+    public static string CompactFolderSummary(string path, string defaultFolder, string defaultLabel)
     {
         if (string.Equals(path, defaultFolder, StringComparison.OrdinalIgnoreCase))
         {
-            return "Videos / DawnCapture";
+            return defaultLabel;
         }
 
         return MiddleEllipsis(path, 38);

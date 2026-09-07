@@ -30,6 +30,7 @@ public partial class CaptureViewModel : ObservableObject
         _recordingService.RecordingFailed += OnRecordingFailed;
 
         DestinationFolderSummary = _mainViewModel.OutputFolderSummary;
+        _mainViewModel.PropertyChanged += OnMainViewModelPropertyChanged;
         RecordButtonLabel = LocalizationService.GetString("Dock_StartRecording");
         VideoQualityLabel = LocalizationService.GetString("Dock_Quality");
         AudioQualityLabel = LocalizationService.GetString("Dock_AudioQuality");
@@ -445,6 +446,26 @@ public partial class CaptureViewModel : ObservableObject
     private void ChooseSource()
     {
         // UI shell only.
+    }
+
+    [RelayCommand]
+    private void OpenOutputFolder()
+    {
+        _mainViewModel.OpenOutputFolderCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private async Task ChangeOutputFolderAsync()
+    {
+        await _mainViewModel.ChangeOutputFolderCommand.ExecuteAsync(null);
+    }
+
+    private void OnMainViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.OutputFolderSummary))
+        {
+            DestinationFolderSummary = _mainViewModel.OutputFolderSummary;
+        }
     }
 
     private void UpdateHeaderCopy()
