@@ -317,7 +317,8 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         {
             Log.Debug($"Failed to cleanup legacy sidecars in '{folder}': {ex.Message}");
         }
-    }    private static IEnumerable<string> EnumerateCandidateFiles(string folder, IEnumerable<string> knownPaths)
+    }
+    private static IEnumerable<string> EnumerateCandidateFiles(string folder, IEnumerable<string> knownPaths)
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (string path in knownPaths)

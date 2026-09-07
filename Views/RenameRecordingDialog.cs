@@ -22,19 +22,22 @@ public sealed class RenameRecordingDialog : ContentDialog
     {
         _filePath = filePath;
 
-        _nameBox = new TextBox {
+        _nameBox = new TextBox
+        {
             Text = currentName,
             MaxLength = 200
         };
 
-        _errorText = new TextBlock {
+        _errorText = new TextBlock
+        {
             Foreground = (Brush)Application.Current.Resources["DawnDangerBrush"],
             FontSize = 12,
             Visibility = Visibility.Collapsed,
             TextWrapping = TextWrapping.WrapWholeWords
         };
 
-        Content = new StackPanel {
+        Content = new StackPanel
+        {
             MinWidth = 320,
             Spacing = 8,
             Children =
@@ -56,12 +59,13 @@ public sealed class RenameRecordingDialog : ContentDialog
 
     public static async Task<string?> ShowAsync(string filePath, string currentName)
     {
-        if (App.MainWindow?.Content?.XamlRoot is not {} xamlRoot)
+        if (App.MainWindow?.Content?.XamlRoot is not { } xamlRoot)
         {
             return null;
         }
 
-        var dialog = new RenameRecordingDialog(filePath, currentName) {
+        var dialog = new RenameRecordingDialog(filePath, currentName)
+        {
             XamlRoot = xamlRoot,
             Title = LocalizationService.GetString("Recordings_RenameTitle"),
             PrimaryButtonText = LocalizationService.GetString("Recordings_RenamePrimary"),
@@ -124,7 +128,7 @@ public sealed class RenameRecordingDialog : ContentDialog
     {
         string extension = Path.GetExtension(_filePath);
         return extension.Length > 0 && name.EndsWith(extension, StringComparison.OrdinalIgnoreCase)
-                   ? name[..^ extension.Length]
+                   ? name[..^extension.Length]
                    : name;
     }
 }

@@ -10,7 +10,7 @@ public static class ScreenBoundsHelper
     public static RectInt32 GetVirtualScreenBounds()
     {
         var monitors = new List<RectInt32>();
-        EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, delegate(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect rcMonitor, IntPtr data)
+        EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect rcMonitor, IntPtr data)
         {
             monitors.Add(new RectInt32
             {

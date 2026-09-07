@@ -21,24 +21,27 @@ public sealed class DeleteRecordingDialog : ContentDialog
 
     public static async Task<bool> ConfirmAsync(RecordingListItem item)
     {
-        if (App.MainWindow?.Content?.XamlRoot is not {} xamlRoot)
+        if (App.MainWindow?.Content?.XamlRoot is not { } xamlRoot)
         {
             return false;
         }
 
-        var message = new TextBlock {
+        var message = new TextBlock
+        {
             Text = string.Format(
                 LocalizationService.GetString("Recordings_DeleteMessage"),
                 item.Name),
             TextWrapping = TextWrapping.WrapWholeWords,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
         };
-        var restoreHint = new TextBlock {
+        var restoreHint = new TextBlock
+        {
             Text = LocalizationService.GetString("Recordings_DeleteRestoreHint"),
             TextWrapping = TextWrapping.WrapWholeWords,
             Foreground = (Brush)Application.Current.Resources["DawnTextMutedBrush"]
         };
-        var size = new TextBlock {
+        var size = new TextBlock
+        {
             Text = string.Format(
                 LocalizationService.GetString("Recordings_DeleteSize"),
                 item.SizeLabel),
@@ -47,10 +50,12 @@ public sealed class DeleteRecordingDialog : ContentDialog
             FontSize = 12
         };
 
-        var dialog = new DeleteRecordingDialog {
+        var dialog = new DeleteRecordingDialog
+        {
             XamlRoot = xamlRoot,
             Title = LocalizationService.GetString("Recordings_DeleteTitle"),
-            Content = new StackPanel {
+            Content = new StackPanel
+            {
                 MinWidth = 320,
                 Spacing = 6,
                 Children =
@@ -60,7 +65,9 @@ public sealed class DeleteRecordingDialog : ContentDialog
                         size
                     }
             },
-            PrimaryButtonText = LocalizationService.GetString("Recordings_DeletePrimary"), SecondaryButtonText = LocalizationService.GetString("Recordings_DeleteCancel"), DefaultButton = ContentDialogButton.Secondary
+            PrimaryButtonText = LocalizationService.GetString("Recordings_DeletePrimary"),
+            SecondaryButtonText = LocalizationService.GetString("Recordings_DeleteCancel"),
+            DefaultButton = ContentDialogButton.Secondary
         };
 
         dialog.Loaded += (_, _) => TintPrimaryButton(dialog);
