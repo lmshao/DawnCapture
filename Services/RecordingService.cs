@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -268,7 +267,10 @@ public sealed class RecordingService : IRecordingService
                 Height = crop.Height
             };
             _regionMarker = new RegionMarkerWindow(recordedRegion);
-            AttachRecordingControlWindow(recordedRegion, dpiScale);
+
+            // Recording starts immediately (industry convention). The dock is
+            // placed above the region so it never covers the recorded content.
+            AttachRegionRecordingControlWindow(recordedRegion, dpiScale);
             MinimizeMainWindow();
             return true;
         }
@@ -1578,6 +1580,48 @@ public sealed class RecordingService : IRecordingService
         };
 
         control.ShowRecordingTopLeft(bounds, dpiScale);
+    }
+
+    private void AttachRegionRecordingControlWindow(RectInt32 region, double dpiScale)
+    {
+        var control = new RecordingControlWindow(() => Elapsed);
+        _controlWindow = control;
+
+        control.StopRequested += async () =>
+        {
+            try
+            {
+                await StopAsync();
+            }
+            finally
+            {
+                control.CloseWindow();
+            }
+        };
+
+        control.PauseRequested += () =>
+        {
+            if (State == RecordingState.Recording)
+            {
+                Pause();
+                control.ShowPaused();
+            }
+            else if (State == RecordingState.Paused)
+            {
+                Resume();
+                control.ShowRecording();
+            }
+        };
+
+        control.Closed += (_, _) =>
+        {
+            if (State is RecordingState.Recording or RecordingState.Paused)
+            {
+                _ = StopAsync();
+            }
+        };
+
+        control.ShowRecordingNear(region, dpiScale);
     }
 
     private void AttachAudioRecordingControlWindow()

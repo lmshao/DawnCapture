@@ -65,6 +65,9 @@
   <data name="Settings_Save.Content" xml:space="preserve"><value>保存</value></data>
   <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>拖拽选择录制区域。选中后可拖动选框或控制点调整，按 Enter 确认，按 Esc 取消。</value></data>
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ 停止</value></data>
+  <data name="RecordingControl_Pause.ToolTip" xml:space="preserve"><value>暂停</value></data>
+  <data name="RecordingControl_Resume.ToolTip" xml:space="preserve"><value>继续</value></data>
+  <data name="RecordingControl_Stop.ToolTip" xml:space="preserve"><value>停止</value></data>
   <data name="About_Description" xml:space="preserve"><value>一款快速、轻量、注重隐私的 Windows 11 屏幕与音频录制工具。你的录像始终保存在本机。</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>准备就绪</value></data>
   <data name="Status_Countdown" xml:space="preserve"><value>{0} 秒后开始录制…</value></data>

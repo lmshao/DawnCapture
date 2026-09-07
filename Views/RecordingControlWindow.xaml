@@ -5,77 +5,134 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid x:Name="Root" Background="Transparent">
+        <Grid.Resources>
+        <!-- Recording Dock design tokens (see design/DESIGN.md) — follow system theme -->
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="DockAccentBrush" Color="#D85B42" />
+                    <SolidColorBrush x:Key="DockAccentSoftBrush" Color="#F7E4DF" />
+                    <SolidColorBrush x:Key="DockSurfaceBrush" Color="#F8F9FB" />
+                    <SolidColorBrush x:Key="DockStrokeBrush" Color="#D6D9DD" />
+                    <SolidColorBrush x:Key="DockTextBrush" Color="#1C2024" />
+                    <SolidColorBrush x:Key="DockTextMutedBrush" Color="#626971" />
+                    <SolidColorBrush x:Key="DockHoverBrush" Color="#EBEEF2" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="DockAccentBrush" Color="#F07A61" />
+                    <SolidColorBrush x:Key="DockAccentSoftBrush" Color="#4A2C27" />
+                    <SolidColorBrush x:Key="DockSurfaceBrush" Color="#1E2125" />
+                    <SolidColorBrush x:Key="DockStrokeBrush" Color="#41464C" />
+                    <SolidColorBrush x:Key="DockTextBrush" Color="#F3F4F5" />
+                    <SolidColorBrush x:Key="DockTextMutedBrush" Color="#B5BAC0" />
+                    <SolidColorBrush x:Key="DockHoverBrush" Color="#33383E" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush x:Key="DockAccentBrush" Color="#D85B42" />
+                    <SolidColorBrush x:Key="DockAccentSoftBrush" Color="#F7E4DF" />
+                    <SolidColorBrush x:Key="DockSurfaceBrush" Color="#F8F9FB" />
+                    <SolidColorBrush x:Key="DockStrokeBrush" Color="#D6D9DD" />
+                    <SolidColorBrush x:Key="DockTextBrush" Color="#1C2024" />
+                    <SolidColorBrush x:Key="DockTextMutedBrush" Color="#626971" />
+                    <SolidColorBrush x:Key="DockHoverBrush" Color="#EBEEF2" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+        </Grid.Resources>
+
         <Border
-            Background="#EB252836"
-            BorderBrush="#73EF4444"
+            x:Name="DockBorder"
+            Background="{ThemeResource DockSurfaceBrush}"
+            BorderBrush="{ThemeResource DockStrokeBrush}"
             BorderThickness="1"
-            CornerRadius="7">
+            CornerRadius="8">
+            <Border.Shadow>
+                <ThemeShadow />
+            </Border.Shadow>
             <StackPanel
-                Padding="7,0"
+                x:Name="DockPanel"
+                Padding="8,0,4,0"
                 Orientation="Horizontal"
                 Spacing="6"
                 VerticalAlignment="Center">
 
+                <!-- ● REC chip (dot + label; dot pulses while recording) -->
                 <Border
-                    x:Name="DragHandle"
-                    MinWidth="24"
-                    Height="32"
-                    Background="Transparent"
-                    VerticalAlignment="Center">
-                    <Ellipse
-                        x:Name="RecDot"
-                        Width="7"
-                        Height="7"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Fill="#EF4444" />
+                    x:Name="RecChip"
+                    Height="24"
+                    Padding="9,0"
+                    VerticalAlignment="Center"
+                    Background="{ThemeResource DockAccentSoftBrush}"
+                    CornerRadius="5">
+                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                        <Ellipse
+                            x:Name="RecDot"
+                            Width="7"
+                            Height="7"
+                            VerticalAlignment="Center"
+                            Fill="{ThemeResource DockAccentBrush}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            CharacterSpacing="40"
+                            Foreground="{ThemeResource DockAccentBrush}"
+                            Text="REC" />
+                    </StackPanel>
                 </Border>
 
-                <Button
-                    x:Name="RecordButton"
-                    Height="22"
-                    MinWidth="0"
-                    Padding="7,1"
-                    VerticalAlignment="Center"
-                    Background="#2EEF4444"
-                    BorderThickness="0"
-                    Click="RecordButton_Click"
-                    Content="REC"
-                    CornerRadius="4"
-                    FontSize="11"
-                    FontWeight="SemiBold"
-                    Foreground="#FCA5A5" />
-
+                <!-- Pause / Resume (32×32 touch target; glyphs match the HTML prototype) -->
                 <Button
                     x:Name="PauseButton"
-                    Width="22"
-                    Height="22"
+                    Width="32"
+                    Height="32"
                     Padding="0"
                     VerticalAlignment="Center"
-                    Background="#2EEF4444"
+                    Background="Transparent"
                     BorderThickness="0"
                     Click="PauseButton_Click"
-                    Content="II"
-                    CornerRadius="4"
-                    FontSize="11"
-                    Foreground="#F87171"
-                    Visibility="Collapsed" />
+                    CornerRadius="6"
+                    Visibility="Collapsed">
+                    <Grid>
+                        <Viewbox x:Name="PauseGlyph" Width="14" Height="14" Stretch="Uniform">
+                            <Path
+                                Width="16"
+                                Height="16"
+                                Data="M4 2 H5.6 Q6.6 2 6.6 3 V13 Q6.6 14 5.6 14 H4 Q3 14 3 13 V3 Q3 2 4 2 Z M10.4 2 H12 Q13 2 13 3 V13 Q13 14 12 14 H10.4 Q9.4 14 9.4 13 V3 Q9.4 2 10.4 2 Z"
+                                Fill="{ThemeResource DockTextMutedBrush}" />
+                        </Viewbox>
+                        <Viewbox x:Name="PlayGlyph" Width="14" Height="14" Stretch="Uniform" Visibility="Collapsed">
+                            <Path
+                                Width="16"
+                                Height="16"
+                                Data="M4 2.5 V13.5 C4 14.1 4.7 14.5 5.2 14.2 L13.7 8.7 C14.2 8.4 14.2 7.7 13.7 7.4 L5.2 1.8 C4.7 1.5 4 1.9 4 2.5 Z"
+                                Fill="{ThemeResource DockTextMutedBrush}" />
+                        </Viewbox>
+                    </Grid>
+                </Button>
 
+                <!-- Stop (32×32, accent — solid rounded square, same color as REC dot) -->
                 <Button
                     x:Name="StopButton"
-                    x:Uid="RecordingControl_Stop"
-                    Height="22"
-                    MinWidth="0"
-                    Padding="6,1"
+                    Width="32"
+                    Height="32"
+                    Padding="0"
                     VerticalAlignment="Center"
-                    Background="#2EEF4444"
+                    Background="Transparent"
                     BorderThickness="0"
                     Click="StopButton_Click"
-                    CornerRadius="4"
-                    FontSize="11"
-                    Foreground="#F87171"
-                    Visibility="Collapsed" />
+                    CornerRadius="6"
+                    Visibility="Collapsed">
+                    <Viewbox Width="14" Height="14" Stretch="Uniform">
+                        <Path
+                            Width="16"
+                            Height="16"
+                            Data="M4.3 2.5 H11.7 Q13.5 2.5 13.5 4.3 V11.7 Q13.5 13.5 11.7 13.5 H4.3 Q2.5 13.5 2.5 11.7 V4.3 Q2.5 2.5 4.3 2.5 Z"
+                            Fill="{ThemeResource DockAccentBrush}" />
+                    </Viewbox>
+                </Button>
 
+                <!-- Elapsed time: mm:ss → hh:mm:ss after 1 hour -->
                 <TextBlock
                     x:Name="TimeText"
                     MinWidth="44"
@@ -83,23 +140,9 @@
                     FontFamily="Consolas"
                     FontSize="12"
                     FontWeight="SemiBold"
-                    Foreground="#E8EAEF"
+                    Foreground="{ThemeResource DockTextBrush}"
                     Text="00:00"
                     TextAlignment="Center" />
-
-                <Button
-                    x:Name="CancelButton"
-                    Width="22"
-                    Height="22"
-                    Padding="0"
-                    VerticalAlignment="Center"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Click="CancelButton_Click"
-                    Content="✕"
-                    CornerRadius="4"
-                    FontSize="11"
-                    Foreground="#AEB3C2" />
             </StackPanel>
         </Border>
     </Grid>

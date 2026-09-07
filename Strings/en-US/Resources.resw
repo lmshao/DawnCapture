@@ -65,6 +65,9 @@
   <data name="Settings_Save.Content" xml:space="preserve"><value>Save</value></data>
   <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>Drag to select. Drag inside to move, or drag handles to resize. Press Enter to confirm or Esc to cancel.</value></data>
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ Stop</value></data>
+  <data name="RecordingControl_Pause.ToolTip" xml:space="preserve"><value>Pause</value></data>
+  <data name="RecordingControl_Resume.ToolTip" xml:space="preserve"><value>Resume</value></data>
+  <data name="RecordingControl_Stop.ToolTip" xml:space="preserve"><value>Stop</value></data>
   <data name="About_Description" xml:space="preserve"><value>A fast, lightweight, privacy-friendly screen and audio recorder built for Windows 11. Your recordings always stay on your device.</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>Ready</value></data>
   <data name="Status_Countdown" xml:space="preserve"><value>Starting in {0}…</value></data>

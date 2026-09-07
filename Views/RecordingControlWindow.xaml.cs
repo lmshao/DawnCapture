@@ -6,6 +6,8 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Windows.Graphics;
 
 namespace DawnCapture.Views;
@@ -15,11 +17,11 @@ public sealed partial class RecordingControlWindow : Window
     private const int DwmwaWindowCornerPreference = 33;
     private const int DwmwcpRound = 2;
     private const uint WdaExcludeFromCapture = 0x00000011;
-    private const double WindowWidthDip = 220;
-    private const double WindowHeightDip = 36;
+    private const double DockHeightDip = 40;
 
     private readonly Func<TimeSpan> _elapsedProvider;
     private readonly DispatcherTimer _timer;
+    private Storyboard? _pulseStoryboard;
     private bool _isDragging;
     private NativePoint _dragStartCursor;
     private PointInt32 _dragStartWindow;
@@ -53,50 +55,56 @@ public sealed partial class RecordingControlWindow : Window
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _timer.Tick += (_, _) => UpdateTime();
 
-        DragHandle.PointerPressed += DragHandle_PointerPressed;
-        DragHandle.PointerMoved += DragHandle_PointerMoved;
-        DragHandle.PointerReleased += DragHandle_PointerReleased;
-        DragHandle.PointerCanceled += DragHandle_PointerReleased;
-    }
+        // The whole dock is draggable; buttons and the REC chip opt out.
+        DockBorder.PointerPressed += DockBorder_PointerPressed;
+        DockBorder.PointerMoved += DockBorder_PointerMoved;
+        DockBorder.PointerReleased += DockBorder_PointerReleased;
+        DockBorder.PointerCanceled += DockBorder_PointerReleased;
 
-    public event Action? StartRequested;
+        WireHover(PauseButton);
+        WireHover(StopButton);
+
+        ToolTipService.SetToolTip(PauseButton, LocalizationService.GetString("RecordingControl_Pause.ToolTip"));
+        ToolTipService.SetToolTip(StopButton, LocalizationService.GetString("RecordingControl_Stop.ToolTip"));
+
+        // Re-measure when the window moves to a display with a different scale.
+        Root.Loaded += (_, _) =>
+        {
+            if (Root.XamlRoot is not { } xamlRoot)
+            {
+                return;
+            }
+
+            _dpiScale = xamlRoot.RasterizationScale;
+            RefreshSizeKeepPosition();
+        };
+    }
 
     public event Action? StopRequested;
 
     public event Action? PauseRequested;
 
-    public event Action? CancelRequested;
-
-    public void ShowWaiting(RectInt32 region, double dpiScale = 1.0)
-    {
-        _dpiScale = dpiScale;
-        RecordButton.Visibility = Visibility.Visible;
-        StopButton.Visibility = Visibility.Collapsed;
-        PauseButton.Visibility = Visibility.Collapsed;
-        CancelButton.Visibility = Visibility.Visible;
-        RecDot.Visibility = Visibility.Visible;
-        TimeText.Text = "00:00";
-        PositionNear(region);
-        Activate();
-    }
-
     public void ShowRecording()
     {
-        RecordButton.Visibility = Visibility.Collapsed;
-        CancelButton.Visibility = Visibility.Collapsed;
-        StopButton.Visibility = Visibility.Visible;
-        PauseButton.Visibility = Visibility.Visible;
-        PauseButton.Content = "II";
+        RecChip.Visibility = Visibility.Visible;
         RecDot.Visibility = Visibility.Visible;
+        PauseButton.Visibility = Visibility.Visible;
+        PauseGlyph.Visibility = Visibility.Visible;
+        PlayGlyph.Visibility = Visibility.Collapsed;
+        StopButton.Visibility = Visibility.Visible;
         _timer.Start();
         UpdateTime();
+        StartPulse();
         RefreshSizeKeepPosition();
     }
 
     public void ShowPaused()
     {
-        PauseButton.Content = "\uE768";
+        PauseGlyph.Visibility = Visibility.Collapsed;
+        PlayGlyph.Visibility = Visibility.Visible;
+        ToolTipService.SetToolTip(PauseButton, LocalizationService.GetString("RecordingControl_Resume.ToolTip"));
         UpdateTime();
+        StopPulse();
     }
 
     public void ShowRecordingTopLeft(RectInt32 bounds, double dpiScale)
@@ -115,11 +123,24 @@ public sealed partial class RecordingControlWindow : Window
         Activate();
     }
 
+    /// <summary>
+    /// Recording dock placed just above the selected region so it never
+    /// covers the recorded content.
+    /// </summary>
+    public void ShowRecordingNear(RectInt32 region, double dpiScale)
+    {
+        _dpiScale = dpiScale;
+        ShowRecording();
+        PositionNear(region);
+        Activate();
+    }
+
     public void CloseWindow()
     {
         try
         {
             _timer.Stop();
+            StopPulse();
             Close();
         }
         catch
@@ -131,8 +152,8 @@ public sealed partial class RecordingControlWindow : Window
     private void PositionNear(RectInt32 region)
     {
         const int gapDip = 8;
-        int width = ToPixels(WindowWidthDip);
-        int height = ToPixels(WindowHeightDip);
+        int width = CurrentPixelWidth();
+        int height = ToPixels(DockHeightDip);
 
         int x = region.X;
         int y = region.Y - height - ToPixels(gapDip);
@@ -158,8 +179,8 @@ public sealed partial class RecordingControlWindow : Window
         {
             X = bounds.X + ToPixels(marginDip),
             Y = bounds.Y + ToPixels(marginDip),
-            Width = ToPixels(WindowWidthDip),
-            Height = ToPixels(WindowHeightDip)
+            Width = CurrentPixelWidth(),
+            Height = ToPixels(DockHeightDip)
         });
     }
 
@@ -172,8 +193,8 @@ public sealed partial class RecordingControlWindow : Window
         {
             X = screen.X + ToPixels(marginDip),
             Y = screen.Y + ToPixels(marginDip),
-            Width = ToPixels(WindowWidthDip),
-            Height = ToPixels(WindowHeightDip)
+            Width = CurrentPixelWidth(),
+            Height = ToPixels(DockHeightDip)
         });
     }
 
@@ -184,21 +205,84 @@ public sealed partial class RecordingControlWindow : Window
         {
             X = position.X,
             Y = position.Y,
-            Width = ToPixels(WindowWidthDip),
-            Height = ToPixels(WindowHeightDip)
+            Width = CurrentPixelWidth(),
+            Height = ToPixels(DockHeightDip)
         });
+    }
+
+    /// <summary>
+    /// Measures the content (Auto width) and converts DIP to physical pixels
+    /// using the current XamlRoot rasterization scale.
+    /// </summary>
+    private void UpdateWindowSize()
+    {
+        if (Root.XamlRoot is not { } xamlRoot)
+        {
+            return;
+        }
+
+        _dpiScale = xamlRoot.RasterizationScale;
+        RefreshSizeKeepPosition();
+    }
+
+    private int CurrentPixelWidth()
+    {
+        Root.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        double contentWidth = Root.DesiredSize.Width;
+        return Math.Max(1, (int)Math.Ceiling(contentWidth * _dpiScale));
     }
 
     private int ToPixels(double dip) => Math.Max(1, (int)Math.Ceiling(dip * _dpiScale));
 
     private void UpdateTime()
     {
-        TimeText.Text = _elapsedProvider().ToString(@"mm\:ss");
+        TimeText.Text = FormatElapsed(_elapsedProvider());
     }
 
-    private void RecordButton_Click(object sender, RoutedEventArgs e)
+    private static string FormatElapsed(TimeSpan elapsed)
     {
-        StartRequested?.Invoke();
+        return elapsed.TotalHours >= 1
+            ? elapsed.ToString(@"hh\:mm\:ss")
+            : elapsed.ToString(@"mm\:ss");
+    }
+
+    private void StartPulse()
+    {
+        StopPulse();
+        var animation = new DoubleAnimation
+        {
+            From = 1.0,
+            To = 0.35,
+            Duration = new Duration(TimeSpan.FromMilliseconds(800)),
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EnableDependentAnimation = true
+        };
+        Storyboard.SetTarget(animation, RecDot);
+        Storyboard.SetTargetProperty(animation, "Opacity");
+        _pulseStoryboard = new Storyboard();
+        _pulseStoryboard.Children.Add(animation);
+        _pulseStoryboard.Begin();
+    }
+
+    private void StopPulse()
+    {
+        _pulseStoryboard?.Stop();
+        _pulseStoryboard = null;
+        RecDot.Opacity = 1.0;
+    }
+
+    private void WireHover(Button button)
+    {
+        button.PointerEntered += (_, _) =>
+        {
+            bool dark = Root.ActualTheme == ElementTheme.Dark;
+            button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                dark ? Microsoft.UI.ColorHelper.FromArgb(255, 0x33, 0x38, 0x3E)
+                     : Microsoft.UI.ColorHelper.FromArgb(255, 0xEB, 0xEE, 0xF2));
+        };
+        button.PointerExited += (_, _) =>
+            button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
     }
 
     private void StopButton_Click(object sender, RoutedEventArgs e)
@@ -211,21 +295,21 @@ public sealed partial class RecordingControlWindow : Window
         PauseRequested?.Invoke();
     }
 
-    private void CancelButton_Click(object sender, RoutedEventArgs e)
+    private void DockBorder_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        CancelRequested?.Invoke();
-    }
+        if (IsInsideInteractiveElement(e.OriginalSource as DependencyObject))
+        {
+            return;
+        }
 
-    private void DragHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
-    {
         GetCursorPos(out _dragStartCursor);
         _dragStartWindow = AppWindow.Position;
         _isDragging = true;
-        DragHandle.CapturePointer(e.Pointer);
+        DockBorder.CapturePointer(e.Pointer);
         e.Handled = true;
     }
 
-    private void DragHandle_PointerMoved(object sender, PointerRoutedEventArgs e)
+    private void DockBorder_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (!_isDragging)
         {
@@ -244,7 +328,7 @@ public sealed partial class RecordingControlWindow : Window
         e.Handled = true;
     }
 
-    private void DragHandle_PointerReleased(object sender, PointerRoutedEventArgs e)
+    private void DockBorder_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
         if (!_isDragging)
         {
@@ -252,8 +336,27 @@ public sealed partial class RecordingControlWindow : Window
         }
 
         _isDragging = false;
-        DragHandle.ReleasePointerCapture(e.Pointer);
+        DockBorder.ReleasePointerCapture(e.Pointer);
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// True when the pressed element belongs to a button (or its glyph), so
+    /// dragging never starts from a click target.
+    /// </summary>
+    private static bool IsInsideInteractiveElement(DependencyObject? node)
+    {
+        while (node is not null)
+        {
+            if (node is Button)
+            {
+                return true;
+            }
+
+            node = VisualTreeHelper.GetParent(node);
+        }
+
+        return false;
     }
 
     [DllImport("user32.dll")]
