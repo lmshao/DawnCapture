@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <Version>1.0.0.0</Version>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <RootNamespace>DawnCapture</RootNamespace>
@@ -73,7 +74,25 @@
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
-    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    <!--
+      Trimming is disabled for Release: WinUI 3 + CommunityToolkit.Mvvm
+      reflection + System.Text.Json all break when trimmed (observed
+      TypeLoadException for System.Environment / WindowsAppRuntime.Projection
+      at startup). Enable explicitly with -p:PublishTrimmed=true if ever needed.
+    -->
+    <PublishTrimmed>False</PublishTrimmed>
   </PropertyGroup>
+
+  <!--
+    WinUI 3 generates the app's own resources.pri (DawnCapture.pri) into the
+    build output directory, but `dotnet publish` (unpackaged, custom
+    PublishDir) does not copy it. Without it the app crashes at startup with
+    0xC000027B in Microsoft.UI.Xaml.dll, so copy it explicitly.
+  -->
+  <Target Name="CopyPriToPublish" AfterTargets="Publish">
+    <Copy
+      SourceFiles="$(TargetDir)$(AssemblyName).pri"
+      DestinationFolder="$(PublishDir)"
+      Condition="Exists('$(TargetDir)$(AssemblyName).pri')" />
+  </Target>
 </Project>
