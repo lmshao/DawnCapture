@@ -63,6 +63,8 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
                 probe.Height,
                 probe.VideoCodec,
                 probe.AudioCodec,
+                probe.VideoBitrateKbps,
+                probe.AudioBitrateKbps,
                 existingId: existing?.Id,
                 existingDisplayName: existing?.DisplayName,
                 existingThumbnail: existing?.ThumbnailPng,
@@ -88,7 +90,7 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
             command.CommandText = """
                 SELECT id, file_path, display_name, file_hash, file_size, last_write_time_utc,
                        recorded_at, media_kind, source_kind, duration_ms, video_codec, audio_codec,
-                       width, height, frame_rate, bitrate_kbps, thumbnail, thumbnail_width, thumbnail_height
+                       width, height, frame_rate, bitrate_kbps, audio_bitrate_kbps, thumbnail, thumbnail_width, thumbnail_height
                 FROM recordings
                 WHERE file_path LIKE $folder || '%'
                 ORDER BY recorded_at DESC;
@@ -231,7 +233,7 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
                 existingByPath.FileSize,
                 existingByPath.LastWriteTimeUtc.UtcDateTime))
         {
-            BackfillMissingCodecs(existingByPath, fileInfo);
+            BackfillMissingMetadata(existingByPath, fileInfo);
             seenIds.Add(existingByPath.Id);
             seenHashes.Add(existingByPath.FileHash);
             return;
@@ -245,7 +247,7 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
             if (string.Equals(existingByPath.FileHash, hash, StringComparison.OrdinalIgnoreCase))
             {
                 UpdateFileIdentity(existingByPath, fileInfo);
-                BackfillMissingCodecs(existingByPath, fileInfo);
+                BackfillMissingMetadata(existingByPath, fileInfo);
             }
             else
             {
@@ -260,6 +262,7 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         if (dbByHash.TryGetValue(hash, out RecordingCatalogEntry? existingByHash))
         {
             UpdateFileIdentity(existingByHash, fileInfo);
+            BackfillMissingMetadata(existingByHash, fileInfo);
             seenIds.Add(existingByHash.Id);
             seenHashes.Add(hash);
             return;
@@ -292,6 +295,8 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
             probe.Height,
             probe.VideoCodec,
             probe.AudioCodec,
+            probe.VideoBitrateKbps,
+            probe.AudioBitrateKbps,
             existingId: null,
             existingDisplayName: null,
             existingThumbnail: null,
@@ -386,12 +391,24 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         int? probedHeight,
         string? probedVideoCodec,
         string? probedAudioCodec,
+        int? probedVideoBitrateKbps,
+        int? probedAudioBitrateKbps,
         Guid? existingId,
         string? existingDisplayName,
         byte[]? existingThumbnail,
         int? existingThumbnailWidth,
         int? existingThumbnailHeight)
     {
+        bool hasAudio = !string.IsNullOrWhiteSpace(encoding?.AudioCodec ?? probedAudioCodec);
+        int? bitrateKbps = mediaKind == RecordingMediaKind.Audio
+            ? probedAudioBitrateKbps
+                ?? RecordingMediaProbe.SanitizeAacBitrateKbps(encoding?.BitrateKbps)
+                ?? RecordingMediaProbe.SanitizeAacBitrateKbps(encoding?.AudioBitrateKbps)
+            : probedVideoBitrateKbps ?? encoding?.BitrateKbps;
+        int? audioBitrateKbps = hasAudio && mediaKind == RecordingMediaKind.Video
+            ? probedAudioBitrateKbps ?? RecordingMediaProbe.SanitizeAacBitrateKbps(encoding?.AudioBitrateKbps)
+            : null;
+
         return new RecordingCatalogEntry
         {
             Id = existingId ?? Guid.NewGuid(),
@@ -409,7 +426,8 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
             Width = encoding?.Width ?? probedWidth,
             Height = encoding?.Height ?? probedHeight,
             FrameRate = encoding?.FrameRate,
-            BitrateKbps = encoding?.BitrateKbps,
+            BitrateKbps = bitrateKbps,
+            AudioBitrateKbps = hasAudio && mediaKind == RecordingMediaKind.Video ? audioBitrateKbps : null,
             ThumbnailPng = existingThumbnail,
             ThumbnailWidth = existingThumbnailWidth,
             ThumbnailHeight = existingThumbnailHeight
@@ -424,11 +442,11 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
             INSERT INTO recordings (
                 id, file_path, display_name, file_hash, file_size, last_write_time_utc,
                 recorded_at, media_kind, source_kind, duration_ms, video_codec, audio_codec,
-                width, height, frame_rate, bitrate_kbps, thumbnail, thumbnail_width, thumbnail_height, updated_at)
+                width, height, frame_rate, bitrate_kbps, audio_bitrate_kbps, thumbnail, thumbnail_width, thumbnail_height, updated_at)
             VALUES (
                 $id, $filePath, $displayName, $fileHash, $fileSize, $lastWriteTimeUtc,
                 $recordedAt, $mediaKind, $sourceKind, $durationMs, $videoCodec, $audioCodec,
-                $width, $height, $frameRate, $bitrateKbps, $thumbnail, $thumbnailWidth, $thumbnailHeight, $updatedAt)
+                $width, $height, $frameRate, $bitrateKbps, $audioBitrateKbps, $thumbnail, $thumbnailWidth, $thumbnailHeight, $updatedAt)
             ON CONFLICT(id) DO UPDATE SET
                 file_path = excluded.file_path,
                 display_name = excluded.display_name,
@@ -445,6 +463,7 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
                 height = excluded.height,
                 frame_rate = excluded.frame_rate,
                 bitrate_kbps = excluded.bitrate_kbps,
+                audio_bitrate_kbps = COALESCE(excluded.audio_bitrate_kbps, recordings.audio_bitrate_kbps),
                 thumbnail = COALESCE(excluded.thumbnail, recordings.thumbnail),
                 thumbnail_width = COALESCE(excluded.thumbnail_width, recordings.thumbnail_width),
                 thumbnail_height = COALESCE(excluded.thumbnail_height, recordings.thumbnail_height),
@@ -474,23 +493,25 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         command.ExecuteNonQuery();
     }
 
-    private void BackfillMissingCodecs(RecordingCatalogEntry existing, FileInfo fileInfo)
+    private void BackfillMissingMetadata(RecordingCatalogEntry existing, FileInfo fileInfo)
     {
-        bool needsVideoCodec = existing.MediaKind == RecordingMediaKind.Video
-            && string.IsNullOrWhiteSpace(existing.VideoCodec);
-        bool needsAudioCodec = string.IsNullOrWhiteSpace(existing.AudioCodec);
-        if (!needsVideoCodec && !needsAudioCodec)
-        {
-            return;
-        }
-
         var probe = RecordingMediaProbe.ProbeAsync(fileInfo.FullName, existing.MediaKind)
             .GetAwaiter().GetResult();
 
         string? videoCodec = existing.VideoCodec ?? probe.VideoCodec;
         string? audioCodec = existing.AudioCodec ?? probe.AudioCodec;
+        bool hasAudio = !string.IsNullOrWhiteSpace(audioCodec);
+        int? bitrateKbps = existing.MediaKind == RecordingMediaKind.Audio
+            ? probe.AudioBitrateKbps ?? RecordingMediaProbe.SanitizeAacBitrateKbps(existing.BitrateKbps)
+            : probe.VideoBitrateKbps ?? existing.BitrateKbps;
+        int? audioBitrateKbps = existing.MediaKind == RecordingMediaKind.Video && hasAudio
+            ? probe.AudioBitrateKbps ?? RecordingMediaProbe.SanitizeAacBitrateKbps(existing.AudioBitrateKbps)
+            : existing.AudioBitrateKbps;
+
         if (string.Equals(existing.VideoCodec, videoCodec, StringComparison.Ordinal)
-            && string.Equals(existing.AudioCodec, audioCodec, StringComparison.Ordinal))
+            && string.Equals(existing.AudioCodec, audioCodec, StringComparison.Ordinal)
+            && existing.AudioBitrateKbps == audioBitrateKbps
+            && existing.BitrateKbps == bitrateKbps)
         {
             return;
         }
@@ -509,12 +530,15 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
                 Width = existing.Width,
                 Height = existing.Height,
                 FrameRate = existing.FrameRate,
-                BitrateKbps = existing.BitrateKbps
+                BitrateKbps = bitrateKbps,
+                AudioBitrateKbps = audioBitrateKbps
             },
             existing.Width,
             existing.Height,
             probe.VideoCodec,
             probe.AudioCodec,
+            probe.VideoBitrateKbps,
+            probe.AudioBitrateKbps,
             existing.Id,
             existing.DisplayName,
             existing.ThumbnailPng,
@@ -543,12 +567,17 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
                 Width = probe.Width ?? existing.Width,
                 Height = probe.Height ?? existing.Height,
                 FrameRate = existing.FrameRate,
-                BitrateKbps = existing.BitrateKbps
+                BitrateKbps = existing.MediaKind == RecordingMediaKind.Audio
+                    ? probe.AudioBitrateKbps ?? existing.BitrateKbps
+                    : probe.VideoBitrateKbps ?? existing.BitrateKbps,
+                AudioBitrateKbps = probe.AudioBitrateKbps ?? existing.AudioBitrateKbps
             },
             probe.Width,
             probe.Height,
             probe.VideoCodec,
             probe.AudioCodec,
+            probe.VideoBitrateKbps,
+            probe.AudioBitrateKbps,
             existing.Id,
             existing.DisplayName,
             existingThumbnail: null,
@@ -565,7 +594,7 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         command.CommandText = """
             SELECT id, file_path, display_name, file_hash, file_size, last_write_time_utc,
                    recorded_at, media_kind, source_kind, duration_ms, video_codec, audio_codec,
-                   width, height, frame_rate, bitrate_kbps, thumbnail, thumbnail_width, thumbnail_height
+                   width, height, frame_rate, bitrate_kbps, audio_bitrate_kbps, thumbnail, thumbnail_width, thumbnail_height
             FROM recordings;
             """;
 
@@ -599,9 +628,10 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
             Height = reader.IsDBNull(13) ? null : reader.GetInt32(13),
             FrameRate = reader.IsDBNull(14) ? null : reader.GetDouble(14),
             BitrateKbps = reader.IsDBNull(15) ? null : reader.GetInt32(15),
-            ThumbnailPng = reader.IsDBNull(16) ? null : (byte[])reader.GetValue(16),
-            ThumbnailWidth = reader.IsDBNull(17) ? null : reader.GetInt32(17),
-            ThumbnailHeight = reader.IsDBNull(18) ? null : reader.GetInt32(18)
+            AudioBitrateKbps = reader.IsDBNull(16) ? null : reader.GetInt32(16),
+            ThumbnailPng = reader.IsDBNull(17) ? null : (byte[])reader.GetValue(17),
+            ThumbnailWidth = reader.IsDBNull(18) ? null : reader.GetInt32(18),
+            ThumbnailHeight = reader.IsDBNull(19) ? null : reader.GetInt32(19)
         };
     }
 
@@ -623,6 +653,7 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
         command.Parameters.AddWithValue("$height", entry.Height ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("$frameRate", entry.FrameRate ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("$bitrateKbps", entry.BitrateKbps ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("$audioBitrateKbps", entry.AudioBitrateKbps ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("$thumbnail", entry.ThumbnailPng ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("$thumbnailWidth", entry.ThumbnailWidth ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("$thumbnailHeight", entry.ThumbnailHeight ?? (object)DBNull.Value);
@@ -667,8 +698,27 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
                 CREATE INDEX IF NOT EXISTS idx_recordings_path ON recordings(file_path);
                 """;
             command.ExecuteNonQuery();
+            TryAddColumn(connection, "audio_bitrate_kbps", "INTEGER NULL");
             _schemaInitialized = true;
         }
+    }
+
+    private static void TryAddColumn(SqliteConnection connection, string columnName, string columnType)
+    {
+        using var infoCommand = connection.CreateCommand();
+        infoCommand.CommandText = "PRAGMA table_info(recordings);";
+        using var reader = infoCommand.ExecuteReader();
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(1), columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+        }
+
+        using var alterCommand = connection.CreateCommand();
+        alterCommand.CommandText = $"ALTER TABLE recordings ADD COLUMN {columnName} {columnType};";
+        alterCommand.ExecuteNonQuery();
     }
 
     private static SqliteConnection OpenConnection()
@@ -823,6 +873,8 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
                 var fileInfo = new FileInfo(legacy.FilePath);
                 string hash = RecordingFileHashHelper.ComputeSha256HexAsync(legacy.FilePath)
                     .GetAwaiter().GetResult();
+                var probe = RecordingMediaProbe.ProbeAsync(legacy.FilePath, legacy.MediaKind)
+                    .GetAwaiter().GetResult();
                 var entry = BuildEntryFromFile(
                     fileInfo,
                     hash,
@@ -831,10 +883,12 @@ public sealed class RecordingCatalogService : IRecordingCatalogService
                     legacy.SourceKind,
                     legacy.DurationMs,
                     encoding: null,
-                    probedWidth: null,
-                    probedHeight: null,
-                    probedVideoCodec: null,
-                    probedAudioCodec: null,
+                    probe.Width,
+                    probe.Height,
+                    probe.VideoCodec,
+                    probe.AudioCodec,
+                    probe.VideoBitrateKbps,
+                    probe.AudioBitrateKbps,
                     existingId: legacy.Id,
                     existingDisplayName: Path.GetFileNameWithoutExtension(fileInfo.Name),
                     existingThumbnail: null,

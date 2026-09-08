@@ -12,6 +12,8 @@ public sealed class AppSettings
 
     public int BitrateKbps { get; set; } = 8000;
 
+    public VideoBitrateMode BitrateMode { get; set; } = VideoBitrateMode.Adaptive;
+
     public bool CaptureCursor { get; set; } = true;
 
     public string Language { get; set; } = "system";

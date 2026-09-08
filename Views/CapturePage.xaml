@@ -392,90 +392,160 @@
         <!-- Command dock -->
         <Border
             Grid.Row="2"
-            MinHeight="72"
+            MinHeight="88"
             Margin="-44,0,-44,0"
-            Padding="44,10,44,10"
+            Padding="44,12,44,12"
             Background="{ThemeResource LayerFillColorDefaultBrush}"
             BorderBrush="{StaticResource DawnStrokeBrush}"
             BorderThickness="0,1,0,0">
-            <Grid ColumnSpacing="14">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <StackPanel Spacing="6">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <Button x:Name="SaveToButton" MinWidth="220" HorizontalAlignment="Left" HorizontalContentAlignment="Stretch">
-                    <Button.Flyout>
-                        <MenuFlyout x:Name="FolderFlyout">
-                            <MenuFlyoutItem Command="{x:Bind ViewModel.OpenOutputFolderCommand}" x:Uid="FolderFlyout_Open" Text="Open folder" />
-                            <MenuFlyoutItem Command="{x:Bind ViewModel.ChangeOutputFolderCommand}" x:Uid="FolderFlyout_Change" Text="Change folder" />
-                        </MenuFlyout>
-                    </Button.Flyout>
-                    <Grid ColumnSpacing="12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Spacing="2">
-                            <TextBlock FontSize="10" Foreground="{StaticResource DawnTextFaintBrush}" x:Uid="Dock_SaveTo" Text="Save to" />
-                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.DestinationFolderSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                        <FontIcon
-                            Grid.Column="1"
-                            VerticalAlignment="Center"
-                            FontSize="16"
-                            Foreground="{StaticResource DawnTextFaintBrush}"
-                            Glyph="&#xE70D;" />
-                    </Grid>
-                </Button>
-
-                <Border Grid.Column="1" Width="1" Height="32" VerticalAlignment="Center" Background="{StaticResource DawnStrokeBrush}" />
-
-                <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="16">
-                    <!-- Video quality: hidden when Audio only is selected -->
-                    <StackPanel
-                        Spacing="2"
-                        Visibility="{x:Bind ViewModel.ShowVideoQuality, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock FontSize="10" Foreground="{StaticResource DawnTextFaintBrush}" Text="{x:Bind ViewModel.VideoQualityLabel, Mode=OneWay}" />
-                        <ComboBox
-                            MinWidth="145"
-                            ItemsSource="{x:Bind ViewModel.QualityOptions, Mode=OneWay}"
-                            SelectedIndex="{x:Bind ViewModel.QualityIndex, Mode=TwoWay}" />
-                        <TextBlock
-                            FontSize="10"
-                            Foreground="{StaticResource DawnTextFaintBrush}"
-                            Text="{x:Bind ViewModel.VideoCodecSummary, Mode=OneWay}" />
-                    </StackPanel>
-
-                    <!-- Audio quality: always visible -->
-                    <StackPanel Spacing="2">
-                        <TextBlock FontSize="10" Foreground="{StaticResource DawnTextFaintBrush}" Text="{x:Bind ViewModel.AudioQualityLabel, Mode=OneWay}" />
-                        <ComboBox
-                            MinWidth="145"
-                            ItemsSource="{x:Bind ViewModel.AudioQualityOptions, Mode=OneWay}"
-                            SelectedIndex="{x:Bind ViewModel.AudioQualityIndex, Mode=TwoWay}" />
-                        <TextBlock
-                            FontSize="10"
-                            Foreground="{StaticResource DawnTextFaintBrush}"
-                            Text="{x:Bind ViewModel.AudioCodecSummary, Mode=OneWay}" />
-                    </StackPanel>
-                </StackPanel>
-
-                <StackPanel Grid.Column="3" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
                     <Button
+                        x:Name="SaveToButton"
+                        MinWidth="196"
+                        MaxWidth="196"
+                        HorizontalAlignment="Left"
+                        HorizontalContentAlignment="Stretch"
+                        Padding="10,6">
+                        <Button.Flyout>
+                            <MenuFlyout x:Name="FolderFlyout">
+                                <MenuFlyoutItem Command="{x:Bind ViewModel.OpenOutputFolderCommand}" x:Uid="FolderFlyout_Open" Text="Open folder" />
+                                <MenuFlyoutItem Command="{x:Bind ViewModel.ChangeOutputFolderCommand}" x:Uid="FolderFlyout_Change" Text="Change folder" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Width="28"
+                                Height="28"
+                                Background="{StaticResource DawnSurfaceMutedBrush}"
+                                CornerRadius="6">
+                                <FontIcon
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{StaticResource DawnTextMutedBrush}"
+                                    Glyph="&#xE8B7;" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="2" MinWidth="0">
+                                <TextBlock FontSize="10" Foreground="{StaticResource DawnTextFaintBrush}" x:Uid="Dock_SaveTo" Text="Save to" />
+                                <TextBlock
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Text="{x:Bind ViewModel.DestinationFolderSummary, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <Border Grid.Column="1" Width="1" Height="32" VerticalAlignment="Center" Background="{StaticResource DawnStrokeBrush}" />
+
+                    <Border
+                        Grid.Column="2"
+                        Padding="10,6"
+                        VerticalAlignment="Center"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{StaticResource DawnStrokeBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <StackPanel
+                                Orientation="Horizontal"
+                                Spacing="6"
+                                Visibility="{x:Bind ViewModel.ShowVideoQuality, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="11"
+                                    Foreground="{StaticResource DawnTextFaintBrush}"
+                                    Text="{x:Bind ViewModel.PresetLabel, Mode=OneWay}" />
+                                <Button
+                                    MinWidth="88"
+                                    MaxWidth="112"
+                                    Padding="10,6,8,6"
+                                    HorizontalContentAlignment="Stretch"
+                                    Background="{ThemeResource ComboBoxBackground}"
+                                    BorderBrush="{StaticResource DawnStrokeStrongBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Flyout="{x:Bind ViewModel.PresetFlyout, Mode=OneWay}">
+                                    <Grid ColumnSpacing="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="14"
+                                            Text="{x:Bind ViewModel.SelectedPresetTierLabel, Mode=OneWay}"
+                                            TextTrimming="CharacterEllipsis" />
+                                        <FontIcon
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Foreground="{StaticResource DawnTextMutedBrush}"
+                                            Glyph="&#xE70D;" />
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="11"
+                                    Foreground="{StaticResource DawnTextFaintBrush}"
+                                    Text="{x:Bind ViewModel.AudioQualityLabel, Mode=OneWay}" />
+                                <ComboBox
+                                    MinWidth="108"
+                                    MaxWidth="136"
+                                    ItemsSource="{x:Bind ViewModel.AudioQualityOptions, Mode=OneWay}"
+                                    SelectedIndex="{x:Bind ViewModel.AudioQualityIndex, Mode=TwoWay}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Button
+                        Grid.Column="4"
+                        MinHeight="40"
+                        Padding="16,0"
+                        VerticalAlignment="Center"
                         Background="{StaticResource DawnAccentBrush}"
                         Command="{x:Bind ViewModel.ToggleRecordingCommand}"
-                        Content="{x:Bind ViewModel.RecordButtonLabel, Mode=OneWay}"
-                        Foreground="White" />
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="{StaticResource DawnTextFaintBrush}"
-                        Text="Ctrl R" />
-                </StackPanel>
-            </Grid>
+                        Foreground="White">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{x:Bind ViewModel.RecordButtonLabel, Mode=OneWay}" />
+                            <Border
+                                Padding="5,1"
+                                VerticalAlignment="Center"
+                                Background="#24FFFFFF"
+                                BorderBrush="#59FFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                                <TextBlock FontSize="10" FontWeight="SemiBold" Foreground="#F2FFFFFF" Text="Ctrl R" />
+                            </Border>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <TextBlock
+                    Padding="0,2,0,0"
+                    FontSize="10"
+                    Foreground="{StaticResource DawnTextFaintBrush}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.OutputFootnoteTooltip, Mode=OneWay}">
+                    <Run Text="{x:Bind ViewModel.OutputFootnoteSpecs, Mode=OneWay}" />
+                    <Run Foreground="{StaticResource DawnTextMutedBrush}" Text="{x:Bind ViewModel.OutputFootnoteHint, Mode=OneWay}" />
+                </TextBlock>
+            </StackPanel>
         </Border>
         </Grid>
     </Grid>

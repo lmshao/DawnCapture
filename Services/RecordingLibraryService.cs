@@ -201,30 +201,8 @@ public sealed class RecordingLibraryService : IRecordingLibraryService
 
     private static string FormatMediaLabel(RecordingCatalogEntry entry, FileInfo fileInfo)
     {
-        string unknownCodec = LocalizationService.GetString("Recordings_Codec_Unknown");
-        string container = fileInfo.Extension.TrimStart('.').ToUpperInvariant();
-        if (string.IsNullOrEmpty(container))
-        {
-            container = entry.MediaKind == RecordingMediaKind.Audio
-                ? LocalizationService.GetString("Recordings_Media_Audio")
-                : LocalizationService.GetString("Recordings_Media_Video");
-        }
-
-        var parts = new List<string> { container };
-
-        if (entry.MediaKind == RecordingMediaKind.Audio)
-        {
-            parts.Add(string.IsNullOrWhiteSpace(entry.AudioCodec) ? unknownCodec : entry.AudioCodec);
-            return string.Join(' ', parts);
-        }
-
-        parts.Add(string.IsNullOrWhiteSpace(entry.VideoCodec) ? unknownCodec : entry.VideoCodec);
-        if (!string.IsNullOrWhiteSpace(entry.AudioCodec))
-        {
-            parts.Add(entry.AudioCodec);
-        }
-
-        return string.Join(' ', parts);
+        _ = fileInfo;
+        return RecordingOutputSummaryHelper.FormatCatalogEntry(entry);
     }
 
     private static string FormatUpdatedAt(DateTimeOffset updatedAt)

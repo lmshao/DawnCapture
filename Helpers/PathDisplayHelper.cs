@@ -40,4 +40,14 @@ public static class PathDisplayHelper
 
         return MiddleEllipsis(path, 38);
     }
+
+    public static string CompactDockFolderSummary(string path, string defaultFolder, string defaultLabel)
+    {
+        if (string.Equals(path, defaultFolder, StringComparison.OrdinalIgnoreCase))
+        {
+            return defaultLabel;
+        }
+
+        return MiddleEllipsis(path, 26);
+    }
 }

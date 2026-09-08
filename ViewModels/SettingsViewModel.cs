@@ -23,7 +23,10 @@ public partial class SettingsViewModel : ObservableObject
         _outputFolder = _settingsService.Current.OutputFolder;
         _outputFolderDisplay = PathDisplayHelper.MiddleEllipsis(_outputFolder, 44);
         _frameRateIndex = RecordingSettingsHelper.FrameRateToSettingsIndex(_settingsService.Current.FrameRate);
+        NormalizeStoredFrameRateIfNeeded();
         _qualityIndex = _settingsService.Current.QualityIndex;
+        _bitrateModeIndex = (int)_settingsService.Current.BitrateMode;
+        _fixedBitrateMbps = _settingsService.Current.BitrateKbps / 1000.0;
         _codecIndex = _settingsService.Current.VideoCodecIndex;
         _audioQualityIndex = _settingsService.Current.AudioQualityIndex;
         _captureCursor = _settingsService.Current.CaptureCursor;
@@ -47,6 +50,8 @@ public partial class SettingsViewModel : ObservableObject
             OutputFolder = settings.OutputFolder;
             FrameRateIndex = RecordingSettingsHelper.FrameRateToSettingsIndex(settings.FrameRate);
             QualityIndex = settings.QualityIndex;
+            BitrateModeIndex = (int)settings.BitrateMode;
+            FixedBitrateMbps = settings.BitrateKbps / 1000.0;
             CodecIndex = settings.VideoCodecIndex;
             AudioQualityIndex = settings.AudioQualityIndex;
             CaptureCursor = settings.CaptureCursor;
@@ -77,6 +82,14 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private int _qualityIndex = 1;
+
+    [ObservableProperty]
+    private int _bitrateModeIndex;
+
+    [ObservableProperty]
+    private double _fixedBitrateMbps = 8;
+
+    public bool IsAdaptiveBitrateMode => BitrateModeIndex == (int)Models.VideoBitrateMode.Adaptive;
 
     [ObservableProperty]
     private int _codecIndex;
@@ -122,6 +135,32 @@ public partial class SettingsViewModel : ObservableObject
         {
             PersistSettings();
         }
+    }
+
+    partial void OnBitrateModeIndexChanged(int value)
+    {
+        OnPropertyChanged(nameof(IsAdaptiveBitrateMode));
+        if (_suppressPersist)
+        {
+            return;
+        }
+
+        if (value == (int)Models.VideoBitrateMode.Fixed)
+        {
+            FixedBitrateMbps = _settingsService.Current.BitrateKbps / 1000.0;
+        }
+
+        PersistSettings();
+    }
+
+    partial void OnFixedBitrateMbpsChanged(double value)
+    {
+        if (_suppressPersist || BitrateModeIndex != (int)Models.VideoBitrateMode.Fixed)
+        {
+            return;
+        }
+
+        PersistSettings();
     }
 
     partial void OnCodecIndexChanged(int value)
@@ -204,6 +243,18 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
+    private void NormalizeStoredFrameRateIfNeeded()
+    {
+        int normalized = RecordingSettingsHelper.NormalizeFrameRate(_settingsService.Current.FrameRate);
+        if (_settingsService.Current.FrameRate == normalized)
+        {
+            return;
+        }
+
+        _settingsService.Current.FrameRate = normalized;
+        _settingsService.Save();
+    }
+
     private void PersistSettings()
     {
         if (_suppressPersist)
@@ -212,10 +263,18 @@ public partial class SettingsViewModel : ObservableObject
         }
 
         _settingsService.Current.OutputFolder = OutputFolder;
-        _settingsService.Current.FrameRate = RecordingSettingsHelper.FrameRateFromSettingsIndex(
-            FrameRateIndex,
-            _settingsService.Current.FrameRate);
-        RecordingSettingsHelper.ApplySettingsQualityIndex(_settingsService.Current, QualityIndex);
+        _settingsService.Current.FrameRate = RecordingSettingsHelper.FrameRateFromSettingsIndex(FrameRateIndex);
+        _settingsService.Current.BitrateMode = (Models.VideoBitrateMode)BitrateModeIndex;
+        if (BitrateModeIndex == (int)Models.VideoBitrateMode.Fixed)
+        {
+            int fixedKbps = (int)Math.Round(Math.Clamp(FixedBitrateMbps, 1, 100) * 1000);
+            _settingsService.Current.BitrateKbps = fixedKbps;
+        }
+        else
+        {
+            RecordingSettingsHelper.ApplySettingsQualityIndex(_settingsService.Current, QualityIndex);
+        }
+
         _settingsService.Current.AudioQualityIndex = AudioQualityIndex;
         _settingsService.Current.VideoCodecIndex = CodecIndex;
         _settingsService.Current.CaptureCursor = CaptureCursor;

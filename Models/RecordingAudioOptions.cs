@@ -10,6 +10,8 @@ public sealed class RecordingAudioOptions
 
     public int SampleRate { get; init; } = 48000;
 
+    public const int DefaultSampleRateKhz = 48;
+
     public int Channels { get; init; } = 2;
 
     public bool HasAnySource => EnableMicrophone || EnableSystemAudio;

@@ -5,6 +5,7 @@ using DawnCapture.Models;
 using DawnCapture.Services;
 using DawnCapture.Views;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
@@ -34,10 +35,10 @@ public partial class CaptureViewModel : ObservableObject
         _recordingService.RecordingFailed += OnRecordingFailed;
         _recordingService.RecordingNotice += OnRecordingNotice;
 
-        DestinationFolderSummary = _mainViewModel.OutputFolderSummary;
+        DestinationFolderSummary = BuildDestinationFolderSummary(_mainViewModel.OutputFolderFull);
         _mainViewModel.PropertyChanged += OnMainViewModelPropertyChanged;
         RecordButtonLabel = LocalizationService.GetString("Dock_StartRecording");
-        VideoQualityLabel = LocalizationService.GetString("Dock_Quality");
+        PresetLabel = LocalizationService.GetString("Dock_Preset");
         AudioQualityLabel = LocalizationService.GetString("Dock_AudioQuality");
         _settingsService.SettingsChanged += OnSettingsChanged;
         ApplyFromSettings(_settingsService.Current);
@@ -45,9 +46,28 @@ public partial class CaptureViewModel : ObservableObject
         ApplySelectedMode();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
+        UpdateOutputSummary();
 
         InitializeAudioDevices();
         InitializeWaveformBars();
+        PresetFlyout = CreatePresetFlyout();
+    }
+
+    private MenuFlyout CreatePresetFlyout()
+    {
+        var flyout = new MenuFlyout();
+        for (int i = 0; i < PresetOptions.Count; i++)
+        {
+            int index = i;
+            flyout.Items.Add(new MenuFlyoutItem
+            {
+                Text = PresetOptions[index].FullLabel,
+                Command = SelectCapturePresetCommand,
+                CommandParameter = index
+            });
+        }
+
+        return flyout;
     }
 
     private void InitializeWaveformBars()
@@ -172,15 +192,34 @@ public partial class CaptureViewModel : ObservableObject
         _settingsService.Save();
     }
 
-    partial void OnQualityIndexChanged(int value)
+    partial void OnCapturePresetIndexChanged(int value)
     {
+        OnPropertyChanged(nameof(SelectedPresetTierLabel));
+
         if (_suppressSettingsSave)
+        {
+            return;
+        }
+
+        if (value >= 3)
         {
             return;
         }
 
         RecordingSettingsHelper.ApplyCaptureQualityPreset(_settingsService.Current, value);
         _settingsService.Save();
+        UpdateOutputSummary();
+    }
+
+    [RelayCommand]
+    private void SelectCapturePreset(int index)
+    {
+        if (index < 0 || index >= PresetOptions.Count)
+        {
+            return;
+        }
+
+        CapturePresetIndex = index;
     }
 
     partial void OnAudioQualityIndexChanged(int value)
@@ -192,6 +231,7 @@ public partial class CaptureViewModel : ObservableObject
 
         _settingsService.Current.AudioQualityIndex = value;
         _settingsService.Save();
+        UpdateOutputSummary();
     }
 
     private void OnSettingsChanged(object? sender, EventArgs e) =>
@@ -203,9 +243,11 @@ public partial class CaptureViewModel : ObservableObject
         try
         {
             ShowCursor = settings.CaptureCursor;
-            QualityIndex = RecordingSettingsHelper.GetCaptureQualityIndex(settings);
+            CapturePresetIndex = RecordingSettingsHelper.ResolveCapturePresetIndex(settings);
+            OnPropertyChanged(nameof(SelectedPresetTierLabel));
             AudioQualityIndex = settings.AudioQualityIndex;
             UpdateCodecSummaries(settings.VideoCodecIndex);
+            UpdateOutputSummary();
         }
         finally
         {
@@ -365,10 +407,19 @@ public partial class CaptureViewModel : ObservableObject
     private bool _showVideoQuality = true;
 
     [ObservableProperty]
-    private string _videoQualityLabel = string.Empty;
+    private string _presetLabel = string.Empty;
 
     [ObservableProperty]
     private string _audioQualityLabel = string.Empty;
+
+    [ObservableProperty]
+    private string _outputFootnoteSpecs = string.Empty;
+
+    [ObservableProperty]
+    private string _outputFootnoteHint = string.Empty;
+
+    [ObservableProperty]
+    private string _outputFootnoteTooltip = string.Empty;
 
     [ObservableProperty]
     private string _videoCodecSummary = string.Empty;
@@ -376,24 +427,38 @@ public partial class CaptureViewModel : ObservableObject
     [ObservableProperty]
     private string _audioCodecSummary = string.Empty;
 
-    public string AudioOnlyModeLabel { get; } = LocalizationService.GetString("Capture_Mode_Audio");
-
-    public IReadOnlyList<string> QualityOptions { get; } =
+    public IReadOnlyList<DockComboOption> PresetOptions { get; } =
     [
-        LocalizationService.GetString("Quality_Option_Compact"),
-        LocalizationService.GetString("Quality_Option_Balanced"),
-        LocalizationService.GetString("Quality_Option_Smooth")
+        new(
+            LocalizationService.GetString("Preset_Tier_SmallerFiles"),
+            LocalizationService.GetString("Preset_Option_SmallerFiles")),
+        new(
+            LocalizationService.GetString("Preset_Tier_Balanced"),
+            LocalizationService.GetString("Preset_Option_Balanced")),
+        new(
+            LocalizationService.GetString("Preset_Tier_SmootherMotion"),
+            LocalizationService.GetString("Preset_Option_SmootherMotion")),
+        new(
+            LocalizationService.GetString("Preset_Tier_Custom"),
+            LocalizationService.GetString("Preset_Option_Custom"))
     ];
+
+    public MenuFlyout PresetFlyout { get; }
+
+    public string SelectedPresetTierLabel =>
+        PresetOptions[Math.Clamp(CapturePresetIndex, 0, PresetOptions.Count - 1)].TierLabel;
 
     public IReadOnlyList<string> AudioQualityOptions { get; } =
     [
-        LocalizationService.GetString("AudioQuality_Option_Standard"),
-        LocalizationService.GetString("AudioQuality_Option_High"),
-        LocalizationService.GetString("AudioQuality_Option_Best")
+        LocalizationService.GetString("AudioQuality_Option_Standard_Short"),
+        LocalizationService.GetString("AudioQuality_Option_High_Short"),
+        LocalizationService.GetString("AudioQuality_Option_Best_Short")
     ];
 
+    public string AudioOnlyModeLabel { get; } = LocalizationService.GetString("Capture_Mode_Audio");
+
     [ObservableProperty]
-    private int _qualityIndex = 1;
+    private int _capturePresetIndex = 1;
 
     [ObservableProperty]
     private int _audioQualityIndex;
@@ -425,6 +490,7 @@ public partial class CaptureViewModel : ObservableObject
         SyncHasSource();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
+        UpdateOutputSummary();
     }
 
     partial void OnSelectedModeChanged(CaptureModeKind value)
@@ -442,6 +508,7 @@ public partial class CaptureViewModel : ObservableObject
         ApplySelectedMode();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
+        UpdateOutputSummary();
     }
 
     partial void OnSelectedRegionChanged(RegionCaptureTarget? value)
@@ -450,6 +517,7 @@ public partial class CaptureViewModel : ObservableObject
         SyncHasSource();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
+        UpdateOutputSummary();
     }
 
     partial void OnSelectedWindowChanged(WindowCaptureTarget? value)
@@ -458,6 +526,7 @@ public partial class CaptureViewModel : ObservableObject
         SyncHasSource();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
+        UpdateOutputSummary();
     }
 
     private void ApplySelectedMode()
@@ -471,6 +540,7 @@ public partial class CaptureViewModel : ObservableObject
         ShowVideoQuality = SelectedMode != CaptureModeKind.AudioOnly;
 
         SyncHasSource();
+        UpdateOutputSummary();
     }
 
     private void SyncHasSource()
@@ -952,11 +1022,108 @@ public partial class CaptureViewModel : ObservableObject
 
     private void OnMainViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.OutputFolderSummary))
+        if (e.PropertyName is nameof(MainViewModel.OutputFolderSummary) or nameof(MainViewModel.OutputFolderFull))
         {
-            DestinationFolderSummary = _mainViewModel.OutputFolderSummary;
+            DestinationFolderSummary = BuildDestinationFolderSummary(_mainViewModel.OutputFolderFull);
         }
     }
+
+    private static string BuildDestinationFolderSummary(string folder) =>
+        PathDisplayHelper.CompactDockFolderSummary(
+            folder,
+            OutputFolderHelper.DefaultPath,
+            LocalizationService.GetString("OutputFolder_DefaultSummary"));
+
+    private void UpdateOutputSummary()
+    {
+        var settings = _settingsService.Current;
+        int captureIndex = RecordingSettingsHelper.ResolveCapturePresetIndex(settings);
+        int audioKbps = RecordingAudioOptions.BitrateFromQualityIndex(settings.AudioQualityIndex);
+
+        if (SelectedMode == CaptureModeKind.AudioOnly)
+        {
+            OutputFootnoteSpecs = RecordingOutputSummaryHelper.FormatAudioSpecs(audioKbps);
+            OutputFootnoteHint = " · " + InlineAudioQualityHint(settings.AudioQualityIndex);
+            OutputFootnoteTooltip = OutputFootnoteSpecs + OutputFootnoteHint;
+            return;
+        }
+
+        string? resolution = GetCaptureResolution();
+        if (string.IsNullOrEmpty(resolution))
+        {
+            OutputFootnoteSpecs = LocalizationService.GetString("Dock_Output_SelectSource");
+            OutputFootnoteHint = string.Empty;
+            OutputFootnoteTooltip = OutputFootnoteSpecs;
+            return;
+        }
+
+        string codec = RecordingSettingsHelper.VideoCodecLabel(settings.VideoCodecIndex);
+        (int Width, int Height)? dimensions = GetCaptureDimensions();
+        int width = dimensions?.Width ?? RecordingSettingsHelper.ReferenceWidth;
+        int height = dimensions?.Height ?? RecordingSettingsHelper.ReferenceHeight;
+        int effectiveVideoKbps = RecordingSettingsHelper.ResolvePreviewVideoBitrateKbps(settings, width, height);
+        bool approximateVideoBitrate = RecordingSettingsHelper.UsesApproximateVideoBitrate(settings);
+
+        OutputFootnoteSpecs = RecordingOutputSummaryHelper.FormatVideoSpecs(
+            codec,
+            resolution,
+            width: null,
+            height: null,
+            settings.FrameRate,
+            effectiveVideoKbps,
+            audioKbps,
+            includeAudio: true,
+            approximateVideoBitrate: approximateVideoBitrate);
+        OutputFootnoteHint = " · " + InlinePresetHint(captureIndex);
+        OutputFootnoteTooltip = OutputFootnoteSpecs + OutputFootnoteHint;
+    }
+
+    private string? GetCaptureResolution() => SelectedMode switch
+    {
+        CaptureModeKind.FullScreen => SelectedDisplay?.Resolution,
+        CaptureModeKind.Window => SelectedWindow?.Resolution,
+        CaptureModeKind.Region => SelectedRegion?.Resolution,
+        _ => null
+    };
+
+    private (int Width, int Height)? GetCaptureDimensions() => SelectedMode switch
+    {
+        CaptureModeKind.FullScreen when SelectedDisplay is { } display =>
+            (display.Width, display.Height),
+        CaptureModeKind.Window when SelectedWindow is { } window =>
+            (window.Width, window.Height),
+        CaptureModeKind.Region when SelectedRegion is { } region =>
+            (region.Width, region.Height),
+        _ => null
+    };
+
+    private static string InlinePresetHint(int captureIndex)
+    {
+        string text = captureIndex switch
+        {
+            0 => LocalizationService.GetString("Preset_Friendly_SmallerFiles"),
+            2 => LocalizationService.GetString("Preset_Friendly_SmootherMotion"),
+            3 => LocalizationService.GetString("Preset_Friendly_Custom"),
+            _ => LocalizationService.GetString("Preset_Friendly_Balanced")
+        };
+
+        return InlineHintPhrase(text);
+    }
+
+    private static string InlineAudioQualityHint(int audioQualityIndex)
+    {
+        string text = audioQualityIndex switch
+        {
+            0 => LocalizationService.GetString("AudioQuality_Option_Standard_Short"),
+            2 => LocalizationService.GetString("AudioQuality_Option_Best_Short"),
+            _ => LocalizationService.GetString("AudioQuality_Option_High_Short")
+        };
+
+        return InlineHintPhrase(text);
+    }
+
+    private static string InlineHintPhrase(string text) =>
+        text.Replace(" · ", LocalizationService.GetString("Dock_Output_HintSeparator"), StringComparison.Ordinal);
 
     private void UpdateHeaderCopy()
     {

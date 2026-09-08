@@ -10,6 +10,9 @@
     <GridLength x:Key="DawnNavPaneWidth">176</GridLength>
     <x:Double x:Key="DawnPageMaxWidth">980</x:Double>
     <x:Double x:Key="DawnSettingsMaxWidth">850</x:Double>
+    <x:Double x:Key="DawnSettingsControlWidth">250</x:Double>
+    <GridLength x:Key="DawnSettingsControlColumnWidth">250</GridLength>
+    <Thickness x:Key="DawnSettingsScrollPadding">0,0,12,0</Thickness>
     <x:Double x:Key="DawnAboutMaxWidth">700</x:Double>
     <Thickness x:Key="DawnPagePadding">44,38,44,34</Thickness>
     <Thickness x:Key="DawnCapturePagePadding">44,24,44,0</Thickness>
@@ -80,6 +83,24 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Padding" Value="0,0,0,9" />
         <Setter Property="Margin" Value="0,0,0,0" />
+    </Style>
+
+    <Style x:Key="DawnSettingsRowStyle" TargetType="Grid">
+        <Setter Property="MinHeight" Value="66" />
+        <Setter Property="ColumnSpacing" Value="30" />
+    </Style>
+
+    <Style x:Key="DawnSettingsComboBoxStyle" TargetType="ComboBox">
+        <Setter Property="Width" Value="{StaticResource DawnSettingsControlWidth}" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="DawnSettingsToggleStyle" TargetType="ToggleSwitch">
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="OffContent" Value="" />
+        <Setter Property="OnContent" Value="" />
     </Style>
 
     <Style x:Key="TimerTextBlockStyle" TargetType="TextBlock">

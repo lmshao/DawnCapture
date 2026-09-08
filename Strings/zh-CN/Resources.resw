@@ -143,6 +143,7 @@
   <data name="Capture_EmptyRegion_Desc" xml:space="preserve"><value>在透明区域选择器中框选精确录制区域。</value></data>
   <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>仅音频 / AAC-LC / M4A</value></data>
   <data name="Capture_Source_None" xml:space="preserve"><value>无来源</value></data>
+  <data name="Dock_Preset" xml:space="preserve"><value>录制预设</value></data>
   <data name="Dock_Quality" xml:space="preserve"><value>画质</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>音质</value></data>
   <data name="Dock_Codec_Avc" xml:space="preserve"><value>兼容 / H.264 AVC</value></data>
@@ -150,6 +151,25 @@
   <data name="Dock_Codec_Audio" xml:space="preserve"><value>AAC-LC / M4A</value></data>
   <data name="Dock_StartRecording" xml:space="preserve"><value>开始录制</value></data>
   <data name="Dock_StopRecording" xml:space="preserve"><value>停止录制</value></data>
+  <data name="Dock_Output_SelectSource" xml:space="preserve"><value>选择捕获源以预览输出参数。</value></data>
+  <data name="Dock_Output_HintSeparator" xml:space="preserve"><value>，</value></data>
+  <data name="Dock_Output_VideoFormat" xml:space="preserve"><value>{0} · {1} · {2} fps · {3} Mbps — {4}</value></data>
+  <data name="Dock_Output_AudioFormat" xml:space="preserve"><value>AAC · {0} kHz · {1} kbps</value></data>
+  <data name="Output_Summary_VideoWithAudio" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Output_Summary_VideoSection" xml:space="preserve"><value>视频：{0}</value></data>
+  <data name="Output_Summary_AudioSection" xml:space="preserve"><value>音频：{0}</value></data>
+  <data name="Preset_Option_SmallerFiles" xml:space="preserve"><value>省空间档 · 30 fps · 更小文件</value></data>
+  <data name="Preset_Option_Balanced" xml:space="preserve"><value>均衡档 · 30 fps · 推荐</value></data>
+  <data name="Preset_Option_SmootherMotion" xml:space="preserve"><value>高画质档 · 60 fps · 更流畅</value></data>
+  <data name="Preset_Option_Custom" xml:space="preserve"><value>自定义</value></data>
+  <data name="Preset_Tier_SmallerFiles" xml:space="preserve"><value>省空间档</value></data>
+  <data name="Preset_Tier_Balanced" xml:space="preserve"><value>均衡档</value></data>
+  <data name="Preset_Tier_SmootherMotion" xml:space="preserve"><value>高画质档</value></data>
+  <data name="Preset_Tier_Custom" xml:space="preserve"><value>自定义</value></data>
+  <data name="Preset_Friendly_SmallerFiles" xml:space="preserve"><value>更小文件 · 适合长时间录制</value></data>
+  <data name="Preset_Friendly_Balanced" xml:space="preserve"><value>推荐 · 体积与清晰度平衡</value></data>
+  <data name="Preset_Friendly_SmootherMotion" xml:space="preserve"><value>动作更顺 · 文件较大</value></data>
+  <data name="Preset_Friendly_Custom" xml:space="preserve"><value>自定义组合 · 帧率与码率见设置</value></data>
   <data name="AppStatus_Recording" xml:space="preserve"><value>录制中 / {0}</value></data>
   <data name="Recordings_Eyebrow.Text" xml:space="preserve"><value>本地库</value></data>
   <data name="Recordings_Title.Text" xml:space="preserve"><value>录像库</value></data>
@@ -180,7 +200,7 @@
   <data name="Recordings_Column_Name" xml:space="preserve"><value>文件名</value></data>
   <data name="Recordings_Column_Updated" xml:space="preserve"><value>更新时间</value></data>
   <data name="Recordings_Column_Size" xml:space="preserve"><value>大小</value></data>
-  <data name="Recordings_Format_VideoAudio" xml:space="preserve"><value>{0} · {1} + {2}</value></data>
+  <data name="Recordings_Format_VideoAudio" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="Recordings_Format_VideoOnly" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Format_Audio" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>未知</value></data>
@@ -256,12 +276,20 @@
   <data name="Settings_OutputFolder.Text" xml:space="preserve"><value>输出文件夹</value></data>
   <data name="Settings_OutputFolder_Desc.Text" xml:space="preserve"><value>已完成录像的保存位置</value></data>
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>帧率</value></data>
-  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>数值越高，文件越大</value></data>
-  <data name="Settings_Quality.Text" xml:space="preserve"><value>画质</value></data>
-  <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>均衡适合大多数录制</value></data>
+  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>与视频码率分开设置。首页「录制预设」会同时修改帧率与码率。</value></data>
+  <data name="Settings_Quality.Text" xml:space="preserve"><value>视频码率</value></data>
+  <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>仅控制视频编码目标码率。首页「录制预设」会同时设置帧率与本项码率。</value></data>
+  <data name="Settings_BitrateMode.Text" xml:space="preserve"><value>视频码率模式</value></data>
+  <data name="Settings_BitrateMode_Desc.Text" xml:space="preserve"><value>随分辨率调整会按捕获尺寸缩放；固定码率则始终使用设定值。</value></data>
+  <data name="Settings_BitrateMode_Adaptive.Content" xml:space="preserve"><value>随捕获尺寸调整</value></data>
+  <data name="Settings_BitrateMode_Fixed.Content" xml:space="preserve"><value>固定目标码率</value></data>
+  <data name="Settings_AdaptiveQuality.Text" xml:space="preserve"><value>画质档位</value></data>
+  <data name="Settings_AdaptiveQuality_Desc.Text" xml:space="preserve"><value>以 1080p 为参考档位；实际码率会随捕获尺寸与帧率自动调整。</value></data>
+  <data name="Settings_FixedBitrate.Text" xml:space="preserve"><value>目标码率</value></data>
+  <data name="Settings_FixedBitrate_Desc.Text" xml:space="preserve"><value>无论全屏、窗口或区域，均使用此视频码率。</value></data>
+  <data name="Settings_FixedBitrate_Unit.Text" xml:space="preserve"><value>Mbps</value></data>
   <data name="Settings_VideoCodec.Text" xml:space="preserve"><value>视频编解码器</value></data>
   <data name="Settings_VideoCodec_Desc.Text" xml:space="preserve"><value>选择兼容性或小文件</value></data>
-  <data name="Settings_Codec_Avc_Status.Text" xml:space="preserve"><value>几乎适用于所有播放器、编辑器、浏览器和上传服务。</value></data>
   <data name="Settings_AudioQuality.Text" xml:space="preserve"><value>音频质量</value></data>
   <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>纯音频录制使用 M4A 容器中的 AAC-LC</value></data>
   <data name="Settings_CaptureCursor.Text" xml:space="preserve"><value>录制光标</value></data>
@@ -278,6 +306,9 @@
   <data name="AudioQuality_Option_Standard" xml:space="preserve"><value>标准 / 128 kbps</value></data>
   <data name="AudioQuality_Option_High" xml:space="preserve"><value>高 / 192 kbps</value></data>
   <data name="AudioQuality_Option_Best" xml:space="preserve"><value>最佳 / 256 kbps</value></data>
+  <data name="AudioQuality_Option_Standard_Short" xml:space="preserve"><value>标准 · 128k</value></data>
+  <data name="AudioQuality_Option_High_Short" xml:space="preserve"><value>高 · 192k</value></data>
+  <data name="AudioQuality_Option_Best_Short" xml:space="preserve"><value>最佳 · 256k</value></data>
   <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>已选区域 / 1280 x 720</value></data>
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>已选区域 / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>请选择录制区域</value></data>
@@ -289,7 +320,7 @@
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
   <data name="Settings_FrameRate_Custom.Content" xml:space="preserve"><value>自定义</value></data>
-  <data name="Settings_Quality_Compact.Content" xml:space="preserve"><value>紧凑</value></data>
+  <data name="Settings_Quality_Compact.Content" xml:space="preserve"><value>省空间</value></data>
   <data name="Settings_Quality_Balanced.Content" xml:space="preserve"><value>均衡</value></data>
   <data name="Settings_Quality_High.Content" xml:space="preserve"><value>高画质</value></data>
   <data name="Settings_Codec_Avc.Content" xml:space="preserve"><value>兼容 / H.264 AVC</value></data>

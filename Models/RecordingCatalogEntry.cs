@@ -21,6 +21,8 @@ public sealed class RecordingEncodingInfo
     public double? FrameRate { get; init; }
 
     public int? BitrateKbps { get; init; }
+
+    public int? AudioBitrateKbps { get; init; }
 }
 
 public sealed class RecordingCatalogEntry
@@ -56,6 +58,8 @@ public sealed class RecordingCatalogEntry
     public double? FrameRate { get; init; }
 
     public int? BitrateKbps { get; init; }
+
+    public int? AudioBitrateKbps { get; init; }
 
     public byte[]? ThumbnailPng { get; init; }
 

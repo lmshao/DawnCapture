@@ -217,7 +217,8 @@
                                     FontSize="11"
                                     LineHeight="16"
                                     Text="{x:Bind FormatLabel}"
-                                    TextTrimming="CharacterEllipsis" />
+                                    TextTrimming="CharacterEllipsis"
+                                    ToolTipService.ToolTip="{x:Bind FormatLabel}" />
                             </StackPanel>
 
                             <TextBlock

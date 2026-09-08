@@ -143,6 +143,7 @@
   <data name="Capture_EmptyRegion_Desc" xml:space="preserve"><value>Draw a precise capture area in the transparent region picker.</value></data>
   <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>Audio only / AAC-LC / M4A</value></data>
   <data name="Capture_Source_None" xml:space="preserve"><value>No source</value></data>
+  <data name="Dock_Preset" xml:space="preserve"><value>Preset</value></data>
   <data name="Dock_Quality" xml:space="preserve"><value>Quality</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>Audio quality</value></data>
   <data name="Dock_Codec_Avc" xml:space="preserve"><value>Compatible / H.264 AVC</value></data>
@@ -150,6 +151,25 @@
   <data name="Dock_Codec_Audio" xml:space="preserve"><value>AAC-LC / M4A</value></data>
   <data name="Dock_StartRecording" xml:space="preserve"><value>Start recording</value></data>
   <data name="Dock_StopRecording" xml:space="preserve"><value>Stop recording</value></data>
+  <data name="Dock_Output_SelectSource" xml:space="preserve"><value>Select a source to preview output settings.</value></data>
+  <data name="Dock_Output_HintSeparator" xml:space="preserve"><value>, </value></data>
+  <data name="Dock_Output_VideoFormat" xml:space="preserve"><value>{0} · {1} · {2} fps · {3} Mbps — {4}</value></data>
+  <data name="Dock_Output_AudioFormat" xml:space="preserve"><value>AAC · {0} kHz · {1} kbps</value></data>
+  <data name="Output_Summary_VideoWithAudio" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Output_Summary_VideoSection" xml:space="preserve"><value>Video: {0}</value></data>
+  <data name="Output_Summary_AudioSection" xml:space="preserve"><value>Audio: {0}</value></data>
+  <data name="Preset_Option_SmallerFiles" xml:space="preserve"><value>Compact tier · 30 fps · smaller files</value></data>
+  <data name="Preset_Option_Balanced" xml:space="preserve"><value>Balanced tier · 30 fps · recommended</value></data>
+  <data name="Preset_Option_SmootherMotion" xml:space="preserve"><value>High tier · 60 fps · smoother motion</value></data>
+  <data name="Preset_Option_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="Preset_Tier_SmallerFiles" xml:space="preserve"><value>Compact</value></data>
+  <data name="Preset_Tier_Balanced" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Preset_Tier_SmootherMotion" xml:space="preserve"><value>High</value></data>
+  <data name="Preset_Tier_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="Preset_Friendly_SmallerFiles" xml:space="preserve"><value>Smaller files · good for long recordings</value></data>
+  <data name="Preset_Friendly_Balanced" xml:space="preserve"><value>Recommended · balanced size and clarity</value></data>
+  <data name="Preset_Friendly_SmootherMotion" xml:space="preserve"><value>Smoother motion · larger files</value></data>
+  <data name="Preset_Friendly_Custom" xml:space="preserve"><value>Custom mix · see Settings for frame rate and bitrate</value></data>
   <data name="AppStatus_Recording" xml:space="preserve"><value>Recording / {0}</value></data>
   <data name="Recordings_Eyebrow.Text" xml:space="preserve"><value>Local library</value></data>
   <data name="Recordings_Title.Text" xml:space="preserve"><value>Recordings</value></data>
@@ -180,7 +200,7 @@
   <data name="Recordings_Column_Name" xml:space="preserve"><value>Name</value></data>
   <data name="Recordings_Column_Updated" xml:space="preserve"><value>Updated</value></data>
   <data name="Recordings_Column_Size" xml:space="preserve"><value>Size</value></data>
-  <data name="Recordings_Format_VideoAudio" xml:space="preserve"><value>{0} · {1} + {2}</value></data>
+  <data name="Recordings_Format_VideoAudio" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="Recordings_Format_VideoOnly" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Format_Audio" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>Unknown</value></data>
@@ -256,12 +276,20 @@
   <data name="Settings_OutputFolder.Text" xml:space="preserve"><value>Output folder</value></data>
   <data name="Settings_OutputFolder_Desc.Text" xml:space="preserve"><value>Where completed recordings are saved</value></data>
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>Frame rate</value></data>
-  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>Higher values create larger files</value></data>
-  <data name="Settings_Quality.Text" xml:space="preserve"><value>Quality</value></data>
-  <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>Balanced works well for most recordings</value></data>
+  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>Separate from video bitrate. Capture presets change both together.</value></data>
+  <data name="Settings_Quality.Text" xml:space="preserve"><value>Video bitrate</value></data>
+  <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>Target video encoding bitrate only. Capture presets on the home page set frame rate and bitrate together.</value></data>
+  <data name="Settings_BitrateMode.Text" xml:space="preserve"><value>Video bitrate mode</value></data>
+  <data name="Settings_BitrateMode_Desc.Text" xml:space="preserve"><value>Adaptive scales with capture size; fixed uses an exact target.</value></data>
+  <data name="Settings_BitrateMode_Adaptive.Content" xml:space="preserve"><value>Scale with capture size</value></data>
+  <data name="Settings_BitrateMode_Fixed.Content" xml:space="preserve"><value>Fixed target bitrate</value></data>
+  <data name="Settings_AdaptiveQuality.Text" xml:space="preserve"><value>Quality tier</value></data>
+  <data name="Settings_AdaptiveQuality_Desc.Text" xml:space="preserve"><value>Reference tiers for 1080p; actual bitrate adjusts to your capture size and frame rate.</value></data>
+  <data name="Settings_FixedBitrate.Text" xml:space="preserve"><value>Target bitrate</value></data>
+  <data name="Settings_FixedBitrate_Desc.Text" xml:space="preserve"><value>Uses this exact video bitrate for every capture size.</value></data>
+  <data name="Settings_FixedBitrate_Unit.Text" xml:space="preserve"><value>Mbps</value></data>
   <data name="Settings_VideoCodec.Text" xml:space="preserve"><value>Video codec</value></data>
   <data name="Settings_VideoCodec_Desc.Text" xml:space="preserve"><value>Choose compatibility or smaller files</value></data>
-  <data name="Settings_Codec_Avc_Status.Text" xml:space="preserve"><value>Works with nearly every player, editor, browser, and upload service.</value></data>
   <data name="Settings_AudioQuality.Text" xml:space="preserve"><value>Audio quality</value></data>
   <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>AAC-LC in an M4A file for audio-only recordings</value></data>
   <data name="Settings_CaptureCursor.Text" xml:space="preserve"><value>Capture cursor</value></data>
@@ -278,6 +306,9 @@
   <data name="AudioQuality_Option_Standard" xml:space="preserve"><value>Standard / 128 kbps</value></data>
   <data name="AudioQuality_Option_High" xml:space="preserve"><value>High / 192 kbps</value></data>
   <data name="AudioQuality_Option_Best" xml:space="preserve"><value>Best / 256 kbps</value></data>
+  <data name="AudioQuality_Option_Standard_Short" xml:space="preserve"><value>Standard · 128k</value></data>
+  <data name="AudioQuality_Option_High_Short" xml:space="preserve"><value>High · 192k</value></data>
+  <data name="AudioQuality_Option_Best_Short" xml:space="preserve"><value>Best · 256k</value></data>
   <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>Selected region / 1280 x 720</value></data>
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>Selected region / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>Select a recording region</value></data>
@@ -289,7 +320,7 @@
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
   <data name="Settings_FrameRate_Custom.Content" xml:space="preserve"><value>Custom</value></data>
-  <data name="Settings_Quality_Compact.Content" xml:space="preserve"><value>Compact</value></data>
+  <data name="Settings_Quality_Compact.Content" xml:space="preserve"><value>Smaller files</value></data>
   <data name="Settings_Quality_Balanced.Content" xml:space="preserve"><value>Balanced</value></data>
   <data name="Settings_Quality_High.Content" xml:space="preserve"><value>High quality</value></data>
   <data name="Settings_Codec_Avc.Content" xml:space="preserve"><value>Compatible / H.264 AVC</value></data>

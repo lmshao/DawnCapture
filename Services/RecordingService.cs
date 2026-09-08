@@ -72,6 +72,7 @@ public sealed class RecordingService : IRecordingService
     private bool _isPaused;
     private bool _isStopping;
     private string? _currentOutputPath;
+    private int _effectiveVideoBitrateKbps;
     private RecordingSourceKind _currentSourceKind = RecordingSourceKind.Screen;
     private SizeInt32 _windowEncodeSize;
     private SizeInt32 _poolContentSize;
@@ -436,7 +437,12 @@ public sealed class RecordingService : IRecordingService
                     FrameRate = sourceKind == RecordingSourceKind.Audio ? null : _settings.Current.FrameRate,
                     BitrateKbps = sourceKind == RecordingSourceKind.Audio
                         ? _audioOptions.BitrateKbps
-                        : _settings.Current.BitrateKbps
+                        : _effectiveVideoBitrateKbps > 0
+                            ? _effectiveVideoBitrateKbps
+                            : _settings.Current.BitrateKbps,
+                    AudioBitrateKbps = sourceKind == RecordingSourceKind.Audio
+                        ? _audioOptions.BitrateKbps
+                        : _audioOptions.HasAnySource ? _audioOptions.BitrateKbps : null
                 });
 
             if (_settings.Current.NotificationEnabled)
@@ -589,6 +595,11 @@ public sealed class RecordingService : IRecordingService
         Log.Debug($"Creating media objects: OutputSize={size.Width}x{size.Height}, FrameRate={_settings.Current.FrameRate}, Bitrate={_settings.Current.BitrateKbps}Kbps, AudioMic={audioOptions.EnableMicrophone}, AudioSystem={audioOptions.EnableSystemAudio}, AudioBitrate={audioOptions.BitrateKbps}Kbps");
         try
         {
+            _effectiveVideoBitrateKbps = RecordingSettingsHelper.ResolveEffectiveVideoBitrateKbps(
+                _settings.Current,
+                size.Width,
+                size.Height);
+            Log.Debug($"Effective video bitrate={_effectiveVideoBitrateKbps}Kbps (mode={_settings.Current.BitrateMode})");
             var videoProperties = VideoEncodingProperties.CreateUncompressed(
                 MediaEncodingSubtypes.Bgra8,
                 (uint)size.Width,
@@ -617,7 +628,7 @@ public sealed class RecordingService : IRecordingService
             var profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD1080p);
             profile.Video.Width = (uint)size.Width;
             profile.Video.Height = (uint)size.Height;
-            profile.Video.Bitrate = (uint)(_settings.Current.BitrateKbps * 1000);
+            profile.Video.Bitrate = (uint)(_effectiveVideoBitrateKbps * 1000);
             profile.Video.FrameRate.Numerator = (uint)_settings.Current.FrameRate;
             profile.Video.FrameRate.Denominator = 1;
             profile.Video.PixelAspectRatio.Numerator = 1;
