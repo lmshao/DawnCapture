@@ -65,9 +65,9 @@
   <data name="Settings_Save.Content" xml:space="preserve"><value>保存</value></data>
   <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>拖拽选择录制区域。选中后可拖动选框或控制点调整，按 Enter 确认，按 Esc 取消。</value></data>
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ 停止</value></data>
-  <data name="RecordingControl_Pause.ToolTip" xml:space="preserve"><value>暂停</value></data>
-  <data name="RecordingControl_Resume.ToolTip" xml:space="preserve"><value>继续</value></data>
-  <data name="RecordingControl_Stop.ToolTip" xml:space="preserve"><value>停止</value></data>
+  <data name="RecordingControl_PauseToolTip" xml:space="preserve"><value>暂停</value></data>
+  <data name="RecordingControl_ResumeToolTip" xml:space="preserve"><value>继续</value></data>
+  <data name="RecordingControl_StopToolTip" xml:space="preserve"><value>停止</value></data>
   <data name="About_Description" xml:space="preserve"><value>一款快速、轻量、注重隐私的 Windows 11 屏幕与音频录制工具。你的录像始终保存在本机。</value></data>
   <data name="About_Eyebrow.Text" xml:space="preserve"><value>关于</value></data>
   <data name="About_PageTitle.Text" xml:space="preserve"><value>关于 DawnCapture</value></data>
@@ -271,15 +271,15 @@
   <data name="Capture_AudioFormatDetail.Text" xml:space="preserve"><value>AAC-LC / M4A / 48 kHz 立体声</value></data>
   <data name="Capture_MicrophoneOn" xml:space="preserve"><value>麦克风已开启</value></data>
   <data name="Capture_SystemAudioUnavailable.Text" xml:space="preserve"><value>未识别到播放设备</value></data>
-  <data name="Capture_MicrophoneOff.Text" xml:space="preserve"><value>麦克风已关闭</value></data>
-  <data name="Capture_SystemAudioOff.Text" xml:space="preserve"><value>系统音频已关闭</value></data>
+  <data name="Capture_MicrophoneOff" xml:space="preserve"><value>麦克风已关闭</value></data>
+  <data name="Capture_SystemAudioOff" xml:space="preserve"><value>系统音频已关闭</value></data>
   <data name="Capture_Preview_AudioSummary_Mic" xml:space="preserve"><value>仅麦克风</value></data>
   <data name="Capture_Preview_AudioSummary_System" xml:space="preserve"><value>仅系统音频</value></data>
   <data name="Capture_Preview_AudioSummary_None" xml:space="preserve"><value>未选择音频来源</value></data>
   <data name="Failure_NoAudioSamples" xml:space="preserve"><value>没有写入任何音频样本。请检查音频设备和来源开关。</value></data>
   <data name="AppStatus_NoAudioDevices" xml:space="preserve"><value>没有可用的音频输入或播放设备</value></data>
   <data name="AppStatus_AudioRecordingHint" xml:space="preserve"><value>正在录制音频</value></data>
-  <data name="Capture_SystemAudioOn.Text" xml:space="preserve"><value>系统音频已开启</value></data>
+  <data name="Capture_SystemAudioOn" xml:space="preserve"><value>系统音频已开启</value></data>
   <data name="Dock_SaveTo.Text" xml:space="preserve"><value>保存到</value></data>
   <data name="FolderFlyout_Open.Text" xml:space="preserve"><value>打开文件夹</value></data>
   <data name="FolderFlyout_Change.Text" xml:space="preserve"><value>更改文件夹</value></data>
@@ -330,6 +330,9 @@
   <data name="Settings_Notification.Text" xml:space="preserve"><value>完成通知</value></data>
   <data name="Settings_Notification_Desc.Text" xml:space="preserve"><value>保存后显示 Windows 通知</value></data>
   <data name="Settings_Language_Desc.Text" xml:space="preserve"><value>更改此设置后需重启应用</value></data>
+  <data name="Settings_LanguageRestart_Title" xml:space="preserve"><value>需要重启</value></data>
+  <data name="Settings_LanguageRestart_Message" xml:space="preserve"><value>更改语言将重启 DawnCapture。是否继续？</value></data>
+  <data name="Settings_LanguageRestart_Confirm" xml:space="preserve"><value>立即重启</value></data>
   <data name="Quality_Option_Compact" xml:space="preserve"><value>紧凑 / 30 FPS</value></data>
   <data name="Quality_Option_Balanced" xml:space="preserve"><value>均衡 / 30 FPS</value></data>
   <data name="Quality_Option_Smooth" xml:space="preserve"><value>流畅 / 60 FPS</value></data>

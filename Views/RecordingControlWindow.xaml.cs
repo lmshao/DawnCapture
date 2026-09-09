@@ -64,8 +64,8 @@ public sealed partial class RecordingControlWindow : Window
         WireHover(PauseButton);
         WireHover(StopButton);
 
-        ToolTipService.SetToolTip(PauseButton, LocalizationService.GetString("RecordingControl_Pause.ToolTip"));
-        ToolTipService.SetToolTip(StopButton, LocalizationService.GetString("RecordingControl_Stop.ToolTip"));
+        ToolTipService.SetToolTip(PauseButton, LocalizationService.GetString("RecordingControl_PauseToolTip"));
+        ToolTipService.SetToolTip(StopButton, LocalizationService.GetString("RecordingControl_StopToolTip"));
 
         // Re-measure when the window moves to a display with a different scale.
         Root.Loaded += (_, _) =>
@@ -102,7 +102,7 @@ public sealed partial class RecordingControlWindow : Window
     {
         PauseGlyph.Visibility = Visibility.Collapsed;
         PlayGlyph.Visibility = Visibility.Visible;
-        ToolTipService.SetToolTip(PauseButton, LocalizationService.GetString("RecordingControl_Resume.ToolTip"));
+        ToolTipService.SetToolTip(PauseButton, LocalizationService.GetString("RecordingControl_ResumeToolTip"));
         UpdateTime();
         StopPulse();
     }

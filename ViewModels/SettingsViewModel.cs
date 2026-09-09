@@ -48,6 +48,7 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     private bool _suppressPersist;
+    private bool _suppressLanguageChange;
 
     private void OnExternalSettingsChanged(object? sender, EventArgs e)
     {
@@ -238,20 +239,51 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnSelectedLanguageChanged(LanguageOption value)
     {
-        if (value is null)
+        if (value is null || _suppressLanguageChange)
         {
             return;
         }
 
-        bool languageChanged = _settingsService.Current.Language != value.Code;
-        _settingsService.Current.Language = value.Code;
-        _settingsService.Save();
-
-        if (languageChanged)
+        string previousCode = _settingsService.Current.Language;
+        if (previousCode == value.Code)
         {
-            LocalizationService.ApplyLanguage(value.Code);
-            RestartApplication();
+            return;
         }
+
+        _ = ConfirmLanguageChangeAsync(previousCode, value);
+    }
+
+    private async Task ConfirmLanguageChangeAsync(string previousCode, LanguageOption selected)
+    {
+        bool confirmed = await DialogHelper.ShowConfirmAsync(
+            LocalizationService.GetString("Settings_LanguageRestart_Message"),
+            LocalizationService.GetString("Settings_LanguageRestart_Title"),
+            confirmText: LocalizationService.GetString("Settings_LanguageRestart_Confirm"),
+            cancelText: LocalizationService.GetString("Recordings_DeleteCancel"));
+
+        if (!confirmed)
+        {
+            RevertSelectedLanguage(previousCode);
+            return;
+        }
+
+        _settingsService.Current.Language = selected.Code;
+        if (!_settingsService.Save())
+        {
+            _ = DialogHelper.ShowErrorAsync(LocalizationService.GetString("Settings_SaveFailed"));
+            RevertSelectedLanguage(previousCode);
+            return;
+        }
+
+        LocalizationService.ApplyLanguage(selected.Code);
+        RestartApplication();
+    }
+
+    private void RevertSelectedLanguage(string languageCode)
+    {
+        _suppressLanguageChange = true;
+        SelectedLanguage = Languages.FirstOrDefault(option => option.Code == languageCode) ?? Languages[0];
+        _suppressLanguageChange = false;
     }
 
     [RelayCommand]

@@ -65,9 +65,9 @@
   <data name="Settings_Save.Content" xml:space="preserve"><value>Save</value></data>
   <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>Drag to select. Drag inside to move, or drag handles to resize. Press Enter to confirm or Esc to cancel.</value></data>
   <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ Stop</value></data>
-  <data name="RecordingControl_Pause.ToolTip" xml:space="preserve"><value>Pause</value></data>
-  <data name="RecordingControl_Resume.ToolTip" xml:space="preserve"><value>Resume</value></data>
-  <data name="RecordingControl_Stop.ToolTip" xml:space="preserve"><value>Stop</value></data>
+  <data name="RecordingControl_PauseToolTip" xml:space="preserve"><value>Pause</value></data>
+  <data name="RecordingControl_ResumeToolTip" xml:space="preserve"><value>Resume</value></data>
+  <data name="RecordingControl_StopToolTip" xml:space="preserve"><value>Stop</value></data>
   <data name="About_Description" xml:space="preserve"><value>A fast, lightweight, privacy-friendly screen and audio recorder built for Windows 11. Your recordings always stay on your device.</value></data>
   <data name="About_Eyebrow.Text" xml:space="preserve"><value>About</value></data>
   <data name="About_PageTitle.Text" xml:space="preserve"><value>About DawnCapture</value></data>
@@ -272,15 +272,15 @@
   <data name="Capture_AudioFormatDetail.Text" xml:space="preserve"><value>AAC-LC / M4A / 48 kHz stereo</value></data>
   <data name="Capture_MicrophoneOn" xml:space="preserve"><value>Microphone on</value></data>
   <data name="Capture_SystemAudioUnavailable.Text" xml:space="preserve"><value>No playback device detected</value></data>
-  <data name="Capture_MicrophoneOff.Text" xml:space="preserve"><value>Microphone off</value></data>
-  <data name="Capture_SystemAudioOff.Text" xml:space="preserve"><value>System audio off</value></data>
+  <data name="Capture_MicrophoneOff" xml:space="preserve"><value>Microphone off</value></data>
+  <data name="Capture_SystemAudioOff" xml:space="preserve"><value>System audio off</value></data>
   <data name="Capture_Preview_AudioSummary_Mic" xml:space="preserve"><value>Microphone only</value></data>
   <data name="Capture_Preview_AudioSummary_System" xml:space="preserve"><value>System audio only</value></data>
   <data name="Capture_Preview_AudioSummary_None" xml:space="preserve"><value>No audio source selected</value></data>
   <data name="Failure_NoAudioSamples" xml:space="preserve"><value>No audio samples were written. Check your audio devices and source toggles.</value></data>
   <data name="AppStatus_NoAudioDevices" xml:space="preserve"><value>No audio input or playback device is available</value></data>
   <data name="AppStatus_AudioRecordingHint" xml:space="preserve"><value>Recording audio</value></data>
-  <data name="Capture_SystemAudioOn.Text" xml:space="preserve"><value>System audio on</value></data>
+  <data name="Capture_SystemAudioOn" xml:space="preserve"><value>System audio on</value></data>
   <data name="Dock_SaveTo.Text" xml:space="preserve"><value>Save to</value></data>
   <data name="FolderFlyout_Open.Text" xml:space="preserve"><value>Open folder</value></data>
   <data name="FolderFlyout_Change.Text" xml:space="preserve"><value>Change folder</value></data>
@@ -331,6 +331,9 @@
   <data name="Settings_Notification.Text" xml:space="preserve"><value>Completion notification</value></data>
   <data name="Settings_Notification_Desc.Text" xml:space="preserve"><value>Show a Windows notification after saving</value></data>
   <data name="Settings_Language_Desc.Text" xml:space="preserve"><value>Restart the app after changing this setting</value></data>
+  <data name="Settings_LanguageRestart_Title" xml:space="preserve"><value>Restart required</value></data>
+  <data name="Settings_LanguageRestart_Message" xml:space="preserve"><value>Changing the language will restart DawnCapture. Continue?</value></data>
+  <data name="Settings_LanguageRestart_Confirm" xml:space="preserve"><value>Restart now</value></data>
   <data name="Quality_Option_Compact" xml:space="preserve"><value>Compact / 30 FPS</value></data>
   <data name="Quality_Option_Balanced" xml:space="preserve"><value>Balanced / 30 FPS</value></data>
   <data name="Quality_Option_Smooth" xml:space="preserve"><value>Smooth / 60 FPS</value></data>

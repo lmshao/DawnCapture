@@ -29,4 +29,32 @@ public static class DialogHelper
 
         await dialog.ShowAsync();
     }
+
+    public static async Task<bool> ShowConfirmAsync(
+        string message,
+        string? title = null,
+        string? confirmText = null,
+        string? cancelText = null)
+    {
+        if (App.MainWindow?.Content?.XamlRoot is not { } xamlRoot)
+        {
+            return false;
+        }
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = xamlRoot,
+            Title = title ?? LocalizationService.GetString("Recordings_ErrorTitle"),
+            Content = new TextBlock
+            {
+                Text = message,
+                TextWrapping = TextWrapping.WrapWholeWords
+            },
+            PrimaryButtonText = confirmText ?? LocalizationService.GetString("Recordings_Ok"),
+            SecondaryButtonText = cancelText ?? LocalizationService.GetString("Recordings_DeleteCancel"),
+            DefaultButton = ContentDialogButton.Secondary
+        };
+
+        return await dialog.ShowAsync() == ContentDialogResult.Primary;
+    }
 }
