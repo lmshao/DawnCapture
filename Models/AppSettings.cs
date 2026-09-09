@@ -27,4 +27,8 @@ public sealed class AppSettings
     public bool CountdownEnabled { get; set; } = true;
 
     public bool NotificationEnabled { get; set; } = true;
+
+    public HotkeyBinding HotkeyToggleRecording { get; set; } = HotkeyBinding.ToggleRecordingDefault;
+
+    public HotkeyBinding HotkeyTogglePause { get; set; } = HotkeyBinding.TogglePauseDefault;
 }

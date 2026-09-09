@@ -69,6 +69,14 @@
   <data name="RecordingControl_Resume.ToolTip" xml:space="preserve"><value>继续</value></data>
   <data name="RecordingControl_Stop.ToolTip" xml:space="preserve"><value>停止</value></data>
   <data name="About_Description" xml:space="preserve"><value>一款快速、轻量、注重隐私的 Windows 11 屏幕与音频录制工具。你的录像始终保存在本机。</value></data>
+  <data name="About_Eyebrow.Text" xml:space="preserve"><value>关于</value></data>
+  <data name="About_PageTitle.Text" xml:space="preserve"><value>关于 DawnCapture</value></data>
+  <data name="About_PageDescription.Text" xml:space="preserve"><value>产品信息与录像数据的处理方式。</value></data>
+  <data name="About_AuthorPrefix" xml:space="preserve"><value>作者：SHAO Liming · </value></data>
+  <data name="About_Trust_Local" xml:space="preserve"><value>录像始终保存在本机</value></data>
+  <data name="About_Trust_NoAccount" xml:space="preserve"><value>无需账号，不上传云端</value></data>
+  <data name="About_Trust_Windows11" xml:space="preserve"><value>基于 Windows 11 原生录制 API 构建</value></data>
+  <data name="About_ProductName" xml:space="preserve"><value>DawnCapture</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>准备就绪</value></data>
   <data name="Status_Countdown" xml:space="preserve"><value>{0} 秒后开始录制…</value></data>
   <data name="Notification_RecordingSaved" xml:space="preserve"><value>录像已保存</value></data>
@@ -278,6 +286,20 @@
   <data name="Settings_Subsection_Video.Text" xml:space="preserve"><value>视频</value></data>
   <data name="Settings_Subsection_Audio.Text" xml:space="preserve"><value>音频</value></data>
   <data name="Settings_Subsection_Behavior.Text" xml:space="preserve"><value>录制行为</value></data>
+  <data name="Settings_Subsection_Shortcuts.Text" xml:space="preserve"><value>全局快捷键</value></data>
+  <data name="Settings_Hotkey_ToggleRecording.Text" xml:space="preserve"><value>开始 / 停止录制</value></data>
+  <data name="Settings_Hotkey_ToggleRecording_Desc.Text" xml:space="preserve"><value>全局生效，即使 DawnCapture 已最小化。</value></data>
+  <data name="Settings_Hotkey_TogglePause.Text" xml:space="preserve"><value>暂停 / 继续录制</value></data>
+  <data name="Settings_Hotkey_TogglePause_Desc.Text" xml:space="preserve"><value>仅在录制进行中生效。</value></data>
+  <data name="Settings_Hotkey_Change.Content" xml:space="preserve"><value>更改...</value></data>
+  <data name="Settings_Hotkey_CapturePrompt" xml:space="preserve"><value>请按键...</value></data>
+  <data name="Settings_Hotkey_None" xml:space="preserve"><value>无</value></data>
+  <data name="Settings_Hotkey_Error_Invalid" xml:space="preserve"><value>请选择有效的快捷键。</value></data>
+  <data name="Settings_Hotkey_Error_NeedModifier" xml:space="preserve"><value>请使用功能键，或配合 Ctrl、Alt、Shift、Win。</value></data>
+  <data name="Settings_Hotkey_Error_Duplicate" xml:space="preserve"><value>该快捷键已被 DawnCapture 的另一项操作占用。</value></data>
+  <data name="Settings_Hotkey_Error_External" xml:space="preserve"><value>该快捷键已被其他应用或 Windows 占用。</value></data>
+  <data name="Settings_Hotkey_Warning_Summary" xml:space="preserve"><value>无法注册：{0}</value></data>
+  <data name="Settings_Hotkey_Warning_Item" xml:space="preserve"><value>{0}（{1}）</value></data>
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>帧率</value></data>
   <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>首页「录制预设」会同时修改帧率与画质档位。</value></data>
   <data name="Settings_Quality.Text" xml:space="preserve"><value>视频码率</value></data>

@@ -179,7 +179,10 @@
                                 VerticalAlignment="Center"
                                 Orientation="Horizontal"
                                 Spacing="11">
-                                <SymbolIcon Foreground="{StaticResource DawnTextMutedBrush}" Symbol="Help" />
+                                <FontIcon
+                                    FontSize="16"
+                                    Foreground="{StaticResource DawnTextMutedBrush}"
+                                    Glyph="&#xE8CF;" />
                                 <TextBlock
                                     x:Name="NavAboutLabel"
                                     VerticalAlignment="Center"

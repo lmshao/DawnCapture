@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using DawnCapture.Helpers;
+using DawnCapture.Services;
 using DawnCapture.ViewModels;
 using DawnCapture.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,7 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<string, TextBlock> _navLabels = new();
     private readonly Dictionary<string, Button> _navButtons = new();
     private string _currentNav = "Capture";
+    private IGlobalHotkeyService? _globalHotkeyService;
 
     public MainViewModel ViewModel { get; }
 
@@ -46,6 +48,27 @@ public sealed partial class MainWindow : Window
         };
         Title = $"DawnCapture — {ViewModel.AppStatusText}";
         UpdateStorageAvailabilityBrush();
+        RegisterGlobalHotkeys();
+        Closed += (_, _) => _globalHotkeyService?.Dispose();
+    }
+
+    private void RegisterGlobalHotkeys()
+    {
+        var captureViewModel = Ioc.Default.GetRequiredService<CaptureViewModel>();
+        var settingsService = Ioc.Default.GetRequiredService<ISettingsService>();
+        _globalHotkeyService = Ioc.Default.GetRequiredService<IGlobalHotkeyService>();
+        _globalHotkeyService.Attach(
+            WindowNative.GetWindowHandle(this),
+            DispatcherQueue,
+            () => captureViewModel.ToggleRecordingCommand.Execute(null),
+            () => captureViewModel.TogglePauseCommand.Execute(null));
+
+        if (_globalHotkeyService.Apply(
+                settingsService.Current.HotkeyToggleRecording,
+                settingsService.Current.HotkeyTogglePause))
+        {
+            Log.Info("Global hotkeys applied from settings.");
+        }
     }
 
     private void RegisterNavElements()

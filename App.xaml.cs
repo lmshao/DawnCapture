@@ -54,6 +54,7 @@ public partial class App : Application
         services.AddSingleton<ISettingsService>(settingsService);
         services.AddSingleton<IRecordingService, RecordingService>();
         services.AddSingleton<IMonitorService, MonitorService>();
+        services.AddSingleton<IGlobalHotkeyService, GlobalHotkeyService>();
 
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<CaptureViewModel>();

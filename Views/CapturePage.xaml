@@ -520,20 +520,9 @@
                         VerticalAlignment="Center"
                         Background="{StaticResource DawnAccentBrush}"
                         Command="{x:Bind ViewModel.ToggleRecordingCommand}"
-                        Foreground="White">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{x:Bind ViewModel.RecordButtonLabel, Mode=OneWay}" />
-                            <Border
-                                Padding="5,1"
-                                VerticalAlignment="Center"
-                                Background="#24FFFFFF"
-                                BorderBrush="#59FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="4">
-                                <TextBlock FontSize="10" FontWeight="SemiBold" Foreground="#F2FFFFFF" Text="Ctrl R" />
-                            </Border>
-                        </StackPanel>
-                    </Button>
+                        Content="{x:Bind ViewModel.RecordButtonLabel, Mode=OneWay}"
+                        FontWeight="SemiBold"
+                        Foreground="White" />
                 </Grid>
 
                 <TextBlock

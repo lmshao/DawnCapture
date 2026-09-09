@@ -5,54 +5,131 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:helpers="using:DawnCapture.Helpers">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid
-            MinHeight="600"
-            Padding="{StaticResource DawnPagePadding}">
-            <StackPanel
-                MaxWidth="{StaticResource DawnAboutMaxWidth}"
+    <Grid Padding="{StaticResource DawnPagePadding}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel
+            Grid.Row="0"
+            HorizontalAlignment="Left"
+            Spacing="7">
+            <TextBlock
                 HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                Spacing="7">
+                Style="{StaticResource DawnEyebrowTextStyle}"
+                x:Uid="About_Eyebrow"
+                Text="About" />
+            <TextBlock
+                HorizontalAlignment="Left"
+                Style="{StaticResource DawnPageTitleStyle}"
+                x:Uid="About_PageTitle"
+                Text="About DawnCapture" />
+            <TextBlock
+                HorizontalAlignment="Left"
+                MaxWidth="520"
+                Style="{StaticResource DawnPageDescriptionStyle}"
+                Text="Product details and how DawnCapture handles your recordings."
+                TextAlignment="Left"
+                x:Uid="About_PageDescription" />
+        </StackPanel>
 
-                <Image
-                    Width="60"
-                    Height="60"
-                    Margin="0,0,0,28"
-                    HorizontalAlignment="Left"
-                    Source="{x:Bind helpers:PackageAssets.AboutLogoSource, Mode=OneTime}"
-                    Stretch="Uniform" />
+        <ScrollViewer
+            Grid.Row="1"
+            HorizontalScrollBarVisibility="Disabled"
+            HorizontalScrollMode="Disabled"
+            Margin="0,28,0,0"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel
+                HorizontalAlignment="Left"
+                MaxWidth="{StaticResource DawnAboutMaxWidth}"
+                Spacing="0">
+                <Border BorderBrush="{StaticResource DawnStrokeStrongBrush}" BorderThickness="0,0,0,1" />
+                <StackPanel Padding="0,20,0,24" Spacing="20">
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Image
+                                Width="48"
+                                Height="48"
+                                VerticalAlignment="Top"
+                                Source="{x:Bind helpers:PackageAssets.AboutLogoSource, Mode=OneTime}"
+                                Stretch="Uniform" />
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource DawnTextBrush}"
+                                    Text="{x:Bind ViewModel.VersionLabel, Mode=OneWay}" />
+                                <TextBlock
+                                    FontSize="20"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource DawnTextBrush}"
+                                    Text="{x:Bind ViewModel.Tagline, Mode=OneWay}"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                        </Grid>
 
-                <TextBlock
-                    HorizontalAlignment="Left"
-                    Style="{StaticResource DawnEyebrowTextStyle}"
-                    Text="{x:Bind ViewModel.VersionLabel, Mode=OneWay}" />
+                        <TextBlock
+                            Style="{StaticResource DawnPageDescriptionStyle}"
+                            Text="{x:Bind ViewModel.Description, Mode=OneWay}"
+                            TextAlignment="Left" />
 
-                <TextBlock
-                    HorizontalAlignment="Left"
-                    FontSize="34"
-                    Style="{StaticResource DawnPageTitleStyle}"
-                    Text="{x:Bind ViewModel.Title, Mode=OneWay}" />
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <FontIcon
+                                    FontSize="12"
+                                    Foreground="{StaticResource DawnAccentBrush}"
+                                    Glyph="&#xE73E;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Foreground="{StaticResource DawnTextMutedBrush}"
+                                    Text="{x:Bind ViewModel.TrustLocalText, Mode=OneWay}"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <FontIcon
+                                    FontSize="12"
+                                    Foreground="{StaticResource DawnAccentBrush}"
+                                    Glyph="&#xE73E;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Foreground="{StaticResource DawnTextMutedBrush}"
+                                    Text="{x:Bind ViewModel.TrustNoAccountText, Mode=OneWay}"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <FontIcon
+                                    FontSize="12"
+                                    Foreground="{StaticResource DawnAccentBrush}"
+                                    Glyph="&#xE73E;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Foreground="{StaticResource DawnTextMutedBrush}"
+                                    Text="{x:Bind ViewModel.TrustWindowsText, Mode=OneWay}"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                        </StackPanel>
 
-                <TextBlock
-                    MaxWidth="520"
-                    HorizontalAlignment="Left"
-                    Style="{StaticResource DawnPageDescriptionStyle}"
-                    Text="{x:Bind ViewModel.Description, Mode=OneWay}" />
-
-                <TextBlock
-                    Margin="0,20,0,0"
-                    HorizontalAlignment="Left"
-                    Foreground="{StaticResource DawnTextMutedBrush}"
-                    Text="{x:Bind ViewModel.AuthorLine, Mode=OneWay}" />
-
-                <Button
-                    Margin="0,24,0,0"
-                    HorizontalAlignment="Left"
-                    Command="{x:Bind ViewModel.OpenLicensesCommand}"
-                    Content="Open source licenses"
-                    x:Uid="About_Licenses" />
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Foreground="{StaticResource DawnTextMutedBrush}"
+                                FontSize="13"
+                                Text="{x:Bind ViewModel.AuthorPrefix, Mode=OneWay}" />
+                            <HyperlinkButton
+                                VerticalAlignment="Center"
+                                Content="{x:Bind ViewModel.AuthorEmail, Mode=OneWay}"
+                                NavigateUri="{x:Bind ViewModel.AuthorMailUri, Mode=OneWay}" />
+                        </StackPanel>
+                </StackPanel>
+                <Border BorderBrush="{StaticResource DawnStrokeStrongBrush}" BorderThickness="0,0,0,1" />
             </StackPanel>
-        </Grid>
-    </ScrollViewer>
+        </ScrollViewer>
+    </Grid>
 </Page>

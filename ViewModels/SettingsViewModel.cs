@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DawnCapture.Helpers;
+using DawnCapture.Models;
 using DawnCapture.Services;
 using System;
 using System.Collections.Generic;
@@ -15,11 +16,16 @@ public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settingsService;
     private readonly MainViewModel _mainViewModel;
+    private readonly IGlobalHotkeyService _globalHotkeyService;
 
-    public SettingsViewModel(ISettingsService settingsService, MainViewModel mainViewModel)
+    public SettingsViewModel(
+        ISettingsService settingsService,
+        MainViewModel mainViewModel,
+        IGlobalHotkeyService globalHotkeyService)
     {
         _settingsService = settingsService;
         _mainViewModel = mainViewModel;
+        _globalHotkeyService = globalHotkeyService;
         _outputFolder = _settingsService.Current.OutputFolder;
         _outputFolderDisplay = PathDisplayHelper.MiddleEllipsis(_outputFolder, 44);
         _frameRateIndex = RecordingSettingsHelper.FrameRateToSettingsIndex(_settingsService.Current.FrameRate);
@@ -37,6 +43,8 @@ public partial class SettingsViewModel : ObservableObject
 
         _mainViewModel.OutputFolderChanged += (_, path) => OutputFolder = path;
         _settingsService.SettingsChanged += OnExternalSettingsChanged;
+        RefreshHotkeyDisplays();
+        RefreshHotkeyRegistrationWarning();
     }
 
     private bool _suppressPersist;
@@ -57,6 +65,8 @@ public partial class SettingsViewModel : ObservableObject
             CaptureCursor = settings.CaptureCursor;
             CountdownEnabled = settings.CountdownEnabled;
             NotificationEnabled = settings.NotificationEnabled;
+            RefreshHotkeyDisplays();
+            RefreshHotkeyRegistrationWarning();
         }
         finally
         {
@@ -108,6 +118,29 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private LanguageOption _selectedLanguage = null!;
+
+    [ObservableProperty]
+    private HotkeyCaptureTarget _hotkeyCaptureTarget;
+
+    [ObservableProperty]
+    private string _toggleRecordingHotkeyDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string _togglePauseHotkeyDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string? _hotkeyErrorMessage;
+
+    [ObservableProperty]
+    private string? _hotkeyRegistrationWarning;
+
+    public bool HasHotkeyErrorMessage => !string.IsNullOrEmpty(HotkeyErrorMessage);
+
+    public bool HasHotkeyRegistrationWarning => !string.IsNullOrEmpty(HotkeyRegistrationWarning);
+
+    partial void OnHotkeyErrorMessageChanged(string? value) => OnPropertyChanged(nameof(HasHotkeyErrorMessage));
+
+    partial void OnHotkeyRegistrationWarningChanged(string? value) => OnPropertyChanged(nameof(HasHotkeyRegistrationWarning));
 
     partial void OnOutputFolderChanged(string value)
     {
@@ -219,6 +252,142 @@ public partial class SettingsViewModel : ObservableObject
             LocalizationService.ApplyLanguage(value.Code);
             RestartApplication();
         }
+    }
+
+    [RelayCommand]
+    private void BeginCaptureToggleRecordingHotkey()
+    {
+        BeginHotkeyCapture(HotkeyCaptureTarget.ToggleRecording);
+    }
+
+    [RelayCommand]
+    private void BeginCaptureTogglePauseHotkey()
+    {
+        BeginHotkeyCapture(HotkeyCaptureTarget.TogglePause);
+    }
+
+    public void CancelHotkeyCapture()
+    {
+        if (HotkeyCaptureTarget == HotkeyCaptureTarget.None)
+        {
+            return;
+        }
+
+        HotkeyCaptureTarget = HotkeyCaptureTarget.None;
+        HotkeyErrorMessage = null;
+        ResumeHotkeyBindings();
+        RefreshHotkeyDisplays();
+    }
+
+    public bool TryApplyCapturedHotkey(HotkeyBinding binding)
+    {
+        if (HotkeyCaptureTarget == HotkeyCaptureTarget.None)
+        {
+            return false;
+        }
+
+        HotkeyBinding currentBinding = GetCurrentCaptureTargetBinding();
+        if (binding.Equals(currentBinding))
+        {
+            FinishHotkeyCapture();
+            return true;
+        }
+
+        HotkeyBinding otherBinding = HotkeyCaptureTarget == HotkeyCaptureTarget.ToggleRecording
+            ? _settingsService.Current.HotkeyTogglePause
+            : _settingsService.Current.HotkeyToggleRecording;
+
+        string? validationError = HotkeyHelper.ValidateForSettings(
+            binding,
+            otherBinding,
+            candidate => _globalHotkeyService.Probe(candidate, HotkeyCaptureTarget));
+
+        if (validationError is not null)
+        {
+            HotkeyErrorMessage = validationError;
+            return true;
+        }
+
+        if (HotkeyCaptureTarget == HotkeyCaptureTarget.ToggleRecording)
+        {
+            _settingsService.Current.HotkeyToggleRecording = binding;
+        }
+        else
+        {
+            _settingsService.Current.HotkeyTogglePause = binding;
+        }
+
+        _settingsService.Save();
+        FinishHotkeyCapture();
+        RefreshHotkeyRegistrationWarning();
+        return true;
+    }
+
+    private void BeginHotkeyCapture(HotkeyCaptureTarget target)
+    {
+        HotkeyCaptureTarget = target;
+        HotkeyErrorMessage = null;
+        _globalHotkeyService.SuspendForCapture();
+        RefreshHotkeyDisplays();
+    }
+
+    private void FinishHotkeyCapture()
+    {
+        HotkeyCaptureTarget = HotkeyCaptureTarget.None;
+        HotkeyErrorMessage = null;
+        ResumeHotkeyBindings();
+        RefreshHotkeyDisplays();
+    }
+
+    private void ResumeHotkeyBindings()
+    {
+        _globalHotkeyService.Apply(
+            _settingsService.Current.HotkeyToggleRecording,
+            _settingsService.Current.HotkeyTogglePause);
+    }
+
+    private HotkeyBinding GetCurrentCaptureTargetBinding() =>
+        HotkeyCaptureTarget == HotkeyCaptureTarget.ToggleRecording
+            ? _settingsService.Current.HotkeyToggleRecording
+            : _settingsService.Current.HotkeyTogglePause;
+
+    public void RefreshHotkeyRegistrationWarning()
+    {
+        var settings = _settingsService.Current;
+        var issues = new List<string>();
+
+        if (!settings.HotkeyToggleRecording.IsEmpty && !_globalHotkeyService.IsToggleRecordingRegistered)
+        {
+            issues.Add(string.Format(
+                LocalizationService.GetString("Settings_Hotkey_Warning_Item"),
+                LocalizationService.GetString("Settings_Hotkey_ToggleRecording"),
+                HotkeyHelper.FormatDisplay(settings.HotkeyToggleRecording)));
+        }
+
+        if (!settings.HotkeyTogglePause.IsEmpty && !_globalHotkeyService.IsTogglePauseRegistered)
+        {
+            issues.Add(string.Format(
+                LocalizationService.GetString("Settings_Hotkey_Warning_Item"),
+                LocalizationService.GetString("Settings_Hotkey_TogglePause"),
+                HotkeyHelper.FormatDisplay(settings.HotkeyTogglePause)));
+        }
+
+        HotkeyRegistrationWarning = issues.Count == 0
+            ? null
+            : string.Format(
+                LocalizationService.GetString("Settings_Hotkey_Warning_Summary"),
+                string.Join("; ", issues));
+    }
+
+    private void RefreshHotkeyDisplays()
+    {
+        ToggleRecordingHotkeyDisplay = HotkeyCaptureTarget == HotkeyCaptureTarget.ToggleRecording
+            ? LocalizationService.GetString("Settings_Hotkey_CapturePrompt")
+            : HotkeyHelper.FormatDisplay(_settingsService.Current.HotkeyToggleRecording);
+
+        TogglePauseHotkeyDisplay = HotkeyCaptureTarget == HotkeyCaptureTarget.TogglePause
+            ? LocalizationService.GetString("Settings_Hotkey_CapturePrompt")
+            : HotkeyHelper.FormatDisplay(_settingsService.Current.HotkeyTogglePause);
     }
 
     [RelayCommand]
