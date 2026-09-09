@@ -11,5 +11,5 @@ public interface ISettingsService
 
     void Load();
 
-    void Save();
+    bool Save();
 }

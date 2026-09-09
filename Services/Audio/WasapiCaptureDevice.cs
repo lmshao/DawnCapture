@@ -20,6 +20,8 @@ internal sealed class WasapiCaptureDevice : IDisposable
 
     public int InputSampleRate => _inputSampleRate;
 
+    public bool IsActive => _capture is not null;
+
     public void Start()
     {
         if (_capture is not null)

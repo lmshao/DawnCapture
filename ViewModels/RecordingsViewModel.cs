@@ -184,8 +184,12 @@ public partial class RecordingsViewModel : ObservableObject
         catch (Exception ex)
         {
             Log.Error($"Failed to play recording '{item.FilePath}'", ex);
+            _ = DialogHelper.ShowErrorAsync(LocalizationService.GetString("Recordings_PlayFailed"));
         }
     }
+
+    [RelayCommand]
+    private void GoToCapture() => _mainViewModel.RequestNavigation("Capture");
 
     public async Task RenameRecordingAsync(RecordingListItem item)
     {

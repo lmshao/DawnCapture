@@ -48,6 +48,7 @@ public sealed partial class MainWindow : Window
         };
         Title = $"DawnCapture — {ViewModel.AppStatusText}";
         UpdateStorageAvailabilityBrush();
+        ViewModel.NavigationRequested += (_, tag) => NavigateTo(tag);
         RegisterGlobalHotkeys();
         Closed += (_, _) => _globalHotkeyService?.Dispose();
     }

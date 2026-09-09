@@ -449,7 +449,11 @@ public partial class SettingsViewModel : ObservableObject
         _settingsService.Current.CaptureCursor = CaptureCursor;
         _settingsService.Current.CountdownEnabled = CountdownEnabled;
         _settingsService.Current.NotificationEnabled = NotificationEnabled;
-        _settingsService.Save();
+        if (!_settingsService.Save())
+        {
+            _ = DialogHelper.ShowErrorAsync(LocalizationService.GetString("Settings_SaveFailed"));
+        }
+
         _mainViewModel.RefreshStorage();
     }
 

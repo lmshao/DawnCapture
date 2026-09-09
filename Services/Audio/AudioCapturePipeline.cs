@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
+using DawnCapture.Helpers;
 using DawnCapture.Models;
+using DawnCapture.Services;
 using Windows.Media.Core;
 using Windows.Security.Authorization.AppCapabilityAccess;
 
@@ -69,6 +71,19 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
 
         Log.Info(
             $"Audio pipeline started: mic={options.EnableMicrophone}, system={options.EnableSystemAudio}, bitrate={options.BitrateKbps}kbps.");
+    }
+
+    public void ReportStartupWarnings(RecordingAudioOptions options, Action<string> raiseNotice)
+    {
+        if (options.EnableMicrophone && (_microphone is null || !_microphone.IsActive))
+        {
+            raiseNotice(LocalizationService.GetString("Failure_MicrophoneAccess"));
+        }
+
+        if (options.EnableSystemAudio && (_loopback is null || !_loopback.IsActive))
+        {
+            raiseNotice(LocalizationService.GetString("Notice_SystemAudioUnavailable"));
+        }
     }
 
     public void Stop()

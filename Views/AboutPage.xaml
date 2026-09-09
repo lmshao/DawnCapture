@@ -116,6 +116,17 @@
                             </StackPanel>
                         </StackPanel>
 
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button
+                                Command="{x:Bind ViewModel.OpenLicensesCommand}"
+                                Content="Open source licenses"
+                                x:Uid="About_Licenses" />
+                            <Button
+                                Command="{x:Bind ViewModel.OpenLogsCommand}"
+                                Content="View logs"
+                                x:Uid="About_ViewLogs" />
+                        </StackPanel>
+
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock
                                 VerticalAlignment="Center"

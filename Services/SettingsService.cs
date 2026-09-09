@@ -42,7 +42,7 @@ public sealed class SettingsService : ISettingsService
         }
     }
 
-    public void Save()
+    public bool Save()
     {
         try
         {
@@ -55,10 +55,12 @@ public sealed class SettingsService : ISettingsService
             var json = JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_filePath, json);
             SettingsChanged?.Invoke(this, EventArgs.Empty);
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // A save failure must not interrupt the recording workflow.
+            Log.Error($"Failed to save settings to '{_filePath}'", ex);
+            return false;
         }
     }
 }

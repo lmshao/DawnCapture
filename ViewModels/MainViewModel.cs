@@ -24,6 +24,11 @@ public partial class MainViewModel : ObservableObject
 
     public event EventHandler<string>? OutputFolderChanged;
 
+    public event EventHandler<string>? NavigationRequested;
+
+    public void RequestNavigation(string pageTag) =>
+        NavigationRequested?.Invoke(this, pageTag);
+
     [ObservableProperty]
     private string _appStatusText = LocalizationService.GetString("Status_Ready");
 

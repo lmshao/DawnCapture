@@ -8,6 +8,8 @@ namespace DawnCapture.Helpers;
 
 public static class RecordingNotificationHelper
 {
+    public const string OpenFolderAction = "openFolder";
+
     public static void TryShowSaved(string? filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
@@ -18,12 +20,20 @@ public static class RecordingNotificationHelper
         try
         {
             string fileName = Path.GetFileName(filePath);
-            var notification = new AppNotificationBuilder()
+            string? folder = Path.GetDirectoryName(filePath);
+            var builder = new AppNotificationBuilder()
                 .AddText(LocalizationService.GetString("Notification_RecordingSaved"))
-                .AddText(fileName)
-                .BuildNotification();
+                .AddText(fileName);
 
-            AppNotificationManager.Default.Show(notification);
+            if (!string.IsNullOrWhiteSpace(folder))
+            {
+                builder.AddButton(new AppNotificationButton(
+                        LocalizationService.GetString("Notification_OpenFolder"))
+                    .AddArgument("action", OpenFolderAction)
+                    .AddArgument("path", folder));
+            }
+
+            AppNotificationManager.Default.Show(builder.BuildNotification());
         }
         catch (Exception ex)
         {

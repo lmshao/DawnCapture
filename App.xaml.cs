@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using DawnCapture.Helpers;
@@ -93,11 +95,44 @@ public partial class App : Application
     {
         try
         {
+            AppNotificationManager.Default.NotificationInvoked += OnNotificationInvoked;
             AppNotificationManager.Default.Register();
         }
         catch (Exception ex)
         {
             Log.Info($"App notification registration skipped: {ex.Message}");
+        }
+    }
+
+    private static void OnNotificationInvoked(
+        AppNotificationManager sender,
+        AppNotificationActivatedEventArgs args)
+    {
+        try
+        {
+            if (!args.Arguments.TryGetValue("action", out string? action) ||
+                !string.Equals(action, RecordingNotificationHelper.OpenFolderAction, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (!args.Arguments.TryGetValue("path", out string? folder))
+            {
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+            {
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo("explorer.exe", folder)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Notification action failed: {ex.Message}");
         }
     }
 }

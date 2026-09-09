@@ -95,6 +95,7 @@
   <data name="Failure_CreateFullScreenCapture" xml:space="preserve"><value>Unable to create a full-screen capture session.</value></data>
   <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>Unable to create a capture session for the selected region.</value></data>
   <data name="Failure_NoFrames" xml:space="preserve"><value>No video frames were written. Make sure the capture target is still visible.</value></data>
+  <data name="Failure_TranscodePrepare" xml:space="preserve"><value>Unable to prepare video encoding on this device.</value></data>
   <data name="Window_RegionPickerTitle" xml:space="preserve"><value>Select Recording Region</value></data>
   <data name="Window_RecordingControlTitle" xml:space="preserve"><value>Recording Controls</value></data>
   <data name="Language_System" xml:space="preserve"><value>System default</value></data>
@@ -358,4 +359,17 @@
   <data name="OutputFolder_NotWritable" xml:space="preserve"><value>DawnCapture cannot write to that folder. Choose a different location or check permissions.</value></data>
   <data name="OutputFolder_OpenFailed" xml:space="preserve"><value>Unable to open the output folder in File Explorer.</value></data>
   <data name="OutputFolder_SyncFailed" xml:space="preserve"><value>The folder was saved, but the recordings library could not be refreshed.</value></data>
+  <data name="Storage_Check_Insufficient" xml:space="preserve"><value>Not enough free disk space to start recording ({0} MB available). Free up space or change the output folder in Settings.</value></data>
+  <data name="Storage_Check_Unavailable" xml:space="preserve"><value>Unable to check free disk space on the output drive.</value></data>
+  <data name="Notice_HevcFallback" xml:space="preserve"><value>H.265 is not available on this PC. Recording with H.264 instead.</value></data>
+  <data name="Notice_SystemAudioUnavailable" xml:space="preserve"><value>System audio could not be captured. Check your audio device or Windows sound settings.</value></data>
+  <data name="Settings_SaveFailed" xml:space="preserve"><value>Your settings could not be saved. Check disk space and folder permissions.</value></data>
+  <data name="Recordings_PlayFailed" xml:space="preserve"><value>Unable to open this recording. The file may have been moved or deleted.</value></data>
+  <data name="Recordings_Empty_CTA.Content" xml:space="preserve"><value>Start recording</value></data>
+  <data name="About_ViewLogs.Content" xml:space="preserve"><value>View logs</value></data>
+  <data name="Notification_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="About_LicensesMissing" xml:space="preserve"><value>The license file was not found in the application folder.</value></data>
+  <data name="About_LicensesOpenFailed" xml:space="preserve"><value>Unable to open the license file.</value></data>
+  <data name="About_LogsMissing" xml:space="preserve"><value>No log files are available yet.</value></data>
+  <data name="About_LogsOpenFailed" xml:space="preserve"><value>Unable to open the logs folder.</value></data>
 </root>

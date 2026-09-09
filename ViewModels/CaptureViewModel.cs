@@ -667,15 +667,26 @@ public partial class CaptureViewModel : ObservableObject
     {
         if (_recordingService.State == RecordingState.Idle)
         {
-            if (!HasMicrophoneDevice && !HasSystemAudioDevice)
+            if (SelectedMode == CaptureModeKind.AudioOnly)
             {
-                _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_NoAudioDevices");
-                return;
+                if (!HasMicrophoneDevice && !HasSystemAudioDevice)
+                {
+                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_NoAudioDevices");
+                    return;
+                }
+
+                if (!HasAnyAudioSourceEnabled())
+                {
+                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_EnableOneAudio");
+                    return;
+                }
             }
 
-            if (!HasAnyAudioSourceEnabled())
+            string outputFolder = OutputFolderHelper.Resolve(_settingsService);
+            if (!StorageSpaceHelper.TryEnsureSpaceForRecording(outputFolder, out string? storageError))
             {
-                _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_EnableOneAudio");
+                _mainViewModel.AppStatusText = storageError!;
+                await DialogHelper.ShowErrorAsync(storageError!);
                 return;
             }
 
@@ -791,6 +802,9 @@ public partial class CaptureViewModel : ObservableObject
     private void OnRecordingFailed(object? sender, string message)
     {
         _mainViewModel.AppStatusText = message;
+        _ = DialogHelper.ShowErrorAsync(
+            message,
+            LocalizationService.GetString("Recordings_ErrorTitle"));
     }
 
     private void OnRecordingNotice(object? sender, string message)

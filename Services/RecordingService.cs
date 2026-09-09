@@ -73,6 +73,7 @@ public sealed class RecordingService : IRecordingService
     private bool _isStopping;
     private string? _currentOutputPath;
     private int _effectiveVideoBitrateKbps;
+    private int _effectiveVideoCodecIndex;
     private RecordingSourceKind _currentSourceKind = RecordingSourceKind.Screen;
     private SizeInt32 _windowEncodeSize;
     private SizeInt32 _poolContentSize;
@@ -321,6 +322,7 @@ public sealed class RecordingService : IRecordingService
             try
             {
                 await _audioPipeline.StartAsync(_audioOptions, _stopwatch, _audioCancellation.Token);
+                RaiseAudioStartupWarnings();
             }
             catch (Exception ex)
             {
@@ -396,6 +398,7 @@ public sealed class RecordingService : IRecordingService
         bool hasOutput = isAudioOnly ? audioSamplesWritten > 0 : framesWritten > 0;
         if (!hasOutput)
         {
+            TryDeleteOutputFile(completedOutputPath);
             RaiseFailed(LocalizationService.GetString(
                 isAudioOnly ? "Failure_NoAudioSamples" : "Failure_NoFrames"));
         }
@@ -432,7 +435,7 @@ public sealed class RecordingService : IRecordingService
                 {
                     VideoCodec = sourceKind == RecordingSourceKind.Audio
                         ? null
-                        : RecordingSettingsHelper.VideoCodecLabel(_settings.Current.VideoCodecIndex),
+                        : RecordingSettingsHelper.VideoCodecLabel(_effectiveVideoCodecIndex),
                     AudioCodec = _audioOptions.HasAnySource ? "AAC" : null,
                     FrameRate = sourceKind == RecordingSourceKind.Audio ? null : _settings.Current.FrameRate,
                     BitrateKbps = sourceKind == RecordingSourceKind.Audio
@@ -565,6 +568,7 @@ public sealed class RecordingService : IRecordingService
                 try
                 {
                     await _audioPipeline.StartAsync(_audioOptions, _stopwatch, _audioCancellation!.Token);
+                    RaiseAudioStartupWarnings();
                 }
                 catch (Exception ex)
                 {
@@ -595,6 +599,7 @@ public sealed class RecordingService : IRecordingService
         Log.Debug($"Creating media objects: OutputSize={size.Width}x{size.Height}, FrameRate={_settings.Current.FrameRate}, Bitrate={_settings.Current.BitrateKbps}Kbps, AudioMic={audioOptions.EnableMicrophone}, AudioSystem={audioOptions.EnableSystemAudio}, AudioBitrate={audioOptions.BitrateKbps}Kbps");
         try
         {
+            _effectiveVideoCodecIndex = _settings.Current.VideoCodecIndex;
             _effectiveVideoBitrateKbps = RecordingSettingsHelper.ResolveEffectiveVideoBitrateKbps(
                 _settings.Current,
                 size.Width,
@@ -634,11 +639,6 @@ public sealed class RecordingService : IRecordingService
             profile.Video.PixelAspectRatio.Numerator = 1;
             profile.Video.PixelAspectRatio.Denominator = 1;
 
-            if (_settings.Current.VideoCodecIndex == 1)
-            {
-                profile.Video.Subtype = MediaEncodingSubtypes.Hevc;
-            }
-
             if (audioOptions.HasAnySource)
             {
                 profile.Audio = AudioEncodingProperties.CreateAac(
@@ -648,26 +648,46 @@ public sealed class RecordingService : IRecordingService
             }
 
             var folder = OutputFolderHelper.Resolve(_settings.Current.OutputFolder);
-
-            Directory.CreateDirectory(folder);
-            var outputPath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}.mp4");
-            _currentOutputPath = outputPath;
-
-            // StorageFile.GetFileFromPathAsync requires the file to exist.
-            File.Create(outputPath).Dispose();
-            var outputFile = await StorageFile.GetFileFromPathAsync(outputPath);
-            _outputStream = await outputFile.OpenAsync(FileAccessMode.ReadWrite);
+            if (!await CreateOutputFileAsync(folder, ".mp4"))
+            {
+                return false;
+            }
 
             _transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
 
-            _transcodeTask = Task.Run(async () =>
+            bool requestedHevc = _settings.Current.VideoCodecIndex == 1;
+            if (requestedHevc)
             {
-                var prepared = await _transcoder.PrepareMediaStreamSourceTranscodeAsync(
-                    _mediaStreamSource,
-                    _outputStream,
-                    profile);
-                await prepared.TranscodeAsync();
-            });
+                profile.Video.Subtype = MediaEncodingSubtypes.Hevc;
+            }
+
+            var prepared = await TryPrepareVideoTranscodeAsync(profile);
+            if (prepared is null && requestedHevc)
+            {
+                Log.Info("HEVC transcode preparation failed; retrying with H.264.");
+                profile.Video.Subtype = MediaEncodingSubtypes.H264;
+                _effectiveVideoCodecIndex = 0;
+                if (!await RecreateOutputFileAsync(folder, ".mp4"))
+                {
+                    return false;
+                }
+
+                prepared = await TryPrepareVideoTranscodeAsync(profile);
+                if (prepared is not null)
+                {
+                    RaiseNotice(LocalizationService.GetString("Notice_HevcFallback"));
+                }
+            }
+
+            if (prepared is null)
+            {
+                TryDeleteOutputFile(_currentOutputPath);
+                RaiseFailed(LocalizationService.GetString("Failure_TranscodePrepare"));
+                return false;
+            }
+
+            var transcodeResult = prepared;
+            _transcodeTask = Task.Run(async () => await transcodeResult.TranscodeAsync());
 
             _ = _transcodeTask.ContinueWith(
                 t =>
@@ -683,6 +703,7 @@ public sealed class RecordingService : IRecordingService
         }
         catch (Exception ex)
         {
+            TryDeleteOutputFile(_currentOutputPath);
             RaiseFailed(ex.Message);
             return false;
         }
@@ -731,6 +752,7 @@ public sealed class RecordingService : IRecordingService
         }
         catch (Exception ex)
         {
+            TryDeleteOutputFile(_currentOutputPath);
             RaiseFailed(ex.Message);
             return false;
         }
@@ -1510,6 +1532,83 @@ public sealed class RecordingService : IRecordingService
         else
         {
             handler(this, value);
+        }
+    }
+
+    private async Task<bool> CreateOutputFileAsync(string folder, string extension)
+    {
+        Directory.CreateDirectory(folder);
+        var outputPath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}{extension}");
+        _currentOutputPath = outputPath;
+
+        // StorageFile.GetFileFromPathAsync requires the file to exist.
+        File.Create(outputPath).Dispose();
+        var outputFile = await StorageFile.GetFileFromPathAsync(outputPath);
+        _outputStream = await outputFile.OpenAsync(FileAccessMode.ReadWrite);
+        return true;
+    }
+
+    private async Task<bool> RecreateOutputFileAsync(string folder, string extension)
+    {
+        if (_outputStream is not null)
+        {
+            try
+            {
+                _outputStream.Dispose();
+            }
+            catch
+            {
+                // Ignore cleanup exceptions.
+            }
+
+            _outputStream = null;
+        }
+
+        TryDeleteOutputFile(_currentOutputPath);
+        return await CreateOutputFileAsync(folder, extension);
+    }
+
+    private async Task<PrepareTranscodeResult?> TryPrepareVideoTranscodeAsync(MediaEncodingProfile profile)
+    {
+        try
+        {
+            return await _transcoder!.PrepareMediaStreamSourceTranscodeAsync(
+                _mediaStreamSource!,
+                _outputStream!,
+                profile);
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Video transcode prepare failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static void TryDeleteOutputFile(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Failed to delete output file '{path}': {ex.Message}");
+        }
+    }
+
+    private void RaiseAudioStartupWarnings()
+    {
+        if (_audioPipeline is AudioCapturePipeline pipeline)
+        {
+            pipeline.ReportStartupWarnings(_audioOptions, RaiseNotice);
         }
     }
 
