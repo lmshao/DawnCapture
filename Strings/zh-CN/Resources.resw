@@ -347,9 +347,9 @@
   <data name="AudioQuality_Option_Standard" xml:space="preserve"><value>标准 / 128 kbps</value></data>
   <data name="AudioQuality_Option_High" xml:space="preserve"><value>高 / 192 kbps</value></data>
   <data name="AudioQuality_Option_Best" xml:space="preserve"><value>最佳 / 256 kbps</value></data>
-  <data name="AudioQuality_Option_Standard_Short" xml:space="preserve"><value>标准 · 128k</value></data>
-  <data name="AudioQuality_Option_High_Short" xml:space="preserve"><value>高 · 192k</value></data>
-  <data name="AudioQuality_Option_Best_Short" xml:space="preserve"><value>最佳 · 256k</value></data>
+  <data name="AudioQuality_Option_Standard_Short" xml:space="preserve"><value>标准 · 128 kbps</value></data>
+  <data name="AudioQuality_Option_High_Short" xml:space="preserve"><value>高 · 192 kbps</value></data>
+  <data name="AudioQuality_Option_Best_Short" xml:space="preserve"><value>最佳 · 256 kbps</value></data>
   <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>已选区域 / 1280 x 720</value></data>
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>已选区域 / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>请选择录制区域</value></data>

@@ -348,9 +348,9 @@
   <data name="AudioQuality_Option_Standard" xml:space="preserve"><value>Standard / 128 kbps</value></data>
   <data name="AudioQuality_Option_High" xml:space="preserve"><value>High / 192 kbps</value></data>
   <data name="AudioQuality_Option_Best" xml:space="preserve"><value>Best / 256 kbps</value></data>
-  <data name="AudioQuality_Option_Standard_Short" xml:space="preserve"><value>Standard · 128k</value></data>
-  <data name="AudioQuality_Option_High_Short" xml:space="preserve"><value>High · 192k</value></data>
-  <data name="AudioQuality_Option_Best_Short" xml:space="preserve"><value>Best · 256k</value></data>
+  <data name="AudioQuality_Option_Standard_Short" xml:space="preserve"><value>Standard · 128 kbps</value></data>
+  <data name="AudioQuality_Option_High_Short" xml:space="preserve"><value>High · 192 kbps</value></data>
+  <data name="AudioQuality_Option_Best_Short" xml:space="preserve"><value>Best · 256 kbps</value></data>
   <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>Selected region / 1280 x 720</value></data>
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>Selected region / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>Select a recording region</value></data>
