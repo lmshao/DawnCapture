@@ -8,6 +8,7 @@ using DawnCapture.Services;
 using DawnCapture.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.AppNotifications;
 
 namespace DawnCapture;
@@ -71,6 +72,13 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        var instance = AppInstance.FindOrRegisterForKey("DawnCapture.SingleInstance");
+        if (!instance.IsCurrent)
+        {
+            Log.Info("Another instance is already running; this instance exits.");
+            return;
+        }
+
         try
         {
             Log.Info("OnLaunched started creating the main window.");

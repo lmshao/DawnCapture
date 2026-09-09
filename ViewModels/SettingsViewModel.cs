@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppLifecycle;
 using System.Threading.Tasks;
 
 namespace DawnCapture.ViewModels;
@@ -496,6 +497,11 @@ public partial class SettingsViewModel : ObservableObject
         {
             return;
         }
+
+        // Release the single-instance key so the new process can register it
+        // before this one exits; otherwise the new process sees an existing
+        // instance and quits immediately, leaving no window at all.
+        AppInstance.GetCurrent().UnregisterKey();
 
         Process.Start(new ProcessStartInfo(executable)
         {

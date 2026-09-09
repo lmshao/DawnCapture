@@ -102,9 +102,23 @@ public sealed class RecordingService : IRecordingService
                 return;
             }
 
+            UpdateSleepPrevention(value);
+
             _state = value;
             Log.Debug($"Recording state changed: {_state} -> {value}");
             RaiseStateChanged(value);
+        }
+    }
+
+    private static void UpdateSleepPrevention(RecordingState next)
+    {
+        if (next == RecordingState.Recording)
+        {
+            PowerStateHelper.PreventSleepDuringRecording();
+        }
+        else if (next is not (RecordingState.Recording or RecordingState.Paused))
+        {
+            PowerStateHelper.AllowSleep();
         }
     }
 
