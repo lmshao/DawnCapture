@@ -358,7 +358,6 @@
   <data name="AppStatus_RegionRecordingHint" xml:space="preserve"><value>Do not change the region during recording</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>Keep the selected region unchanged while recording.</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>Browse...</value></data>
-  <data name="About_Licenses.Content" xml:space="preserve"><value>Open source licenses</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
   <data name="Settings_FrameRate_Custom.Content" xml:space="preserve"><value>Custom</value></data>
@@ -382,10 +381,12 @@
   <data name="Settings_SaveFailed" xml:space="preserve"><value>Your settings could not be saved. Check disk space and folder permissions.</value></data>
   <data name="Recordings_PlayFailed" xml:space="preserve"><value>Unable to open this recording. The file may have been moved or deleted.</value></data>
   <data name="Recordings_Empty_CTA.Content" xml:space="preserve"><value>Start recording</value></data>
-  <data name="About_ViewLogs.Content" xml:space="preserve"><value>View logs</value></data>
   <data name="Notification_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
-  <data name="About_LicensesMissing" xml:space="preserve"><value>The license file was not found in the application folder.</value></data>
-  <data name="About_LicensesOpenFailed" xml:space="preserve"><value>Unable to open the license file.</value></data>
-  <data name="About_LogsMissing" xml:space="preserve"><value>No log files are available yet.</value></data>
-  <data name="About_LogsOpenFailed" xml:space="preserve"><value>Unable to open the logs folder.</value></data>
+  <data name="About_ThirdPartyNotices_Title" xml:space="preserve"><value>Third-Party Notices</value></data>
+  <data name="About_PrivacyPolicy_Title" xml:space="preserve"><value>Privacy Policy</value></data>
+  <data name="About_ThirdPartyNotices.Content" xml:space="preserve"><value>Third-Party Notices</value></data>
+  <data name="About_ThirdPartyNoticesMissing" xml:space="preserve"><value>The third-party notices file was not found in the application folder.</value></data>
+  <data name="About_PrivacyPolicy.Content" xml:space="preserve"><value>Privacy Policy</value></data>
+  <data name="About_PrivacyPolicyMissing" xml:space="preserve"><value>The privacy policy file was not found in the application folder.</value></data>
+  <data name="About_LegalReadFailed" xml:space="preserve"><value>Unable to read the file.</value></data>
 </root>

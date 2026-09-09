@@ -2,8 +2,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DawnCapture.Helpers;
 using DawnCapture.Services;
+using DawnCapture.Views;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -51,47 +51,32 @@ public partial class AboutViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task OpenLicensesAsync()
-    {
-        string licensePath = Path.Combine(AppContext.BaseDirectory, "LICENSE");
-        if (!File.Exists(licensePath))
-        {
-            await DialogHelper.ShowErrorAsync(LocalizationService.GetString("About_LicensesMissing"));
-            return;
-        }
-
-        try
-        {
-            Process.Start(new ProcessStartInfo(licensePath)
-            {
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex)
-        {
-            Log.Error($"Failed to open license file '{licensePath}'", ex);
-            await DialogHelper.ShowErrorAsync(LocalizationService.GetString("About_LicensesOpenFailed"));
-        }
-    }
+    private Task ShowThirdPartyNoticesAsync() =>
+        ShowLegalDocumentAsync("THIRD-PARTY-NOTICES.md", "About_ThirdPartyNotices_Title", "About_ThirdPartyNoticesMissing");
 
     [RelayCommand]
-    private async Task OpenLogsAsync()
+    private Task ShowPrivacyPolicyAsync() =>
+        ShowLegalDocumentAsync("PRIVACY-POLICY.md", "About_PrivacyPolicy_Title", "About_PrivacyPolicyMissing");
+
+    private static async Task ShowLegalDocumentAsync(string fileName, string titleKey, string missingKey)
     {
-        string? logsFolder = Path.GetDirectoryName(Log.FilePath);
-        if (string.IsNullOrWhiteSpace(logsFolder) || !Directory.Exists(logsFolder))
+        string filePath = Path.Combine(AppContext.BaseDirectory, fileName);
+        if (!File.Exists(filePath))
         {
-            await DialogHelper.ShowErrorAsync(LocalizationService.GetString("About_LogsMissing"));
+            await DialogHelper.ShowErrorAsync(LocalizationService.GetString(missingKey));
             return;
         }
 
         try
         {
-            OutputFolderHelper.OpenInExplorer(logsFolder);
+            await LegalDocumentDialog.ShowAsync(
+                LocalizationService.GetString(titleKey),
+                await File.ReadAllTextAsync(filePath));
         }
         catch (Exception ex)
         {
-            Log.Error($"Failed to open logs folder '{logsFolder}'", ex);
-            await DialogHelper.ShowErrorAsync(LocalizationService.GetString("About_LogsOpenFailed"));
+            Log.Error($"Failed to read '{fileName}'", ex);
+            await DialogHelper.ShowErrorAsync(LocalizationService.GetString("About_LegalReadFailed"));
         }
     }
 }

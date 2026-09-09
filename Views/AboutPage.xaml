@@ -118,13 +118,13 @@
 
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <Button
-                                Command="{x:Bind ViewModel.OpenLicensesCommand}"
-                                Content="Open source licenses"
-                                x:Uid="About_Licenses" />
+                                Command="{x:Bind ViewModel.ShowThirdPartyNoticesCommand}"
+                                Content="Third-Party Notices"
+                                x:Uid="About_ThirdPartyNotices" />
                             <Button
-                                Command="{x:Bind ViewModel.OpenLogsCommand}"
-                                Content="View logs"
-                                x:Uid="About_ViewLogs" />
+                                Command="{x:Bind ViewModel.ShowPrivacyPolicyCommand}"
+                                Content="Privacy Policy"
+                                x:Uid="About_PrivacyPolicy" />
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Spacing="4">

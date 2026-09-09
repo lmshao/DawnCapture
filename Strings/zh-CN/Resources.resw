@@ -357,7 +357,6 @@
   <data name="AppStatus_RegionRecordingHint" xml:space="preserve"><value>录制过程中请勿更改选区</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>录制期间请保持选区不变。</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>浏览...</value></data>
-  <data name="About_Licenses.Content" xml:space="preserve"><value>开源许可</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
   <data name="Settings_FrameRate_Custom.Content" xml:space="preserve"><value>自定义</value></data>
@@ -381,11 +380,13 @@
   <data name="Settings_SaveFailed" xml:space="preserve"><value>设置未能保存。请检查磁盘空间和文件夹权限。</value></data>
   <data name="Recordings_PlayFailed" xml:space="preserve"><value>无法打开此录像。文件可能已被移动或删除。</value></data>
   <data name="Recordings_Empty_CTA.Content" xml:space="preserve"><value>开始录制</value></data>
-  <data name="About_ViewLogs.Content" xml:space="preserve"><value>查看日志</value></data>
   <data name="Notification_OpenFolder" xml:space="preserve"><value>打开文件夹</value></data>
   <data name="Failure_TranscodePrepare" xml:space="preserve"><value>无法在此设备上准备视频编码。</value></data>
-  <data name="About_LicensesMissing" xml:space="preserve"><value>在应用程序文件夹中未找到许可文件。</value></data>
-  <data name="About_LicensesOpenFailed" xml:space="preserve"><value>无法打开许可文件。</value></data>
-  <data name="About_LogsMissing" xml:space="preserve"><value>暂无可用日志文件。</value></data>
-  <data name="About_LogsOpenFailed" xml:space="preserve"><value>无法打开日志文件夹。</value></data>
+  <data name="About_ThirdPartyNotices_Title" xml:space="preserve"><value>第三方声明</value></data>
+  <data name="About_PrivacyPolicy_Title" xml:space="preserve"><value>隐私政策</value></data>
+  <data name="About_ThirdPartyNotices.Content" xml:space="preserve"><value>第三方声明</value></data>
+  <data name="About_ThirdPartyNoticesMissing" xml:space="preserve"><value>在应用程序文件夹中未找到第三方声明文件。</value></data>
+  <data name="About_PrivacyPolicy.Content" xml:space="preserve"><value>隐私政策</value></data>
+  <data name="About_PrivacyPolicyMissing" xml:space="preserve"><value>在应用程序文件夹中未找到隐私政策文件。</value></data>
+  <data name="About_LegalReadFailed" xml:space="preserve"><value>无法读取该文件。</value></data>
 </root>
