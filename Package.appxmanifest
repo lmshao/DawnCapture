@@ -5,8 +5,7 @@
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  xmlns:systemai="http://schemas.microsoft.com/appx/manifest/systemai/windows10"
-  IgnorableNamespaces="uap rescap systemai">
+  IgnorableNamespaces="uap rescap">
 
   <Identity
     Name="5a9d9dbe-cdf2-45c6-8868-3eb111170803"
@@ -48,7 +47,6 @@
 
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
-    <systemai:Capability Name="systemAIModels"/>
     <DeviceCapability Name="microphone"/>
   </Capabilities>
 </Package>
