@@ -29,11 +29,13 @@ public partial class App : Application
         UnhandledException += (_, e) =>
         {
             Log.Error("Application.UnhandledException", e.Exception);
+            CrashMarkerHelper.Write("Application.UnhandledException");
         };
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
             Log.Error("AppDomain.UnhandledException", e.ExceptionObject as Exception);
+            CrashMarkerHelper.Write("AppDomain.UnhandledException");
         };
 
         TaskScheduler.UnobservedTaskException += (_, e) =>
@@ -90,6 +92,7 @@ public partial class App : Application
             MainWindow = Ioc.Default.GetRequiredService<MainWindow>();
             MainWindow.Activate();
             TryRegisterNotifications();
+            NotifyLastCrashIfAny();
             Log.Info("Main window activated.");
         }
         catch (Exception ex)
@@ -97,6 +100,29 @@ public partial class App : Application
             Log.Error("OnLaunched failed", ex);
             throw;
         }
+    }
+
+    private static void NotifyLastCrashIfAny()
+    {
+        string? crashedAt = CrashMarkerHelper.TryConsume();
+        if (crashedAt is null)
+        {
+            return;
+        }
+
+        Log.Info($"Previous session crashed at {crashedAt}; notifying user.");
+
+        // Wait for the window to finish loading before showing the dialog,
+        // so the XamlRoot is ready.
+        MainWindow?.DispatcherQueue.TryEnqueue(async () =>
+        {
+            string message = string.Format(
+                LocalizationService.GetString("App_LastSessionCrashed"),
+                Log.FilePath);
+            await DialogHelper.ShowErrorAsync(
+                message,
+                LocalizationService.GetString("App_LastSessionCrashedTitle"));
+        });
     }
 
     private static void TryRegisterNotifications()

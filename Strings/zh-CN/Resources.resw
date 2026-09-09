@@ -389,4 +389,6 @@
   <data name="About_PrivacyPolicy.Content" xml:space="preserve"><value>隐私政策</value></data>
   <data name="About_PrivacyPolicyMissing" xml:space="preserve"><value>在应用程序文件夹中未找到隐私政策文件。</value></data>
   <data name="About_LegalReadFailed" xml:space="preserve"><value>无法读取该文件。</value></data>
+  <data name="App_LastSessionCrashedTitle" xml:space="preserve"><value>意外退出</value></data>
+  <data name="App_LastSessionCrashed" xml:space="preserve"><value>DawnCapture 上次运行时意外退出。若问题反复出现，请将日志文件发送给开发者：{0}</value></data>
 </root>
