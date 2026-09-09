@@ -7,6 +7,8 @@ namespace DawnCapture.Services;
 
 public static class Log
 {
+    private const int MaxLogAgeDays = 14;
+
     private static readonly object Sync = new();
     private static string? _logFile;
 
@@ -19,11 +21,32 @@ public static class Log
                 "DawnCapture",
                 "logs");
             Directory.CreateDirectory(directory);
+            DeleteExpiredLogs(directory);
             _logFile = Path.Combine(directory, $"dawncapture_{DateTime.Now:yyyyMMdd}.log");
         }
         catch
         {
             // Log initialization failures must not prevent the application from running.
+        }
+    }
+
+    private static void DeleteExpiredLogs(string directory)
+    {
+        var cutoff = DateTime.Now.AddDays(-MaxLogAgeDays);
+
+        foreach (var file in Directory.EnumerateFiles(directory, "dawncapture_*.log"))
+        {
+            try
+            {
+                if (File.GetLastWriteTime(file) < cutoff)
+                {
+                    File.Delete(file);
+                }
+            }
+            catch
+            {
+                // Best-effort cleanup; locked or undeletable files are left in place.
+            }
         }
     }
 
