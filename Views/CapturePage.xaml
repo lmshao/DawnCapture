@@ -36,14 +36,18 @@
             Closed="CaptureNoticeBar_Closed" />
 
         <!-- Workspace -->
-        <Grid x:Name="Workspace" Grid.Row="2" Margin="0,0,0,10" ColumnSpacing="30" VerticalAlignment="Stretch">
+        <Grid x:Name="Workspace" Grid.Row="2" Margin="0,0,0,4" ColumnSpacing="30" VerticalAlignment="Stretch">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="260" />
                 <ColumnDefinition x:Name="PreviewColumn" Width="*" MinWidth="340" />
             </Grid.ColumnDefinitions>
 
             <!-- Left column -->
-            <StackPanel Spacing="0">
+            <StackPanel Grid.Row="0" Spacing="0">
                 <TextBlock Style="{StaticResource DawnSectionLabelStyle}" x:Uid="Capture_ModeSection" Text="Capture mode" />
 
                 <StackPanel x:Name="ModeButtonsPanel" Spacing="3" />
@@ -95,22 +99,22 @@
             <!-- Preview -->
             <Border
                 x:Name="PreviewCard"
+                Grid.Row="0"
                 Grid.Column="1"
-                MinHeight="360"
-                Padding="14"
+                Padding="8,2"
                 VerticalAlignment="Stretch"
                 Background="{StaticResource DawnSurfaceMutedBrush}"
                 BorderBrush="{StaticResource DawnStrokeBrush}"
                 BorderThickness="1"
                 CornerRadius="10">
-                <Grid RowSpacing="12">
+                <Grid RowSpacing="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <Grid Height="25">
+                    <Grid Height="20">
                         <TextBlock
                             VerticalAlignment="Center"
                             FontSize="11"
@@ -131,8 +135,8 @@
                     <Border
                         x:Name="CaptureOutline"
                         Grid.Row="1"
-                        MinHeight="270"
-                        Padding="16"
+                        Padding="2"
+                        VerticalAlignment="Top"
                         Background="Transparent"
                         BorderBrush="{StaticResource DawnStrokeStrongBrush}"
                         BorderThickness="1"
@@ -375,7 +379,7 @@
                         </Grid>
                     </Border>
 
-                    <Grid Grid.Row="2" MinHeight="32" ColumnSpacing="8">
+                    <Grid Grid.Row="2" MinHeight="22" ColumnSpacing="8">
                         <TextBlock
                             VerticalAlignment="Center"
                             FontSize="11"
@@ -384,25 +388,47 @@
                             TextWrapping="Wrap" />
                         <Button
                             HorizontalAlignment="Right"
+                            MinHeight="24"
+                            Padding="12,0"
+                            FontSize="11"
                             Command="{x:Bind ViewModel.PreviewActionCommand}"
                             Content="{x:Bind ViewModel.PreviewActionLabel, Mode=OneWay}"
                             Visibility="{x:Bind ViewModel.ShowPreviewAction, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
                     </Grid>
                 </Grid>
             </Border>
+
+            <!-- Media format footnote: sits at the bottom of the workspace,
+                 hugging the command dock's top border. The left margin aligns
+                 it with the settings card in the dock below
+                 (save-to 196 + spacing 12 + divider 1 + spacing 12 = 221). -->
+            <TextBlock
+                x:Name="OutputFootnote"
+                Grid.Row="1"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
+                Margin="221,6,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                FontSize="10"
+                Foreground="{StaticResource DawnTextFaintBrush}"
+                TextTrimming="CharacterEllipsis"
+                ToolTipService.ToolTip="{x:Bind ViewModel.OutputFootnoteTooltip, Mode=OneWay}">
+                <Run Text="{x:Bind ViewModel.OutputFootnoteSpecs, Mode=OneWay}" />
+                <Run Foreground="{StaticResource DawnTextMutedBrush}" Text="{x:Bind ViewModel.OutputFootnoteHint, Mode=OneWay}" />
+            </TextBlock>
         </Grid>
 
         <!-- Command dock -->
         <Border
             Grid.Row="3"
-            MinHeight="88"
+            MinHeight="56"
             Margin="-44,0,-44,0"
-            Padding="44,12,44,12"
+            Padding="44,10,44,10"
             Background="{ThemeResource LayerFillColorDefaultBrush}"
             BorderBrush="{StaticResource DawnStrokeBrush}"
             BorderThickness="0,1,0,0">
-            <StackPanel Spacing="6">
-                <Grid ColumnSpacing="12">
+            <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
@@ -526,18 +552,7 @@
                         Content="{x:Bind ViewModel.RecordButtonLabel, Mode=OneWay}"
                         FontWeight="SemiBold"
                         Foreground="White" />
-                </Grid>
-
-                <TextBlock
-                    Padding="0,2,0,0"
-                    FontSize="10"
-                    Foreground="{StaticResource DawnTextFaintBrush}"
-                    TextTrimming="CharacterEllipsis"
-                    ToolTipService.ToolTip="{x:Bind ViewModel.OutputFootnoteTooltip, Mode=OneWay}">
-                    <Run Text="{x:Bind ViewModel.OutputFootnoteSpecs, Mode=OneWay}" />
-                    <Run Foreground="{StaticResource DawnTextMutedBrush}" Text="{x:Bind ViewModel.OutputFootnoteHint, Mode=OneWay}" />
-                </TextBlock>
-            </StackPanel>
+            </Grid>
         </Border>
         </Grid>
     </Grid>

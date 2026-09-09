@@ -41,14 +41,6 @@ public sealed partial class CapturePage : Page
             if (e.PropertyName == nameof(CaptureViewModel.SelectedMode))
             {
                 UpdateModeSelection();
-                UpdateOutlineBrush();
-            }
-            else if (e.PropertyName == nameof(CaptureViewModel.HasSource) ||
-                     e.PropertyName == nameof(CaptureViewModel.SelectedDisplay) ||
-                     e.PropertyName == nameof(CaptureViewModel.SelectedWindow) ||
-                     e.PropertyName == nameof(CaptureViewModel.SelectedRegion))
-            {
-                UpdateOutlineBrush();
             }
             else if (e.PropertyName == nameof(CaptureViewModel.RecordButtonLabel) &&
                      string.IsNullOrEmpty(ViewModel.RecordButtonLabel))
@@ -59,7 +51,6 @@ public sealed partial class CapturePage : Page
 
         ViewModel.RecordButtonLabel = LocalizationService.GetString("Dock_StartRecording");
         UpdateModeSelection();
-        UpdateOutlineBrush();
     }
 
     private void BuildModeButtons()
@@ -179,41 +170,64 @@ public sealed partial class CapturePage : Page
         }
     }
 
-    private void UpdateOutlineBrush()
-    {
-        var accent = (Brush)Application.Current.Resources["DawnAccentBrush"];
-        var stroke = (Brush)Application.Current.Resources["DawnStrokeStrongBrush"];
-        bool committed = ViewModel.SelectedMode != CaptureModeKind.AudioOnly && ViewModel.HasSource;
-        CaptureOutline.BorderBrush = committed ? accent : stroke;
-    }
-
     public void ShowFolderFlyout() => FolderFlyout.ShowAt(SaveToButton);
 
     private void Workspace_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var width = PreviewColumn.ActualWidth;
-        var height = Workspace.ActualHeight;
-        if (width <= 0 || height <= 0)
+        if (e.NewSize.Height > 0)
+        {
+            UpdatePreviewLayout(e.NewSize.Height);
+        }
+    }
+
+    /// <summary>
+    /// All capture modes share one preview footprint: the outline is always
+    /// an exact 16:9 frame (matching full-screen capture). The frame is
+    /// sized with "contain" semantics — constrained by both the available
+    /// width and height, so stretching the window in either direction never
+    /// clips it; surplus space becomes centered letterbox.
+    /// Audio-only mode reuses the same frame with the waveform centered.
+    /// </summary>
+    private void UpdatePreviewLayout(double workspaceHeight)
+    {
+        double width = PreviewColumn.ActualWidth;
+        if (width <= 0 || double.IsNaN(width))
         {
             return;
         }
 
-        var sixteenNineHeight = width * 9.0 / 16.0;
+        // Vertical budget around the content area (PreviewCard):
+        // card padding top/bottom 2×2 + card border 1×1 + header 20 + caption 22 + row spacings 2×2.
+        const double cardChrome = 2 + 2 + 1 + 1 + 20 + 22 + 2 + 2;
+        // Horizontal budget: card padding left/right 8×2 + card border 1×1
+        // + outline padding 2×2 + outline border 1×1.
+        const double outlineChrome = 8 + 8 + 1 + 1 + 2 + 2 + 1 + 1;
+        const double outlinePadBorder = 2 + 2 + 1 + 1;
 
-        // Preserve the designed layout at normal sizes. Once the window grows
-        // substantially taller than the 1120x720 design (e.g. maximized on 4K),
-        // cap the preview card to a strict 16:9 landscape aspect.
-        const double maximizedThreshold = 560;
-        if (height > maximizedThreshold && height > sixteenNineHeight)
+        // Fallback for the footnote row before it has been laid out:
+        // FontSize 10 single line plus its top margin.
+        double footnoteHeight = OutputFootnote.ActualHeight;
+        if (double.IsNaN(footnoteHeight) || footnoteHeight <= 0)
         {
-            PreviewCard.Height = sixteenNineHeight;
-            PreviewCard.VerticalAlignment = VerticalAlignment.Center;
+            footnoteHeight = 20;
         }
-        else
-        {
-            PreviewCard.Height = double.NaN;
-            PreviewCard.VerticalAlignment = VerticalAlignment.Stretch;
-        }
+
+        double maxContentWidth = Math.Max(width - outlineChrome, 0);
+        double maxContentHeight = Math.Max(
+            workspaceHeight - footnoteHeight - cardChrome - outlinePadBorder,
+            0);
+
+        // Contain: keep 16:9 but never exceed the available area in either axis.
+        double contentWidth = Math.Min(maxContentWidth, maxContentHeight * 16.0 / 9.0);
+        double contentHeight = contentWidth * 9.0 / 16.0;
+        double outlineHeight = contentHeight + outlinePadBorder;
+
+        CaptureOutline.Width = contentWidth + outlinePadBorder;
+        CaptureOutline.Height = outlineHeight;
+        CaptureOutline.HorizontalAlignment = HorizontalAlignment.Center;
+
+        PreviewCard.Height = cardChrome + outlineHeight;
+        PreviewCard.VerticalAlignment = VerticalAlignment.Center;
     }
 
     private void UpdateCaptureNoticeBar()
