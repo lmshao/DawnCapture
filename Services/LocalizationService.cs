@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Microsoft.Windows.ApplicationModel.Resources;
 using Microsoft.Windows.Globalization;
 
@@ -18,23 +19,31 @@ public static class LocalizationService
 
     public static void ApplyLanguage(string? language)
     {
-        string? languageOverride = language switch
-        {
-            SimplifiedChinese => SimplifiedChinese,
-            English => English,
-            _ => null
-        };
-
-        if (languageOverride is not null)
-        {
-            ApplicationLanguages.PrimaryLanguageOverride = languageOverride;
-        }
-        else if (!string.IsNullOrEmpty(ApplicationLanguages.PrimaryLanguageOverride))
-        {
-            ApplicationLanguages.PrimaryLanguageOverride = string.Empty;
-        }
-
+        ApplicationLanguages.PrimaryLanguageOverride = ResolveLanguage(language);
         _resourceLoader = null;
+    }
+
+    /// <summary>
+    /// Resolves the configured language to a concrete locale. Explicit zh-CN
+    /// and en-US selections pass through; "system" (or any unknown value)
+    /// follows the system UI language when it is Chinese and otherwise falls
+    /// back to English, so non-Chinese systems never see Chinese text.
+    /// </summary>
+    private static string ResolveLanguage(string? language)
+    {
+        if (language == SimplifiedChinese)
+        {
+            return SimplifiedChinese;
+        }
+
+        if (language == English)
+        {
+            return English;
+        }
+
+        return CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+            ? SimplifiedChinese
+            : English;
     }
 
     public static string GetString(string key)
