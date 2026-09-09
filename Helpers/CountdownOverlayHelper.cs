@@ -25,30 +25,30 @@ public static class CountdownOverlayHelper
                 return ScreenBoundsHelper.FromMonitorDisplay(display);
 
             case CaptureModeKind.Window when window is not null:
-            {
-                IntPtr hwnd = WindowCaptureHelper.TryResolveWindowHandle(window.Item);
-                return ScreenBoundsHelper.GetMonitorBoundsFromWindow(hwnd);
-            }
-
-            case CaptureModeKind.Region when region is not null:
-            {
-                var bounds = region.ScreenBounds;
-                int centerX = bounds.X + bounds.Width / 2;
-                int centerY = bounds.Y + bounds.Height / 2;
-                return ScreenBoundsHelper.GetMonitorBoundsFromPoint(centerX, centerY);
-            }
-
-            case CaptureModeKind.AudioOnly:
-            {
-                var monitors = monitorService.GetMonitors();
-                MonitorDisplay? primary = monitors.FirstOrDefault(m => m.IsPrimary) ?? monitors.FirstOrDefault();
-                if (primary is not null)
                 {
-                    return ScreenBoundsHelper.FromMonitorDisplay(primary);
+                    IntPtr hwnd = WindowCaptureHelper.TryResolveWindowHandle(window.Item);
+                    return ScreenBoundsHelper.GetMonitorBoundsFromWindow(hwnd);
                 }
 
-                break;
-            }
+            case CaptureModeKind.Region when region is not null:
+                {
+                    var bounds = region.ScreenBounds;
+                    int centerX = bounds.X + bounds.Width / 2;
+                    int centerY = bounds.Y + bounds.Height / 2;
+                    return ScreenBoundsHelper.GetMonitorBoundsFromPoint(centerX, centerY);
+                }
+
+            case CaptureModeKind.AudioOnly:
+                {
+                    var monitors = monitorService.GetMonitors();
+                    MonitorDisplay? primary = monitors.FirstOrDefault(m => m.IsPrimary) ?? monitors.FirstOrDefault();
+                    if (primary is not null)
+                    {
+                        return ScreenBoundsHelper.FromMonitorDisplay(primary);
+                    }
+
+                    break;
+                }
         }
 
         return ScreenBoundsHelper.GetPrimaryMonitorBounds()
