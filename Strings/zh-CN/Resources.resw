@@ -275,8 +275,11 @@
   <data name="Settings_Group_Recording.Text" xml:space="preserve"><value>录制</value></data>
   <data name="Settings_OutputFolder.Text" xml:space="preserve"><value>输出文件夹</value></data>
   <data name="Settings_OutputFolder_Desc.Text" xml:space="preserve"><value>已完成录像的保存位置</value></data>
+  <data name="Settings_Subsection_Video.Text" xml:space="preserve"><value>视频</value></data>
+  <data name="Settings_Subsection_Audio.Text" xml:space="preserve"><value>音频</value></data>
+  <data name="Settings_Subsection_Behavior.Text" xml:space="preserve"><value>录制行为</value></data>
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>帧率</value></data>
-  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>与视频码率分开设置。首页「录制预设」会同时修改帧率与码率。</value></data>
+  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>首页「录制预设」会同时修改帧率与画质档位。</value></data>
   <data name="Settings_Quality.Text" xml:space="preserve"><value>视频码率</value></data>
   <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>仅控制视频编码目标码率。首页「录制预设」会同时设置帧率与本项码率。</value></data>
   <data name="Settings_BitrateMode.Text" xml:space="preserve"><value>视频码率模式</value></data>
@@ -291,7 +294,7 @@
   <data name="Settings_VideoCodec.Text" xml:space="preserve"><value>视频编解码器</value></data>
   <data name="Settings_VideoCodec_Desc.Text" xml:space="preserve"><value>选择兼容性或小文件</value></data>
   <data name="Settings_AudioQuality.Text" xml:space="preserve"><value>音频质量</value></data>
-  <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>纯音频录制使用 M4A 容器中的 AAC-LC</value></data>
+  <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>视频内嵌音频与纯音频录制均使用 AAC。</value></data>
   <data name="Settings_CaptureCursor.Text" xml:space="preserve"><value>录制光标</value></data>
   <data name="Settings_CaptureCursor_Desc.Text" xml:space="preserve"><value>在录像中显示鼠标指针</value></data>
   <data name="Settings_Group_General.Text" xml:space="preserve"><value>常规</value></data>

@@ -275,8 +275,11 @@
   <data name="Settings_Group_Recording.Text" xml:space="preserve"><value>Recording</value></data>
   <data name="Settings_OutputFolder.Text" xml:space="preserve"><value>Output folder</value></data>
   <data name="Settings_OutputFolder_Desc.Text" xml:space="preserve"><value>Where completed recordings are saved</value></data>
+  <data name="Settings_Subsection_Video.Text" xml:space="preserve"><value>Video</value></data>
+  <data name="Settings_Subsection_Audio.Text" xml:space="preserve"><value>Audio</value></data>
+  <data name="Settings_Subsection_Behavior.Text" xml:space="preserve"><value>Recording behavior</value></data>
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>Frame rate</value></data>
-  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>Separate from video bitrate. Capture presets change both together.</value></data>
+  <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>Capture presets on the home page change frame rate and quality tier together.</value></data>
   <data name="Settings_Quality.Text" xml:space="preserve"><value>Video bitrate</value></data>
   <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>Target video encoding bitrate only. Capture presets on the home page set frame rate and bitrate together.</value></data>
   <data name="Settings_BitrateMode.Text" xml:space="preserve"><value>Video bitrate mode</value></data>
@@ -291,7 +294,7 @@
   <data name="Settings_VideoCodec.Text" xml:space="preserve"><value>Video codec</value></data>
   <data name="Settings_VideoCodec_Desc.Text" xml:space="preserve"><value>Choose compatibility or smaller files</value></data>
   <data name="Settings_AudioQuality.Text" xml:space="preserve"><value>Audio quality</value></data>
-  <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>AAC-LC in an M4A file for audio-only recordings</value></data>
+  <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>AAC for audio in video recordings and audio-only captures.</value></data>
   <data name="Settings_CaptureCursor.Text" xml:space="preserve"><value>Capture cursor</value></data>
   <data name="Settings_CaptureCursor_Desc.Text" xml:space="preserve"><value>Show the pointer in recorded video</value></data>
   <data name="Settings_Group_General.Text" xml:space="preserve"><value>General</value></data>

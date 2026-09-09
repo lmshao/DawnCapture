@@ -74,6 +74,31 @@
                     </Grid>
                     <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
 
+                    <TextBlock Style="{StaticResource DawnSettingsSubsectionTitleStyle}" x:Uid="Settings_Subsection_Video" Text="Video" />
+
+                    <Grid Style="{StaticResource DawnSettingsRowStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="260" />
+                            <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" x:Uid="Settings_VideoCodec" Text="Video codec" />
+                            <TextBlock
+                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                FontSize="11"
+                                Text="Choose compatibility or smaller files"
+                                x:Uid="Settings_VideoCodec_Desc" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Style="{StaticResource DawnSettingsComboBoxStyle}"
+                            SelectedIndex="{x:Bind ViewModel.CodecIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="Settings_Codec_Avc" Content="Compatible / H.264 AVC" />
+                            <ComboBoxItem x:Uid="Settings_Codec_Hevc" Content="Smaller files / H.265 HEVC" />
+                        </ComboBox>
+                    </Grid>
+                    <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+
                     <Grid Style="{StaticResource DawnSettingsRowStyle}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" MinWidth="260" />
@@ -84,7 +109,7 @@
                             <TextBlock
                                 Foreground="{StaticResource DawnTextFaintBrush}"
                                 FontSize="11"
-                                Text="Higher values create larger files"
+                                Text="Capture presets on the home page change frame rate and quality tier together."
                                 x:Uid="Settings_FrameRate_Desc" />
                         </StackPanel>
                         <ComboBox
@@ -194,28 +219,7 @@
                         BorderThickness="0,0,0,1"
                         Visibility="{x:Bind ViewModel.IsAdaptiveBitrateMode, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}" />
 
-                    <Grid Style="{StaticResource DawnSettingsRowStyle}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" MinWidth="260" />
-                            <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock FontWeight="SemiBold" x:Uid="Settings_VideoCodec" Text="Video codec" />
-                            <TextBlock
-                                Foreground="{StaticResource DawnTextFaintBrush}"
-                                FontSize="11"
-                                Text="Choose compatibility or smaller files"
-                                x:Uid="Settings_VideoCodec_Desc" />
-                        </StackPanel>
-                        <ComboBox
-                            Grid.Column="1"
-                            Style="{StaticResource DawnSettingsComboBoxStyle}"
-                            SelectedIndex="{x:Bind ViewModel.CodecIndex, Mode=TwoWay}">
-                            <ComboBoxItem x:Uid="Settings_Codec_Avc" Content="Compatible / H.264 AVC" />
-                            <ComboBoxItem x:Uid="Settings_Codec_Hevc" Content="Smaller files / H.265 HEVC" />
-                        </ComboBox>
-                    </Grid>
-                    <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Style="{StaticResource DawnSettingsSubsectionTitleStyle}" x:Uid="Settings_Subsection_Audio" Text="Audio" />
 
                     <Grid Style="{StaticResource DawnSettingsRowStyle}">
                         <Grid.ColumnDefinitions>
@@ -227,7 +231,7 @@
                             <TextBlock
                                 Foreground="{StaticResource DawnTextFaintBrush}"
                                 FontSize="11"
-                                Text="AAC-LC in an M4A file for audio-only recordings"
+                                Text="AAC for audio in video recordings and audio-only captures."
                                 x:Uid="Settings_AudioQuality_Desc" />
                         </StackPanel>
                         <ComboBox
@@ -240,6 +244,8 @@
                         </ComboBox>
                     </Grid>
                     <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+
+                    <TextBlock Style="{StaticResource DawnSettingsSubsectionTitleStyle}" x:Uid="Settings_Subsection_Behavior" Text="Recording behavior" />
 
                     <Grid Style="{StaticResource DawnSettingsRowStyle}">
                         <Grid.ColumnDefinitions>
@@ -259,12 +265,7 @@
                             Style="{StaticResource DawnSettingsToggleStyle}"
                             IsOn="{x:Bind ViewModel.CaptureCursor, Mode=TwoWay}" />
                     </Grid>
-                </StackPanel>
-
-                <StackPanel Spacing="0">
-                    <Border BorderBrush="{StaticResource DawnStrokeStrongBrush}" BorderThickness="0,0,0,1">
-                        <TextBlock Style="{StaticResource DawnSettingsGroupTitleStyle}" x:Uid="Settings_Group_General" Text="General" />
-                    </Border>
+                    <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
 
                     <Grid Style="{StaticResource DawnSettingsRowStyle}">
                         <Grid.ColumnDefinitions>
@@ -304,7 +305,12 @@
                             Style="{StaticResource DawnSettingsToggleStyle}"
                             IsOn="{x:Bind ViewModel.NotificationEnabled, Mode=TwoWay}" />
                     </Grid>
-                    <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+                </StackPanel>
+
+                <StackPanel Spacing="0">
+                    <Border BorderBrush="{StaticResource DawnStrokeStrongBrush}" BorderThickness="0,0,0,1">
+                        <TextBlock Style="{StaticResource DawnSettingsGroupTitleStyle}" x:Uid="Settings_Group_General" Text="General" />
+                    </Border>
 
                     <Grid Style="{StaticResource DawnSettingsRowStyle}">
                         <Grid.ColumnDefinitions>
