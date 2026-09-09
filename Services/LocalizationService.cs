@@ -46,17 +46,35 @@ public static class LocalizationService
             : English;
     }
 
+    /// <summary>
+    /// Resolves a localized string by its bare resource key.
+    ///
+    /// Key naming rule (enforced by convention; violations are logged here):
+    /// - GetString takes the BARE key (e.g. "Capture_MicrophoneUnavailable").
+    /// - x:Uid looks up "<Key>.<Property>" (e.g. "Capture_MicrophoneUnavailable.Text"),
+    ///   so property-suffixed keys must never be passed to GetString — MRT Core
+    ///   fails such lookups and this method would fall back to the raw key text.
+    /// </summary>
     public static string GetString(string key)
     {
         try
         {
             _resourceLoader ??= new ResourceLoader();
             string value = _resourceLoader.GetString(key);
-            return string.IsNullOrEmpty(value) ? key : value;
+            if (!string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            Log.Error(
+                $"Localized string missing for key '{key}'. " +
+                "Ensure the key exists in Strings/zh-CN and Strings/en-US " +
+                "and that no x:Uid property suffix ('.Text', '.Content') is appended.");
+            return key;
         }
         catch (Exception ex)
         {
-            Log.Info($"Resource lookup failed for '{key}': {ex.Message}");
+            Log.Error($"Resource lookup failed for '{key}': {ex.Message}");
             return key;
         }
     }
