@@ -271,14 +271,14 @@
   <data name="Failure_AudioStart" xml:space="preserve"><value>无法启动音频采集 (0x{0:X})。</value></data>
   <data name="Capture_ModeSection.Text" xml:space="preserve"><value>录制模式</value></data>
   <data name="Capture_Microphone.Text" xml:space="preserve"><value>麦克风</value></data>
-  <data name="Capture_MicrophoneUnavailable.Text" xml:space="preserve"><value>未识别到麦克风设备</value></data>
+  <data name="Capture_MicrophoneUnavailable" xml:space="preserve"><value>未识别到麦克风设备</value></data>
   <data name="Capture_SystemAudio.Text" xml:space="preserve"><value>系统音频</value></data>
   <data name="Capture_ShowCursor.Text" xml:space="preserve"><value>显示光标</value></data>
   <data name="Capture_Preview.Text" xml:space="preserve"><value>预览</value></data>
   <data name="Capture_Mode_Audio" xml:space="preserve"><value>仅音频</value></data>
   <data name="Capture_AudioFormatDetail.Text" xml:space="preserve"><value>AAC-LC / M4A / 48 kHz 立体声</value></data>
   <data name="Capture_MicrophoneOn" xml:space="preserve"><value>麦克风已开启</value></data>
-  <data name="Capture_SystemAudioUnavailable.Text" xml:space="preserve"><value>未识别到播放设备</value></data>
+  <data name="Capture_SystemAudioUnavailable" xml:space="preserve"><value>未识别到播放设备</value></data>
   <data name="Capture_MicrophoneOff" xml:space="preserve"><value>麦克风已关闭</value></data>
   <data name="Capture_SystemAudioOff" xml:space="preserve"><value>系统音频已关闭</value></data>
   <data name="Capture_Preview_AudioSummary_Mic" xml:space="preserve"><value>仅麦克风</value></data>

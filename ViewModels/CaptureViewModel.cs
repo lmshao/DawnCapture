@@ -84,14 +84,14 @@ public partial class CaptureViewModel : ObservableObject
         if (!HasMicrophoneDevice)
         {
             MicrophoneEnabled = false;
-            MicrophoneUnavailable = true;
+            MicrophoneRowTooltip = LocalizationService.GetString("Capture_MicrophoneUnavailable");
             Log.Info("No microphone device detected; microphone option disabled.");
         }
 
         if (!HasSystemAudioDevice)
         {
             SystemAudioEnabled = false;
-            SystemAudioUnavailable = true;
+            SystemAudioRowTooltip = LocalizationService.GetString("Capture_SystemAudioUnavailable");
             Log.Info("No playback device detected; system audio option disabled.");
         }
 
@@ -145,16 +145,16 @@ public partial class CaptureViewModel : ObservableObject
     private bool _showCursorOption = true;
 
     [ObservableProperty]
-    private bool _microphoneEnabled = true;
+    private bool _microphoneEnabled = false;
 
     [ObservableProperty]
     private bool _systemAudioEnabled = true;
 
     [ObservableProperty]
-    private bool _microphoneUnavailable;
+    private string? _microphoneRowTooltip;
 
     [ObservableProperty]
-    private bool _systemAudioUnavailable;
+    private string? _systemAudioRowTooltip;
 
     [ObservableProperty]
     private string _microphoneStatusBadge = string.Empty;
