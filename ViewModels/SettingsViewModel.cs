@@ -1,8 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using DawnCapture.Helpers;
 using DawnCapture.Models;
 using DawnCapture.Services;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -277,7 +279,7 @@ public partial class SettingsViewModel : ObservableObject
         }
 
         LocalizationService.ApplyLanguage(selected.Code);
-        RestartApplication();
+        await RestartApplicationAsync();
     }
 
     private void RevertSelectedLanguage(string languageCode)
@@ -490,8 +492,16 @@ public partial class SettingsViewModel : ObservableObject
         _mainViewModel.RefreshStorage();
     }
 
-    private static void RestartApplication()
+    private static async Task RestartApplicationAsync()
     {
+        // Finalize any active recording before restarting; the process exit
+        // below would otherwise abort the MP4 and leave it unplayable.
+        var recordingService = Ioc.Default.GetRequiredService<IRecordingService>();
+        if (recordingService.State is RecordingState.Recording or RecordingState.Paused)
+        {
+            await recordingService.StopAsync();
+        }
+
         string? executable = Environment.ProcessPath;
         if (string.IsNullOrEmpty(executable))
         {
