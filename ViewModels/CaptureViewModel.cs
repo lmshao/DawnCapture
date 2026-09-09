@@ -270,6 +270,7 @@ public partial class CaptureViewModel : ObservableObject
             MicrophoneEnabled = false;
         }
 
+        _mainViewModel.ClearCaptureNotice();
         UpdateAudioStatusBadges();
         if (SelectedMode == CaptureModeKind.AudioOnly)
         {
@@ -284,6 +285,7 @@ public partial class CaptureViewModel : ObservableObject
             SystemAudioEnabled = false;
         }
 
+        _mainViewModel.ClearCaptureNotice();
         UpdateAudioStatusBadges();
         if (SelectedMode == CaptureModeKind.AudioOnly)
         {
@@ -485,6 +487,7 @@ public partial class CaptureViewModel : ObservableObject
 
     partial void OnSelectedDisplayChanged(MonitorDisplay? value)
     {
+        _mainViewModel.ClearCaptureNotice();
         SelectedDisplayThumbnail = value?.Thumbnail;
         SelectedDisplayBadge = value?.BadgeLabel ?? string.Empty;
         SyncHasSource();
@@ -495,6 +498,7 @@ public partial class CaptureViewModel : ObservableObject
 
     partial void OnSelectedModeChanged(CaptureModeKind value)
     {
+        _mainViewModel.ClearCaptureNotice();
         if (value != CaptureModeKind.Window)
         {
             ClearSelectedWindow();
@@ -513,6 +517,7 @@ public partial class CaptureViewModel : ObservableObject
 
     partial void OnSelectedRegionChanged(RegionCaptureTarget? value)
     {
+        _mainViewModel.ClearCaptureNotice();
         RegionBadge = value?.Resolution ?? string.Empty;
         SyncHasSource();
         UpdateHeaderCopy();
@@ -522,6 +527,7 @@ public partial class CaptureViewModel : ObservableObject
 
     partial void OnSelectedWindowChanged(WindowCaptureTarget? value)
     {
+        _mainViewModel.ClearCaptureNotice();
         WindowBadge = value?.Resolution ?? string.Empty;
         SyncHasSource();
         UpdateHeaderCopy();
@@ -671,13 +677,13 @@ public partial class CaptureViewModel : ObservableObject
             {
                 if (!HasMicrophoneDevice && !HasSystemAudioDevice)
                 {
-                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_NoAudioDevices");
+                    await BlockRecordingStartAsync(LocalizationService.GetString("AppStatus_NoAudioDevices"));
                     return;
                 }
 
                 if (!HasAnyAudioSourceEnabled())
                 {
-                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_EnableOneAudio");
+                    await BlockRecordingStartAsync(LocalizationService.GetString("AppStatus_EnableOneAudio"));
                     return;
                 }
             }
@@ -685,8 +691,12 @@ public partial class CaptureViewModel : ObservableObject
             string outputFolder = OutputFolderHelper.Resolve(_settingsService);
             if (!StorageSpaceHelper.TryEnsureSpaceForRecording(outputFolder, out string? storageError))
             {
-                _mainViewModel.AppStatusText = storageError!;
-                await DialogHelper.ShowErrorAsync(storageError!);
+                await BlockRecordingStartAsync(storageError!);
+                return;
+            }
+
+            if (!await TryValidateRecordingSourceAsync())
+            {
                 return;
             }
 
@@ -705,7 +715,10 @@ public partial class CaptureViewModel : ObservableObject
                     CountdownOverlayHelper.DefaultSeconds);
                 if (!proceed)
                 {
-                    _mainViewModel.AppStatusText = LocalizationService.GetString("Status_CountdownCancelled");
+                    ShowCaptureNotice(
+                        LocalizationService.GetString("Status_CountdownCancelled"),
+                        CaptureNoticeSeverity.Information);
+                    SetReadyWindowTitle();
                     return;
                 }
             }
@@ -713,43 +726,19 @@ public partial class CaptureViewModel : ObservableObject
             switch (SelectedMode)
             {
                 case CaptureModeKind.FullScreen:
-                    if (SelectedDisplay is null)
-                    {
-                        Log.Info("Recording blocked: no display selected.");
-                        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_SelectDisplay");
-                        return;
-                    }
-
-                    Log.Info($"Recording requested: {SelectedDisplay.Name}, Handle=0x{SelectedDisplay.Handle:X}, Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}");
+                    Log.Info($"Recording requested: {SelectedDisplay!.Name}, Handle=0x{SelectedDisplay.Handle:X}, Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}");
                     await _recordingService.StartFullScreenAsync(SelectedDisplay, audioOptions);
                     break;
                 case CaptureModeKind.Window:
-                    if (SelectedWindow is null)
-                    {
-                        Log.Info("Recording blocked: no window selected.");
-                        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_SelectWindow");
-                        return;
-                    }
-
-                    Log.Info($"Recording requested: {SelectedWindow.DisplayName} ({SelectedWindow.Resolution}), Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}");
-                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_WindowRecordingHint");
+                    Log.Info($"Recording requested: {SelectedWindow!.DisplayName} ({SelectedWindow.Resolution}), Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}");
                     await _recordingService.StartWindowAsync(SelectedWindow.Item, audioOptions);
                     break;
                 case CaptureModeKind.Region:
-                    if (SelectedRegion is null)
-                    {
-                        Log.Info("Recording blocked: no region selected.");
-                        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_SelectRegion");
-                        return;
-                    }
-
-                    Log.Info($"Recording requested: region {SelectedRegion.Resolution} @({SelectedRegion.ScreenBounds.X},{SelectedRegion.ScreenBounds.Y})");
-                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_RegionRecordingHint");
+                    Log.Info($"Recording requested: region {SelectedRegion!.Resolution} @({SelectedRegion.ScreenBounds.X},{SelectedRegion.ScreenBounds.Y})");
                     await _recordingService.StartRegionAsync(SelectedRegion.ScreenBounds, audioOptions);
                     break;
                 case CaptureModeKind.AudioOnly:
                     Log.Info($"Recording requested: audio-only, Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}");
-                    _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_AudioRecordingHint");
                     await _recordingService.StartAudioOnlyAsync(audioOptions);
                     break;
             }
@@ -792,23 +781,23 @@ public partial class CaptureViewModel : ObservableObject
         switch (state)
         {
             case RecordingState.Recording:
-                _mainViewModel.AppStatusText = string.Format(
-                    LocalizationService.GetString("AppStatus_Recording"),
-                    ControllerSource);
+                SetRecordingWindowTitle();
+                _mainViewModel.ClearCaptureNotice();
                 break;
             case RecordingState.Paused:
-                _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Paused");
+                SetPausedWindowTitle();
                 break;
             case RecordingState.Idle:
                 TimerText = "00:00";
-                _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+                SetReadyWindowTitle();
                 break;
         }
     }
 
     private void OnRecordingFailed(object? sender, string message)
     {
-        _mainViewModel.AppStatusText = message;
+        SetReadyWindowTitle();
+        _mainViewModel.ShowCaptureNotice(message, CaptureNoticeSeverity.Error);
         _ = DialogHelper.ShowErrorAsync(
             message,
             LocalizationService.GetString("Recordings_ErrorTitle"));
@@ -816,7 +805,7 @@ public partial class CaptureViewModel : ObservableObject
 
     private void OnRecordingNotice(object? sender, string message)
     {
-        _mainViewModel.AppStatusText = message;
+        ShowCaptureNotice(message, CaptureNoticeSeverity.Warning);
     }
 
     [RelayCommand]
@@ -850,14 +839,14 @@ public partial class CaptureViewModel : ObservableObject
             return;
         }
 
-        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_ChoosingDisplay");
+        SetChoosingWindowTitle();
         foreach (var monitor in Monitors)
         {
             _monitorService.RefreshThumbnail(monitor);
         }
 
         var picked = await DisplayPickerDialog.ShowAsync(Monitors.ToList(), SelectedDisplay);
-        _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+        SetReadyWindowTitle();
 
         if (picked != null)
         {
@@ -882,9 +871,9 @@ public partial class CaptureViewModel : ObservableObject
 
     private async Task PickRegionAsync()
     {
-        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_ChoosingRegion");
+        SetChoosingWindowTitle();
         var region = await RegionPickerHelper.PickRegionAsync();
-        _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+        SetReadyWindowTitle();
 
         if (region is null)
         {
@@ -952,9 +941,9 @@ public partial class CaptureViewModel : ObservableObject
 
     private async Task PickWindowAsync()
     {
-        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_ChoosingWindow");
+        SetChoosingWindowTitle();
         var item = await WindowCaptureHelper.PickWindowAsync();
-        _mainViewModel.AppStatusText = LocalizationService.GetString("Status_Ready");
+        SetReadyWindowTitle();
 
         if (item is null)
         {
@@ -1005,7 +994,10 @@ public partial class CaptureViewModel : ObservableObject
     {
         Log.Info("Selected window closed.");
         ClearSelectedWindow();
-        _mainViewModel.AppStatusText = LocalizationService.GetString("AppStatus_WindowClosed");
+        ShowCaptureNotice(
+            LocalizationService.GetString("AppStatus_WindowClosed"),
+            CaptureNoticeSeverity.Warning);
+        SetReadyWindowTitle();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
     }
@@ -1253,5 +1245,59 @@ public partial class CaptureViewModel : ObservableObject
             EmptySourceDescription = LocalizationService.GetString("Capture_EmptyRegion_Desc");
             EmptySourceButton = LocalizationService.GetString("Capture_Action_SelectRegion");
         }
+    }
+
+    private async Task<bool> TryValidateRecordingSourceAsync()
+    {
+        switch (SelectedMode)
+        {
+            case CaptureModeKind.FullScreen when SelectedDisplay is null:
+                Log.Info("Recording blocked: no display selected.");
+                await BlockRecordingStartAsync(LocalizationService.GetString("AppStatus_SelectDisplay"));
+                return false;
+            case CaptureModeKind.Window when SelectedWindow is null:
+                Log.Info("Recording blocked: no window selected.");
+                await BlockRecordingStartAsync(LocalizationService.GetString("AppStatus_SelectWindow"));
+                return false;
+            case CaptureModeKind.Region when SelectedRegion is null:
+                Log.Info("Recording blocked: no region selected.");
+                await BlockRecordingStartAsync(LocalizationService.GetString("AppStatus_SelectRegion"));
+                return false;
+            default:
+                return true;
+        }
+    }
+
+    private async Task BlockRecordingStartAsync(string message)
+    {
+        _mainViewModel.ShowCaptureNotice(message, CaptureNoticeSeverity.Error);
+        await DialogHelper.ShowErrorAsync(
+            message,
+            LocalizationService.GetString("Capture_Validation_Title"));
+    }
+
+    private void ShowCaptureNotice(string message, CaptureNoticeSeverity severity)
+    {
+        _mainViewModel.ShowCaptureNotice(message, severity);
+    }
+
+    private void SetReadyWindowTitle()
+    {
+        _mainViewModel.WindowTitleText = LocalizationService.GetString("Status_Ready");
+    }
+
+    private void SetChoosingWindowTitle()
+    {
+        _mainViewModel.WindowTitleText = LocalizationService.GetString("Status_Title_Choosing");
+    }
+
+    private void SetRecordingWindowTitle()
+    {
+        _mainViewModel.WindowTitleText = LocalizationService.GetString("Status_Title_Recording");
+    }
+
+    private void SetPausedWindowTitle()
+    {
+        _mainViewModel.WindowTitleText = LocalizationService.GetString("Status_Paused");
     }
 }

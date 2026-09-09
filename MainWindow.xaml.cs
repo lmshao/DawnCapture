@@ -37,16 +37,16 @@ public sealed partial class MainWindow : Window
 
         ViewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(MainViewModel.AppStatusText))
+            if (e.PropertyName == nameof(MainViewModel.WindowTitleText))
             {
-                Title = $"DawnCapture — {ViewModel.AppStatusText}";
+                Title = $"DawnCapture — {ViewModel.WindowTitleText}";
             }
             else if (e.PropertyName == nameof(MainViewModel.IsStorageLow))
             {
                 UpdateStorageAvailabilityBrush();
             }
         };
-        Title = $"DawnCapture — {ViewModel.AppStatusText}";
+        Title = $"DawnCapture — {ViewModel.WindowTitleText}";
         UpdateStorageAvailabilityBrush();
         ViewModel.NavigationRequested += (_, tag) => NavigateTo(tag);
         RegisterGlobalHotkeys();

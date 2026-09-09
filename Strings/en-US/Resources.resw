@@ -78,6 +78,9 @@
   <data name="About_Trust_Windows11" xml:space="preserve"><value>Built for Windows 11 with native capture APIs</value></data>
   <data name="About_ProductName" xml:space="preserve"><value>DawnCapture</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Status_Title_Recording" xml:space="preserve"><value>Recording</value></data>
+  <data name="Status_Title_Choosing" xml:space="preserve"><value>Selecting</value></data>
+  <data name="Capture_Validation_Title" xml:space="preserve"><value>Can't start recording</value></data>
   <data name="Status_Countdown" xml:space="preserve"><value>Starting in {0}…</value></data>
   <data name="Status_CountdownCancelled" xml:space="preserve"><value>Recording cancelled</value></data>
   <data name="Window_CountdownTitle" xml:space="preserve"><value>Recording countdown</value></data>

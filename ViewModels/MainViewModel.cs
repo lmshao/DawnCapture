@@ -30,7 +30,33 @@ public partial class MainViewModel : ObservableObject
         NavigationRequested?.Invoke(this, pageTag);
 
     [ObservableProperty]
-    private string _appStatusText = LocalizationService.GetString("Status_Ready");
+    private string _windowTitleText = LocalizationService.GetString("Status_Ready");
+
+    [ObservableProperty]
+    private string? _captureNoticeText;
+
+    [ObservableProperty]
+    private CaptureNoticeSeverity _captureNoticeSeverity = CaptureNoticeSeverity.Warning;
+
+    public bool IsCaptureNoticeOpen => !string.IsNullOrEmpty(CaptureNoticeText);
+
+    public void ShowCaptureNotice(string message, CaptureNoticeSeverity severity = CaptureNoticeSeverity.Warning)
+    {
+        CaptureNoticeText = message;
+        CaptureNoticeSeverity = severity;
+        OnPropertyChanged(nameof(IsCaptureNoticeOpen));
+    }
+
+    public void ClearCaptureNotice()
+    {
+        if (CaptureNoticeText is null)
+        {
+            return;
+        }
+
+        CaptureNoticeText = null;
+        OnPropertyChanged(nameof(IsCaptureNoticeOpen));
+    }
 
     [ObservableProperty]
     private string _storageLabel = LocalizationService.GetString("Storage_Label");

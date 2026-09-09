@@ -12,6 +12,7 @@
             Padding="{StaticResource DawnCapturePagePadding}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -26,8 +27,16 @@
                 Text="{x:Bind ViewModel.Description, Mode=OneWay}" />
         </StackPanel>
 
+        <InfoBar
+            x:Name="CaptureNoticeBar"
+            Grid.Row="1"
+            Margin="0,0,0,10"
+            IsClosable="True"
+            IsOpen="False"
+            Closed="CaptureNoticeBar_Closed" />
+
         <!-- Workspace -->
-        <Grid x:Name="Workspace" Grid.Row="1" Margin="0,0,0,10" ColumnSpacing="30" VerticalAlignment="Stretch">
+        <Grid x:Name="Workspace" Grid.Row="2" Margin="0,0,0,10" ColumnSpacing="30" VerticalAlignment="Stretch">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="260" />
                 <ColumnDefinition x:Name="PreviewColumn" Width="*" MinWidth="340" />
@@ -391,7 +400,7 @@
 
         <!-- Command dock -->
         <Border
-            Grid.Row="2"
+            Grid.Row="3"
             MinHeight="88"
             Margin="-44,0,-44,0"
             Padding="44,12,44,12"
