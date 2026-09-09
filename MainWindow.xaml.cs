@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using DawnCapture.Helpers;
+using DawnCapture.Models;
 using DawnCapture.Services;
 using DawnCapture.ViewModels;
 using DawnCapture.Views;
@@ -50,7 +51,49 @@ public sealed partial class MainWindow : Window
         UpdateStorageAvailabilityBrush();
         ViewModel.NavigationRequested += (_, tag) => NavigateTo(tag);
         RegisterGlobalHotkeys();
+        AppWindow.Closing += OnMainWindowClosing;
         Closed += (_, _) => _globalHotkeyService?.Dispose();
+    }
+
+    private bool _closingAfterStop;
+
+    /// <summary>
+    /// Ask what to do with an active recording when the main window closes:
+    /// stop and save it, or keep recording and cancel the close.
+    /// </summary>
+    private async void OnMainWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (_closingAfterStop)
+        {
+            // A stop is already in flight; keep the window open until Close()
+            // runs at the end of that stop.
+            args.Cancel = true;
+            return;
+        }
+
+        var recordingService = Ioc.Default.GetRequiredService<IRecordingService>();
+        if (recordingService.State is not (RecordingState.Recording or RecordingState.Paused))
+        {
+            return;
+        }
+
+        args.Cancel = true;
+
+        if (!await CloseRecordingDialog.ConfirmStopAndSaveAsync())
+        {
+            return;
+        }
+
+        _closingAfterStop = true;
+        try
+        {
+            await recordingService.StopAsync();
+        }
+        finally
+        {
+            _closingAfterStop = false;
+            Close();
+        }
     }
 
     private void RegisterGlobalHotkeys()

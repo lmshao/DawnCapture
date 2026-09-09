@@ -240,6 +240,11 @@
   <data name="Recordings_DeleteFailed" xml:space="preserve"><value>无法将文件移入回收站。请确认文件未被其他应用占用。</value></data>
   <data name="Recordings_ErrorTitle" xml:space="preserve"><value>出现问题</value></data>
   <data name="Recordings_Ok" xml:space="preserve"><value>确定</value></data>
+  <data name="MainWindow_CloseRecordingTitle" xml:space="preserve"><value>正在录制</value></data>
+  <data name="MainWindow_CloseRecordingMessage" xml:space="preserve"><value>关闭窗口将停止录制并保存录像；也可以继续录制，稍后再关闭。</value></data>
+  <data name="MainWindow_CloseRecordingStopAndSave" xml:space="preserve"><value>停止并保存</value></data>
+  <data name="MainWindow_CloseRecordingContinue" xml:space="preserve"><value>继续录制</value></data>
+  <data name="MainWindow_CloseRecordingCancel" xml:space="preserve"><value>取消关闭</value></data>
   <data name="About_Version" xml:space="preserve"><value>DawnCapture {0}</value></data>
   <data name="About_Title" xml:space="preserve"><value>记录重要时刻。</value></data>
   <data name="About_Author" xml:space="preserve"><value>作者：SHAO Liming · {0}</value></data>
