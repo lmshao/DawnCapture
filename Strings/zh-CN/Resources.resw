@@ -79,6 +79,11 @@
   <data name="About_ProductName" xml:space="preserve"><value>DawnCapture</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>准备就绪</value></data>
   <data name="Status_Countdown" xml:space="preserve"><value>{0} 秒后开始录制…</value></data>
+  <data name="Status_CountdownCancelled" xml:space="preserve"><value>已取消录制</value></data>
+  <data name="Window_CountdownTitle" xml:space="preserve"><value>录制倒计时</value></data>
+  <data name="Countdown_Overlay_Prepare.Text" xml:space="preserve"><value>请准备桌面布局</value></data>
+  <data name="Countdown_Overlay_Hint.Text" xml:space="preserve"><value>按 Esc 取消</value></data>
+  <data name="Countdown_Overlay_Cancel.Content" xml:space="preserve"><value>取消</value></data>
   <data name="Notification_RecordingSaved" xml:space="preserve"><value>录像已保存</value></data>
   <data name="Status_StartingFullScreen" xml:space="preserve"><value>正在开始全屏录制…</value></data>
   <data name="Status_StartingWindow" xml:space="preserve"><value>正在开始窗口录制…</value></data>

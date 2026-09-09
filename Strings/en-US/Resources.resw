@@ -79,6 +79,11 @@
   <data name="About_ProductName" xml:space="preserve"><value>DawnCapture</value></data>
   <data name="Status_Ready" xml:space="preserve"><value>Ready</value></data>
   <data name="Status_Countdown" xml:space="preserve"><value>Starting in {0}…</value></data>
+  <data name="Status_CountdownCancelled" xml:space="preserve"><value>Recording cancelled</value></data>
+  <data name="Window_CountdownTitle" xml:space="preserve"><value>Recording countdown</value></data>
+  <data name="Countdown_Overlay_Prepare.Text" xml:space="preserve"><value>Prepare your desktop</value></data>
+  <data name="Countdown_Overlay_Hint.Text" xml:space="preserve"><value>Press Esc to cancel</value></data>
+  <data name="Countdown_Overlay_Cancel.Content" xml:space="preserve"><value>Cancel</value></data>
   <data name="Notification_RecordingSaved" xml:space="preserve"><value>Recording saved</value></data>
   <data name="Status_StartingFullScreen" xml:space="preserve"><value>Starting full-screen recording…</value></data>
   <data name="Status_StartingWindow" xml:space="preserve"><value>Starting window recording…</value></data>

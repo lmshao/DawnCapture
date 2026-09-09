@@ -694,12 +694,19 @@ public partial class CaptureViewModel : ObservableObject
 
             if (_settingsService.Current.CountdownEnabled)
             {
-                for (int seconds = 3; seconds >= 1; seconds--)
+                RectInt32 countdownBounds = CountdownOverlayHelper.ResolveTargetBounds(
+                    SelectedMode,
+                    SelectedDisplay,
+                    SelectedWindow,
+                    SelectedRegion,
+                    _monitorService);
+                bool proceed = await CountdownOverlayHelper.RunAsync(
+                    countdownBounds,
+                    CountdownOverlayHelper.DefaultSeconds);
+                if (!proceed)
                 {
-                    _mainViewModel.AppStatusText = string.Format(
-                        LocalizationService.GetString("Status_Countdown"),
-                        seconds);
-                    await Task.Delay(1000);
+                    _mainViewModel.AppStatusText = LocalizationService.GetString("Status_CountdownCancelled");
+                    return;
                 }
             }
 
