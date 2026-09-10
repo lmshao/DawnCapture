@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using DawnCapture.Helpers;
@@ -17,6 +18,10 @@ public partial class App : Application
 {
     private const string SingleInstanceKey = "DawnCapture.SingleInstance";
 
+    // Stable notification identity for unpackaged builds. Packaged (MSIX)
+    // builds ignore this and use their package identity instead.
+    private const string AppUserModelId = "DawnCapture.App";
+
     private AppInstance? _singleInstance;
 
     public App()
@@ -26,6 +31,8 @@ public partial class App : Application
         Log.Init();
         Log.Info("Application startup initialization started.");
         Log.Info($"Log file: {Log.FilePath}");
+
+        TrySetAppUserModelId();
 
         InitializeComponent();
         LocalizationService.ApplyLanguage(settingsService.Current.Language);
@@ -79,12 +86,26 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Register before the single-instance check so notification
+        // activations can be resolved in this process as well.
+        TryRegisterNotifications();
+
         _singleInstance = AppInstance.FindOrRegisterForKey(SingleInstanceKey);
         if (!_singleInstance.IsCurrent)
         {
-            Log.Info("Another instance is already running; redirecting activation.");
+            Log.Info("Another instance is already running; handling activation.");
             AppActivationArguments activationArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
-            await _singleInstance.RedirectActivationToAsync(activationArgs);
+            if (activationArgs.Kind == ExtendedActivationKind.AppNotification)
+            {
+                // Launched by a notification action while the main instance
+                // is running: perform the action here and exit without
+                // opening a second window.
+                TryHandleNotificationActivation(activationArgs);
+            }
+            else
+            {
+                await _singleInstance.RedirectActivationToAsync(activationArgs);
+            }
             Exit();
             return;
         }
@@ -103,7 +124,6 @@ public partial class App : Application
             Ioc.Default.GetRequiredService<ITrayIconService>().Attach(mainWindow);
             mainWindow.Activate();
             _ = SyncLibraryInBackgroundAsync(catalogService, settingsService);
-            TryRegisterNotifications();
             NotifyLastCrashIfAny();
             Log.Info("Main window activated.");
         }
@@ -134,6 +154,13 @@ public partial class App : Application
 
     private void OnAppInstanceActivated(object? sender, AppActivationArguments args)
     {
+        if (args.Kind == ExtendedActivationKind.AppNotification)
+        {
+            Log.Info("Notification activation redirected from a second instance.");
+            TryHandleNotificationActivation(args);
+            return;
+        }
+
         Log.Info("Activation received from a second instance.");
         ActivateMainWindowFromRedirect();
     }
@@ -176,6 +203,39 @@ public partial class App : Application
         });
     }
 
+    private static void TrySetAppUserModelId()
+    {
+        if (IsPackagedProcess())
+        {
+            return;
+        }
+
+        try
+        {
+            SetCurrentProcessExplicitAppUserModelID(AppUserModelId);
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Failed to set AppUserModelId: {ex.Message}");
+        }
+    }
+
+    private static bool IsPackagedProcess()
+    {
+        try
+        {
+            _ = Windows.ApplicationModel.Package.Current;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
+
     private static void TryRegisterNotifications()
     {
         try
@@ -193,6 +253,31 @@ public partial class App : Application
         AppNotificationManager sender,
         AppNotificationActivatedEventArgs args)
     {
+        HandleNotificationAction(args);
+    }
+
+    private static void TryHandleNotificationActivation(AppActivationArguments activationArgs)
+    {
+        if (activationArgs.Kind != ExtendedActivationKind.AppNotification)
+        {
+            return;
+        }
+
+        try
+        {
+            if (activationArgs.Data is AppNotificationActivatedEventArgs notificationArgs)
+            {
+                HandleNotificationAction(notificationArgs);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Notification activation handling failed: {ex.Message}");
+        }
+    }
+
+    private static void HandleNotificationAction(AppNotificationActivatedEventArgs args)
+    {
         try
         {
             if (!args.Arguments.TryGetValue("action", out string? action) ||
@@ -201,11 +286,8 @@ public partial class App : Application
                 return;
             }
 
-            if (!args.Arguments.TryGetValue("path", out string? folder))
-            {
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+            if (!args.Arguments.TryGetValue("path", out string? folder) ||
+                string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
             {
                 return;
             }
@@ -214,6 +296,7 @@ public partial class App : Application
             {
                 UseShellExecute = true
             });
+            Log.Info($"Opened recording folder from notification: {folder}");
         }
         catch (Exception ex)
         {

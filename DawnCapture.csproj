@@ -90,6 +90,37 @@
   </PropertyGroup>
 
   <!--
+    Workaround for WindowsAppSDK #6071: self-contained unpackaged builds miss
+    Microsoft.WindowsAppRuntime.Insights.Resource.dll, which makes
+    AppNotificationManager.Register() throw 0x8007007E (module not found).
+    The DLL only ships inside the framework MSIX in the NuGet package
+    ($(MicrosoftWindowsAppSDKPackageDir)tools\MSIX), which self-contained
+    payload extraction does not read, so extract it explicitly from there.
+    MSIX files are ZIP archives and bsdtar (ships with Windows 10 1803+) can
+    pull the single entry. Remove this workaround once an SDK release
+    containing WindowsAppSDK PR #6725 ships.
+  -->
+  <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)' == 'true' And '$(WindowsPackageType)' == 'None'">
+    <InsightsResourceMsix>$(MicrosoftWindowsAppSDKPackageDir)tools\MSIX\win10-$(Platform)\Microsoft.WindowsAppRuntime.2.msix</InsightsResourceMsix>
+  </PropertyGroup>
+  <Target Name="CopyInsightsResourceDll"
+          AfterTargets="Build"
+          Condition="'$(WindowsAppSDKSelfContained)' == 'true' And '$(WindowsPackageType)' == 'None'">
+    <MakeDir Directories="$(OutDir)" />
+    <Exec WorkingDirectory="$(OutDir)"
+          Command="tar -xf &quot;$(InsightsResourceMsix)&quot; -C . Microsoft.WindowsAppRuntime.Insights.Resource.dll"
+          Condition="Exists('$(InsightsResourceMsix)')" />
+  </Target>
+  <Target Name="CopyInsightsResourceDllToPublish"
+          AfterTargets="Publish"
+          Condition="'$(WindowsAppSDKSelfContained)' == 'true' And '$(WindowsPackageType)' == 'None'">
+    <MakeDir Directories="$(PublishDir)" />
+    <Exec WorkingDirectory="$(PublishDir)"
+          Command="tar -xf &quot;$(InsightsResourceMsix)&quot; -C . Microsoft.WindowsAppRuntime.Insights.Resource.dll"
+          Condition="Exists('$(InsightsResourceMsix)')" />
+  </Target>
+
+  <!--
     WinUI 3 generates the app's own resources.pri (DawnCapture.pri) into the
     build output directory, but `dotnet publish` (unpackaged, custom
     PublishDir) does not copy it. Without it the app crashes at startup with
