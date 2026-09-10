@@ -40,6 +40,8 @@ public partial class CaptureViewModel : ObservableObject
         RecordButtonLabel = LocalizationService.GetString("Dock_StartRecording");
         PresetLabel = LocalizationService.GetString("Dock_Preset");
         AudioQualityLabel = LocalizationService.GetString("Dock_AudioQuality");
+        PresetFlyout = CreatePresetFlyout();
+        AudioQualityFlyout = CreateAudioQualityFlyout();
         _settingsService.SettingsChanged += OnSettingsChanged;
         ApplyFromSettings(_settingsService.Current);
         InitializeMonitors();
@@ -50,8 +52,6 @@ public partial class CaptureViewModel : ObservableObject
 
         InitializeAudioDevices();
         InitializeWaveformBars();
-        PresetFlyout = CreatePresetFlyout();
-        AudioQualityFlyout = CreateAudioQualityFlyout();
     }
 
     private MenuFlyout CreatePresetFlyout()
@@ -68,6 +68,7 @@ public partial class CaptureViewModel : ObservableObject
             });
         }
 
+        ApplyFlyoutSelection(flyout, CapturePresetIndex);
         return flyout;
     }
 
@@ -85,8 +86,23 @@ public partial class CaptureViewModel : ObservableObject
             });
         }
 
+        ApplyFlyoutSelection(flyout, AudioQualityIndex);
         return flyout;
     }
+
+    private static void ApplyFlyoutSelection(MenuFlyout flyout, int selectedIndex)
+    {
+        for (int i = 0; i < flyout.Items.Count; i++)
+        {
+            if (flyout.Items[i] is MenuFlyoutItem item)
+            {
+                item.Icon = i == selectedIndex ? CreateFlyoutCheckIcon() : null;
+            }
+        }
+    }
+
+    private static FontIcon CreateFlyoutCheckIcon() =>
+        new() { Glyph = "\uE73E", FontSize = 12 };
 
     private void InitializeWaveformBars()
     {
@@ -213,6 +229,7 @@ public partial class CaptureViewModel : ObservableObject
     partial void OnCapturePresetIndexChanged(int value)
     {
         OnPropertyChanged(nameof(SelectedPresetTierLabel));
+        ApplyFlyoutSelection(PresetFlyout, value);
 
         if (_suppressSettingsSave)
         {
@@ -254,6 +271,7 @@ public partial class CaptureViewModel : ObservableObject
     partial void OnAudioQualityIndexChanged(int value)
     {
         OnPropertyChanged(nameof(SelectedAudioQualityTierLabel));
+        ApplyFlyoutSelection(AudioQualityFlyout, value);
 
         if (_suppressSettingsSave)
         {
@@ -278,6 +296,8 @@ public partial class CaptureViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedPresetTierLabel));
             AudioQualityIndex = settings.AudioQualityIndex;
             OnPropertyChanged(nameof(SelectedAudioQualityTierLabel));
+            ApplyFlyoutSelection(PresetFlyout, CapturePresetIndex);
+            ApplyFlyoutSelection(AudioQualityFlyout, AudioQualityIndex);
             UpdateCodecSummaries(settings.VideoCodecIndex);
             UpdateOutputSummary();
         }

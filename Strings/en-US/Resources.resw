@@ -50,21 +50,9 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="Navigation_Home.Content" xml:space="preserve"><value>Record</value></data>
-  <data name="Navigation_Settings.Content" xml:space="preserve"><value>Settings</value></data>
-  <data name="Navigation_About.Content" xml:space="preserve"><value>About</value></data>
-  <data name="Home_Title.Text" xml:space="preserve"><value>Screen Recording</value></data>
-  <data name="Home_FullScreen.Content" xml:space="preserve"><value>Full Screen</value></data>
-  <data name="Home_Window.Content" xml:space="preserve"><value>Window</value></data>
-  <data name="Home_Region.Content" xml:space="preserve"><value>Region</value></data>
-  <data name="Home_Pause.Content" xml:space="preserve"><value>Pause</value></data>
-  <data name="Home_Resume.Content" xml:space="preserve"><value>Resume</value></data>
-  <data name="Home_Stop.Content" xml:space="preserve"><value>Stop</value></data>
   <data name="Settings_Title.Text" xml:space="preserve"><value>Settings</value></data>
   <data name="Settings_Language.Text" xml:space="preserve"><value>Language</value></data>
-  <data name="Settings_Save.Content" xml:space="preserve"><value>Save</value></data>
   <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>Drag to select. Drag inside to move, or drag handles to resize. Press Enter to confirm or Esc to cancel.</value></data>
-  <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ Stop</value></data>
   <data name="RecordingControl_PauseToolTip" xml:space="preserve"><value>Pause</value></data>
   <data name="RecordingControl_ResumeToolTip" xml:space="preserve"><value>Resume</value></data>
   <data name="RecordingControl_StopToolTip" xml:space="preserve"><value>Stop</value></data>
@@ -77,29 +65,13 @@
   <data name="About_Trust_NoAccount" xml:space="preserve"><value>No account or cloud upload required</value></data>
   <data name="About_Trust_Windows11" xml:space="preserve"><value>Built for Windows 11 with native capture APIs</value></data>
   <data name="About_ProductName" xml:space="preserve"><value>DawnCapture</value></data>
-  <data name="Status_Ready" xml:space="preserve"><value>Ready</value></data>
-  <data name="Status_Title_Recording" xml:space="preserve"><value>Recording</value></data>
-  <data name="Status_Title_Choosing" xml:space="preserve"><value>Selecting</value></data>
   <data name="Capture_Validation_Title" xml:space="preserve"><value>Can't start recording</value></data>
   <data name="Status_Countdown" xml:space="preserve"><value>Starting in {0}…</value></data>
   <data name="Status_CountdownCancelled" xml:space="preserve"><value>Recording cancelled</value></data>
-  <data name="Window_CountdownTitle" xml:space="preserve"><value>Recording countdown</value></data>
-  <data name="Countdown_Overlay_Prepare.Text" xml:space="preserve"><value>Prepare your desktop</value></data>
-  <data name="Countdown_Overlay_Hint.Text" xml:space="preserve"><value>Press Esc to cancel</value></data>
-  <data name="Countdown_Overlay_Cancel.Content" xml:space="preserve"><value>Cancel</value></data>
   <data name="Notification_RecordingSaved" xml:space="preserve"><value>Recording saved</value></data>
-  <data name="Status_StartingFullScreen" xml:space="preserve"><value>Starting full-screen recording…</value></data>
-  <data name="Status_StartingWindow" xml:space="preserve"><value>Starting window recording…</value></data>
-  <data name="Status_SelectingRegion" xml:space="preserve"><value>Selecting a recording region…</value></data>
-  <data name="Status_Preparing" xml:space="preserve"><value>Preparing to record…</value></data>
-  <data name="Status_Recording" xml:space="preserve"><value>Recording</value></data>
   <data name="Status_Paused" xml:space="preserve"><value>Paused</value></data>
-  <data name="Status_Stopping" xml:space="preserve"><value>Stopping…</value></data>
-  <data name="Status_Saved" xml:space="preserve"><value>Saved</value></data>
-  <data name="Error_StartRecording" xml:space="preserve"><value>Failed to start recording: {0}</value></data>
   <data name="Error_CreateD3DDevice" xml:space="preserve"><value>Failed to create the D3D11 device: {0}</value></data>
   <data name="Error_CreateDirect3DDevice" xml:space="preserve"><value>CreateDirect3D11DeviceFromDXGIDevice failed: 0x{0:X8}</value></data>
-  <data name="Failure_MainWindowUnavailable" xml:space="preserve"><value>The main window is not ready.</value></data>
   <data name="Failure_CreateFullScreenCapture" xml:space="preserve"><value>Unable to create a full-screen capture session.</value></data>
   <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>Unable to create a capture session for the selected region.</value></data>
   <data name="Failure_NoFrames" xml:space="preserve"><value>No video frames were written. Make sure the capture target is still visible.</value></data>
@@ -161,7 +133,6 @@
   <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>Audio only / AAC-LC / M4A</value></data>
   <data name="Capture_Source_None" xml:space="preserve"><value>No source</value></data>
   <data name="Dock_Preset" xml:space="preserve"><value>Preset</value></data>
-  <data name="Dock_Quality" xml:space="preserve"><value>Quality</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>Audio quality</value></data>
   <data name="Dock_Codec_Avc" xml:space="preserve"><value>Compatible / H.264 AVC</value></data>
   <data name="Dock_Codec_Hevc" xml:space="preserve"><value>Smaller files / H.265 HEVC</value></data>
@@ -170,7 +141,6 @@
   <data name="Dock_StopRecording" xml:space="preserve"><value>Stop recording</value></data>
   <data name="Dock_Output_SelectSource" xml:space="preserve"><value>Select a source to preview output settings.</value></data>
   <data name="Dock_Output_HintSeparator" xml:space="preserve"><value>, </value></data>
-  <data name="Dock_Output_VideoFormat" xml:space="preserve"><value>{0} · {1} · {2} fps · {3} Mbps — {4}</value></data>
   <data name="Dock_Output_AudioFormat" xml:space="preserve"><value>AAC · {0} kHz · {1} kbps</value></data>
   <data name="Output_Summary_VideoWithAudio" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="Output_Summary_VideoSection" xml:space="preserve"><value>Video: {0}</value></data>
@@ -187,18 +157,12 @@
   <data name="Preset_Friendly_Balanced" xml:space="preserve"><value>Recommended · balanced size and clarity</value></data>
   <data name="Preset_Friendly_SmootherMotion" xml:space="preserve"><value>Smoother motion · larger files</value></data>
   <data name="Preset_Friendly_Custom" xml:space="preserve"><value>Custom mix · see Settings for frame rate and bitrate</value></data>
-  <data name="AppStatus_Recording" xml:space="preserve"><value>Recording / {0}</value></data>
   <data name="Recordings_Eyebrow.Text" xml:space="preserve"><value>Local library</value></data>
   <data name="Recordings_Title.Text" xml:space="preserve"><value>Recordings</value></data>
   <data name="Recordings_Desc.Text" xml:space="preserve"><value>Your recently saved video and audio recordings.</value></data>
   <data name="Recordings_Search.PlaceholderText" xml:space="preserve"><value>Search recordings</value></data>
   <data name="Recordings_OpenFolder.Content" xml:space="preserve"><value>Open folder</value></data>
-  <data name="Recordings_Type_Full" xml:space="preserve"><value>Full</value></data>
-  <data name="Recordings_Type_Region" xml:space="preserve"><value>Region</value></data>
-  <data name="Recordings_Type_Window" xml:space="preserve"><value>Window</value></data>
-  <data name="Recordings_Type_Audio" xml:space="preserve"><value>Audio</value></data>
   <data name="Recordings_Play.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Play</value></data>
-  <data name="Recordings_Type_Video" xml:space="preserve"><value>Video</value></data>
   <data name="Recordings_VideosCount" xml:space="preserve"><value>{0} videos</value></data>
   <data name="Recordings_AudioCount" xml:space="preserve"><value>{0} audio</value></data>
   <data name="Recordings_TotalSize" xml:space="preserve"><value>{0} total</value></data>
@@ -206,20 +170,13 @@
   <data name="Recordings_Size_MB" xml:space="preserve"><value>{0:0.#} MB</value></data>
   <data name="Recordings_Size_KB" xml:space="preserve"><value>{0:0.#} KB</value></data>
   <data name="Recordings_Size_B" xml:space="preserve"><value>{0} B</value></data>
-  <data name="Recordings_Media_Audio" xml:space="preserve"><value>Audio</value></data>
-  <data name="Recordings_Media_Video" xml:space="preserve"><value>Video</value></data>
   <data name="Recordings_DateToday" xml:space="preserve"><value>Today {0}</value></data>
   <data name="Recordings_DateYesterday" xml:space="preserve"><value>Yesterday {0}</value></data>
   <data name="Recordings_DateTimeFormat" xml:space="preserve"><value>MMM d, HH:mm</value></data>
-  <data name="Recordings_DateDuration" xml:space="preserve"><value>{0} / {1}</value></data>
-  <data name="Recordings_DurationUnknown" xml:space="preserve"><value>--:--</value></data>
   <data name="Recordings_Empty.Text" xml:space="preserve"><value>No recordings yet. Completed captures will appear here.</value></data>
   <data name="Recordings_Column_Name" xml:space="preserve"><value>Name</value></data>
   <data name="Recordings_Column_Updated" xml:space="preserve"><value>Updated</value></data>
   <data name="Recordings_Column_Size" xml:space="preserve"><value>Size</value></data>
-  <data name="Recordings_Format_VideoAudio" xml:space="preserve"><value>{0} — {1}</value></data>
-  <data name="Recordings_Format_VideoOnly" xml:space="preserve"><value>{0} · {1}</value></data>
-  <data name="Recordings_Format_Audio" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>Unknown</value></data>
   <data name="Recordings_More.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>More</value></data>
   <data name="Recordings_Action_Play.Text" xml:space="preserve"><value>Play</value></data>
@@ -254,22 +211,13 @@
   <data name="DisplayDialog_Use" xml:space="preserve"><value>Use display</value></data>
   <data name="DisplayDialog_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>Select a display</value></data>
-  <data name="AppStatus_ChoosingDisplay" xml:space="preserve"><value>Choosing a display</value></data>
   <data name="AppStatus_EnableOneAudio" xml:space="preserve"><value>Enable at least one audio source</value></data>
   <data name="AppStatus_SelectWindow" xml:space="preserve"><value>Select a window</value></data>
-  <data name="AppStatus_ChoosingWindow" xml:space="preserve"><value>Choosing a window</value></data>
   <data name="AppStatus_WindowClosed" xml:space="preserve"><value>The selected window was closed</value></data>
-  <data name="AppStatus_WindowRecordingHint" xml:space="preserve"><value>Do not resize the window during recording</value></data>
   <data name="AppStatus_WindowResizedDuringRecording" xml:space="preserve"><value>Window size changed during recording; black bars or cropped edges may appear</value></data>
   <data name="Failure_CreateWindowComposite" xml:space="preserve"><value>Unable to prepare the window capture frame buffer.</value></data>
   <data name="Capture_Preview_WindowRecordingHint" xml:space="preserve"><value>Keep the window size unchanged while recording.</value></data>
   <data name="Failure_MicrophoneAccess" xml:space="preserve"><value>Microphone access was denied. Check Windows privacy settings.</value></data>
-  <data name="Failure_MicrophoneDevice" xml:space="preserve"><value>Unable to open the microphone device (0x{0:X}).</value></data>
-  <data name="Failure_SystemAudioDevice" xml:space="preserve"><value>Unable to open the system audio device (0x{0:X}).</value></data>
-  <data name="Failure_AudioFormat" xml:space="preserve"><value>Unable to read the audio device format (0x{0:X}).</value></data>
-  <data name="Failure_AudioInitialize" xml:space="preserve"><value>Unable to initialize audio capture (0x{0:X}).</value></data>
-  <data name="Failure_AudioCaptureClient" xml:space="preserve"><value>Unable to create the audio capture client (0x{0:X}).</value></data>
-  <data name="Failure_AudioStart" xml:space="preserve"><value>Unable to start audio capture (0x{0:X}).</value></data>
   <data name="Capture_ModeSection.Text" xml:space="preserve"><value>Capture mode</value></data>
   <data name="Capture_Microphone.Text" xml:space="preserve"><value>Microphone</value></data>
   <data name="Capture_MicrophoneUnavailable" xml:space="preserve"><value>No microphone detected</value></data>
@@ -287,7 +235,6 @@
   <data name="Capture_Preview_AudioSummary_None" xml:space="preserve"><value>No audio source selected</value></data>
   <data name="Failure_NoAudioSamples" xml:space="preserve"><value>No audio samples were written. Check your audio devices and source toggles.</value></data>
   <data name="AppStatus_NoAudioDevices" xml:space="preserve"><value>No audio input or playback device is available</value></data>
-  <data name="AppStatus_AudioRecordingHint" xml:space="preserve"><value>Recording audio</value></data>
   <data name="Capture_SystemAudioOn" xml:space="preserve"><value>System audio on</value></data>
   <data name="Dock_SaveTo.Text" xml:space="preserve"><value>Save to</value></data>
   <data name="FolderFlyout_Open.Text" xml:space="preserve"><value>Open folder</value></data>
@@ -317,7 +264,6 @@
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>Frame rate</value></data>
   <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>Capture presets on the home page change frame rate and quality tier together.</value></data>
   <data name="Settings_Quality.Text" xml:space="preserve"><value>Video bitrate</value></data>
-  <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>Target video encoding bitrate only. Capture presets on the home page set frame rate and bitrate together.</value></data>
   <data name="Settings_BitrateMode.Text" xml:space="preserve"><value>Video bitrate mode</value></data>
   <data name="Settings_BitrateMode_Desc.Text" xml:space="preserve"><value>Adaptive scales with capture size; fixed uses an exact target.</value></data>
   <data name="Settings_BitrateMode_Adaptive.Content" xml:space="preserve"><value>Scale with capture size</value></data>
@@ -342,9 +288,6 @@
   <data name="Settings_LanguageRestart_Title" xml:space="preserve"><value>Restart required</value></data>
   <data name="Settings_LanguageRestart_Message" xml:space="preserve"><value>Changing the language will restart DawnCapture. Continue?</value></data>
   <data name="Settings_LanguageRestart_Confirm" xml:space="preserve"><value>Restart now</value></data>
-  <data name="Quality_Option_Compact" xml:space="preserve"><value>Compact / 30 FPS</value></data>
-  <data name="Quality_Option_Balanced" xml:space="preserve"><value>Balanced / 30 FPS</value></data>
-  <data name="Quality_Option_Smooth" xml:space="preserve"><value>Smooth / 60 FPS</value></data>
   <data name="AudioQuality_Tier_Standard" xml:space="preserve"><value>Standard</value></data>
   <data name="AudioQuality_Tier_High" xml:space="preserve"><value>High</value></data>
   <data name="AudioQuality_Tier_Best" xml:space="preserve"><value>Best</value></data>
@@ -357,13 +300,10 @@
   <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>Selected region / 1280 x 720</value></data>
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>Selected region / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>Select a recording region</value></data>
-  <data name="AppStatus_ChoosingRegion" xml:space="preserve"><value>Choosing a region</value></data>
-  <data name="AppStatus_RegionRecordingHint" xml:space="preserve"><value>Do not change the region during recording</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>Keep the selected region unchanged while recording.</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>Browse...</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
-  <data name="Settings_FrameRate_Custom.Content" xml:space="preserve"><value>Custom</value></data>
   <data name="Settings_Quality_Compact.Content" xml:space="preserve"><value>Smaller files</value></data>
   <data name="Settings_Quality_Balanced.Content" xml:space="preserve"><value>Balanced</value></data>
   <data name="Settings_Quality_High.Content" xml:space="preserve"><value>High quality</value></data>

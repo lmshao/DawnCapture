@@ -50,21 +50,9 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="Navigation_Home.Content" xml:space="preserve"><value>录制</value></data>
-  <data name="Navigation_Settings.Content" xml:space="preserve"><value>设置</value></data>
-  <data name="Navigation_About.Content" xml:space="preserve"><value>关于</value></data>
-  <data name="Home_Title.Text" xml:space="preserve"><value>屏幕录制</value></data>
-  <data name="Home_FullScreen.Content" xml:space="preserve"><value>全屏录制</value></data>
-  <data name="Home_Window.Content" xml:space="preserve"><value>窗口录制</value></data>
-  <data name="Home_Region.Content" xml:space="preserve"><value>区域录制</value></data>
-  <data name="Home_Pause.Content" xml:space="preserve"><value>暂停</value></data>
-  <data name="Home_Resume.Content" xml:space="preserve"><value>继续</value></data>
-  <data name="Home_Stop.Content" xml:space="preserve"><value>停止</value></data>
   <data name="Settings_Title.Text" xml:space="preserve"><value>设置</value></data>
   <data name="Settings_Language.Text" xml:space="preserve"><value>语言</value></data>
-  <data name="Settings_Save.Content" xml:space="preserve"><value>保存</value></data>
   <data name="RegionPicker_Hint.Text" xml:space="preserve"><value>拖拽选择录制区域。选中后可拖动选框或控制点调整，按 Enter 确认，按 Esc 取消。</value></data>
-  <data name="RecordingControl_Stop.Content" xml:space="preserve"><value>⏹ 停止</value></data>
   <data name="RecordingControl_PauseToolTip" xml:space="preserve"><value>暂停</value></data>
   <data name="RecordingControl_ResumeToolTip" xml:space="preserve"><value>继续</value></data>
   <data name="RecordingControl_StopToolTip" xml:space="preserve"><value>停止</value></data>
@@ -77,29 +65,13 @@
   <data name="About_Trust_NoAccount" xml:space="preserve"><value>无需账号，不上传云端</value></data>
   <data name="About_Trust_Windows11" xml:space="preserve"><value>基于 Windows 11 原生录制 API 构建</value></data>
   <data name="About_ProductName" xml:space="preserve"><value>DawnCapture</value></data>
-  <data name="Status_Ready" xml:space="preserve"><value>准备就绪</value></data>
-  <data name="Status_Title_Recording" xml:space="preserve"><value>录制中</value></data>
-  <data name="Status_Title_Choosing" xml:space="preserve"><value>选择中</value></data>
   <data name="Capture_Validation_Title" xml:space="preserve"><value>无法开始录制</value></data>
   <data name="Status_Countdown" xml:space="preserve"><value>{0} 秒后开始录制…</value></data>
   <data name="Status_CountdownCancelled" xml:space="preserve"><value>已取消录制</value></data>
-  <data name="Window_CountdownTitle" xml:space="preserve"><value>录制倒计时</value></data>
-  <data name="Countdown_Overlay_Prepare.Text" xml:space="preserve"><value>请准备桌面布局</value></data>
-  <data name="Countdown_Overlay_Hint.Text" xml:space="preserve"><value>按 Esc 取消</value></data>
-  <data name="Countdown_Overlay_Cancel.Content" xml:space="preserve"><value>取消</value></data>
   <data name="Notification_RecordingSaved" xml:space="preserve"><value>录像已保存</value></data>
-  <data name="Status_StartingFullScreen" xml:space="preserve"><value>正在开始全屏录制…</value></data>
-  <data name="Status_StartingWindow" xml:space="preserve"><value>正在开始窗口录制…</value></data>
-  <data name="Status_SelectingRegion" xml:space="preserve"><value>正在选择录制区域…</value></data>
-  <data name="Status_Preparing" xml:space="preserve"><value>正在准备录制…</value></data>
-  <data name="Status_Recording" xml:space="preserve"><value>录制中</value></data>
   <data name="Status_Paused" xml:space="preserve"><value>已暂停</value></data>
-  <data name="Status_Stopping" xml:space="preserve"><value>正在停止…</value></data>
-  <data name="Status_Saved" xml:space="preserve"><value>已保存</value></data>
-  <data name="Error_StartRecording" xml:space="preserve"><value>启动录制失败：{0}</value></data>
   <data name="Error_CreateD3DDevice" xml:space="preserve"><value>创建 D3D11 设备失败：{0}</value></data>
   <data name="Error_CreateDirect3DDevice" xml:space="preserve"><value>CreateDirect3D11DeviceFromDXGIDevice 失败：0x{0:X8}</value></data>
-  <data name="Failure_MainWindowUnavailable" xml:space="preserve"><value>主窗口尚未准备好。</value></data>
   <data name="Failure_CreateFullScreenCapture" xml:space="preserve"><value>无法创建全屏捕获会话。</value></data>
   <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>无法为所选区域创建捕获会话。</value></data>
   <data name="Failure_NoFrames" xml:space="preserve"><value>没有写入任何视频帧。请确认捕获目标仍然可见。</value></data>
@@ -160,7 +132,6 @@
   <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>仅音频 / AAC-LC / M4A</value></data>
   <data name="Capture_Source_None" xml:space="preserve"><value>无来源</value></data>
   <data name="Dock_Preset" xml:space="preserve"><value>录制预设</value></data>
-  <data name="Dock_Quality" xml:space="preserve"><value>画质</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>音质</value></data>
   <data name="Dock_Codec_Avc" xml:space="preserve"><value>兼容 / H.264 AVC</value></data>
   <data name="Dock_Codec_Hevc" xml:space="preserve"><value>更小文件 / H.265 HEVC</value></data>
@@ -169,7 +140,6 @@
   <data name="Dock_StopRecording" xml:space="preserve"><value>停止录制</value></data>
   <data name="Dock_Output_SelectSource" xml:space="preserve"><value>选择捕获源以预览输出参数。</value></data>
   <data name="Dock_Output_HintSeparator" xml:space="preserve"><value>，</value></data>
-  <data name="Dock_Output_VideoFormat" xml:space="preserve"><value>{0} · {1} · {2} fps · {3} Mbps — {4}</value></data>
   <data name="Dock_Output_AudioFormat" xml:space="preserve"><value>AAC · {0} kHz · {1} kbps</value></data>
   <data name="Output_Summary_VideoWithAudio" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="Output_Summary_VideoSection" xml:space="preserve"><value>视频：{0}</value></data>
@@ -186,18 +156,12 @@
   <data name="Preset_Friendly_Balanced" xml:space="preserve"><value>推荐 · 体积与清晰度平衡</value></data>
   <data name="Preset_Friendly_SmootherMotion" xml:space="preserve"><value>动作更顺 · 文件较大</value></data>
   <data name="Preset_Friendly_Custom" xml:space="preserve"><value>自定义组合 · 帧率与码率见设置</value></data>
-  <data name="AppStatus_Recording" xml:space="preserve"><value>录制中 / {0}</value></data>
   <data name="Recordings_Eyebrow.Text" xml:space="preserve"><value>本地库</value></data>
   <data name="Recordings_Title.Text" xml:space="preserve"><value>录像库</value></data>
   <data name="Recordings_Desc.Text" xml:space="preserve"><value>最近保存的视频和音频录像。</value></data>
   <data name="Recordings_Search.PlaceholderText" xml:space="preserve"><value>搜索录像</value></data>
   <data name="Recordings_OpenFolder.Content" xml:space="preserve"><value>打开文件夹</value></data>
-  <data name="Recordings_Type_Full" xml:space="preserve"><value>全屏</value></data>
-  <data name="Recordings_Type_Region" xml:space="preserve"><value>区域</value></data>
-  <data name="Recordings_Type_Window" xml:space="preserve"><value>窗口</value></data>
-  <data name="Recordings_Type_Audio" xml:space="preserve"><value>音频</value></data>
   <data name="Recordings_Play.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>播放</value></data>
-  <data name="Recordings_Type_Video" xml:space="preserve"><value>视频</value></data>
   <data name="Recordings_VideosCount" xml:space="preserve"><value>{0} 个视频</value></data>
   <data name="Recordings_AudioCount" xml:space="preserve"><value>{0} 个音频</value></data>
   <data name="Recordings_TotalSize" xml:space="preserve"><value>共 {0}</value></data>
@@ -205,20 +169,13 @@
   <data name="Recordings_Size_MB" xml:space="preserve"><value>{0:0.#} MB</value></data>
   <data name="Recordings_Size_KB" xml:space="preserve"><value>{0:0.#} KB</value></data>
   <data name="Recordings_Size_B" xml:space="preserve"><value>{0} B</value></data>
-  <data name="Recordings_Media_Audio" xml:space="preserve"><value>音频</value></data>
-  <data name="Recordings_Media_Video" xml:space="preserve"><value>视频</value></data>
   <data name="Recordings_DateToday" xml:space="preserve"><value>今天 {0}</value></data>
   <data name="Recordings_DateYesterday" xml:space="preserve"><value>昨天 {0}</value></data>
   <data name="Recordings_DateTimeFormat" xml:space="preserve"><value>yyyy年M月d日 HH:mm</value></data>
-  <data name="Recordings_DateDuration" xml:space="preserve"><value>{0} / {1}</value></data>
-  <data name="Recordings_DurationUnknown" xml:space="preserve"><value>--:--</value></data>
   <data name="Recordings_Empty.Text" xml:space="preserve"><value>还没有录像。完成录制后会显示在这里。</value></data>
   <data name="Recordings_Column_Name" xml:space="preserve"><value>文件名</value></data>
   <data name="Recordings_Column_Updated" xml:space="preserve"><value>更新时间</value></data>
   <data name="Recordings_Column_Size" xml:space="preserve"><value>大小</value></data>
-  <data name="Recordings_Format_VideoAudio" xml:space="preserve"><value>{0} — {1}</value></data>
-  <data name="Recordings_Format_VideoOnly" xml:space="preserve"><value>{0} · {1}</value></data>
-  <data name="Recordings_Format_Audio" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>未知</value></data>
   <data name="Recordings_More.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>更多操作</value></data>
   <data name="Recordings_Action_Play.Text" xml:space="preserve"><value>播放</value></data>
@@ -253,22 +210,13 @@
   <data name="DisplayDialog_Use" xml:space="preserve"><value>使用此显示器</value></data>
   <data name="DisplayDialog_Cancel" xml:space="preserve"><value>取消</value></data>
   <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>请选择显示器</value></data>
-  <data name="AppStatus_ChoosingDisplay" xml:space="preserve"><value>正在选择显示器</value></data>
   <data name="AppStatus_EnableOneAudio" xml:space="preserve"><value>请至少启用一个音频来源</value></data>
   <data name="AppStatus_SelectWindow" xml:space="preserve"><value>请选择窗口</value></data>
-  <data name="AppStatus_ChoosingWindow" xml:space="preserve"><value>正在选择窗口</value></data>
   <data name="AppStatus_WindowClosed" xml:space="preserve"><value>所选窗口已关闭</value></data>
-  <data name="AppStatus_WindowRecordingHint" xml:space="preserve"><value>录制过程中请勿调整窗口大小</value></data>
   <data name="AppStatus_WindowResizedDuringRecording" xml:space="preserve"><value>录制过程中窗口尺寸已变化，可能出现黑边或边缘裁切</value></data>
   <data name="Failure_CreateWindowComposite" xml:space="preserve"><value>无法准备窗口捕获帧缓冲区。</value></data>
   <data name="Capture_Preview_WindowRecordingHint" xml:space="preserve"><value>录制期间请保持窗口尺寸不变。</value></data>
   <data name="Failure_MicrophoneAccess" xml:space="preserve"><value>麦克风权限被拒绝，请在 Windows 隐私设置中允许访问。</value></data>
-  <data name="Failure_MicrophoneDevice" xml:space="preserve"><value>无法打开麦克风设备 (0x{0:X})。</value></data>
-  <data name="Failure_SystemAudioDevice" xml:space="preserve"><value>无法打开系统音频设备 (0x{0:X})。</value></data>
-  <data name="Failure_AudioFormat" xml:space="preserve"><value>无法读取音频设备格式 (0x{0:X})。</value></data>
-  <data name="Failure_AudioInitialize" xml:space="preserve"><value>无法初始化音频采集 (0x{0:X})。</value></data>
-  <data name="Failure_AudioCaptureClient" xml:space="preserve"><value>无法创建音频采集客户端 (0x{0:X})。</value></data>
-  <data name="Failure_AudioStart" xml:space="preserve"><value>无法启动音频采集 (0x{0:X})。</value></data>
   <data name="Capture_ModeSection.Text" xml:space="preserve"><value>录制模式</value></data>
   <data name="Capture_Microphone.Text" xml:space="preserve"><value>麦克风</value></data>
   <data name="Capture_MicrophoneUnavailable" xml:space="preserve"><value>未识别到麦克风设备</value></data>
@@ -286,7 +234,6 @@
   <data name="Capture_Preview_AudioSummary_None" xml:space="preserve"><value>未选择音频来源</value></data>
   <data name="Failure_NoAudioSamples" xml:space="preserve"><value>没有写入任何音频样本。请检查音频设备和来源开关。</value></data>
   <data name="AppStatus_NoAudioDevices" xml:space="preserve"><value>没有可用的音频输入或播放设备</value></data>
-  <data name="AppStatus_AudioRecordingHint" xml:space="preserve"><value>正在录制音频</value></data>
   <data name="Capture_SystemAudioOn" xml:space="preserve"><value>系统音频已开启</value></data>
   <data name="Dock_SaveTo.Text" xml:space="preserve"><value>保存到</value></data>
   <data name="FolderFlyout_Open.Text" xml:space="preserve"><value>打开文件夹</value></data>
@@ -316,7 +263,6 @@
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>帧率</value></data>
   <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>首页「录制预设」会同时修改帧率与画质档位。</value></data>
   <data name="Settings_Quality.Text" xml:space="preserve"><value>视频码率</value></data>
-  <data name="Settings_Quality_Desc.Text" xml:space="preserve"><value>仅控制视频编码目标码率。首页「录制预设」会同时设置帧率与本项码率。</value></data>
   <data name="Settings_BitrateMode.Text" xml:space="preserve"><value>视频码率模式</value></data>
   <data name="Settings_BitrateMode_Desc.Text" xml:space="preserve"><value>随分辨率调整会按捕获尺寸缩放；固定码率则始终使用设定值。</value></data>
   <data name="Settings_BitrateMode_Adaptive.Content" xml:space="preserve"><value>随捕获尺寸调整</value></data>
@@ -341,9 +287,6 @@
   <data name="Settings_LanguageRestart_Title" xml:space="preserve"><value>需要重启</value></data>
   <data name="Settings_LanguageRestart_Message" xml:space="preserve"><value>更改语言将重启 DawnCapture。是否继续？</value></data>
   <data name="Settings_LanguageRestart_Confirm" xml:space="preserve"><value>立即重启</value></data>
-  <data name="Quality_Option_Compact" xml:space="preserve"><value>紧凑 / 30 FPS</value></data>
-  <data name="Quality_Option_Balanced" xml:space="preserve"><value>均衡 / 30 FPS</value></data>
-  <data name="Quality_Option_Smooth" xml:space="preserve"><value>流畅 / 60 FPS</value></data>
   <data name="AudioQuality_Tier_Standard" xml:space="preserve"><value>标准</value></data>
   <data name="AudioQuality_Tier_High" xml:space="preserve"><value>高</value></data>
   <data name="AudioQuality_Tier_Best" xml:space="preserve"><value>最佳</value></data>
@@ -356,13 +299,10 @@
   <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>已选区域 / 1280 x 720</value></data>
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>已选区域 / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>请选择录制区域</value></data>
-  <data name="AppStatus_ChoosingRegion" xml:space="preserve"><value>正在选择区域</value></data>
-  <data name="AppStatus_RegionRecordingHint" xml:space="preserve"><value>录制过程中请勿更改选区</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>录制期间请保持选区不变。</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>浏览...</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
-  <data name="Settings_FrameRate_Custom.Content" xml:space="preserve"><value>自定义</value></data>
   <data name="Settings_Quality_Compact.Content" xml:space="preserve"><value>省空间</value></data>
   <data name="Settings_Quality_Balanced.Content" xml:space="preserve"><value>均衡</value></data>
   <data name="Settings_Quality_High.Content" xml:space="preserve"><value>高画质</value></data>
