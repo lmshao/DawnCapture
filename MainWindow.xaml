@@ -220,10 +220,25 @@
             </Grid>
         </Border>
 
-        <Frame
-            x:Name="ContentFrame"
-            Grid.Column="1"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch" />
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <InfoBar
+                x:Name="CaptureNoticeBar"
+                Grid.Row="0"
+                Margin="44,12,44,0"
+                IsClosable="True"
+                IsOpen="False"
+                Closed="CaptureNoticeBar_Closed" />
+
+            <Frame
+                x:Name="ContentFrame"
+                Grid.Row="1"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch" />
+        </Grid>
     </Grid>
 </Window>

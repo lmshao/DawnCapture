@@ -38,12 +38,18 @@ public sealed partial class MainWindow : Window
 
         ViewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(MainViewModel.IsStorageLow))
+            if (e.PropertyName is nameof(MainViewModel.CaptureNoticeText)
+                or nameof(MainViewModel.CaptureNoticeSeverity))
+            {
+                UpdateCaptureNoticeBar();
+            }
+            else if (e.PropertyName == nameof(MainViewModel.IsStorageLow))
             {
                 UpdateStorageAvailabilityBrush();
             }
         };
         Title = "DawnCapture";
+        UpdateCaptureNoticeBar();
         UpdateStorageAvailabilityBrush();
         ViewModel.NavigationRequested += (_, tag) => NavigateTo(tag);
         RegisterGlobalHotkeys();
@@ -230,5 +236,29 @@ public sealed partial class MainWindow : Window
         {
             capturePage.ShowFolderFlyout();
         }
+    }
+
+    private void UpdateCaptureNoticeBar()
+    {
+        string? message = ViewModel.CaptureNoticeText;
+        bool open = !string.IsNullOrEmpty(message);
+        CaptureNoticeBar.IsOpen = open;
+        if (!open)
+        {
+            return;
+        }
+
+        CaptureNoticeBar.Message = message;
+        CaptureNoticeBar.Severity = ViewModel.CaptureNoticeSeverity switch
+        {
+            CaptureNoticeSeverity.Error => InfoBarSeverity.Error,
+            CaptureNoticeSeverity.Warning => InfoBarSeverity.Warning,
+            _ => InfoBarSeverity.Informational
+        };
+    }
+
+    private void CaptureNoticeBar_Closed(InfoBar sender, InfoBarClosedEventArgs args)
+    {
+        ViewModel.ClearCaptureNotice();
     }
 }

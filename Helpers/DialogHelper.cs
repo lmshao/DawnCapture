@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
 using Windows.UI;
@@ -15,6 +16,7 @@ namespace DawnCapture.Helpers;
 public static class DialogHelper
 {
     private const double CardMaxWidth = 268;
+    private static readonly SemaphoreSlim DialogGate = new(1, 1);
 
     public static Task ShowErrorAsync(string message, string? title = null) =>
         ShowCompactDialogAsync(
@@ -51,6 +53,33 @@ public static class DialogHelper
             return showCancel ? false : null;
         }
 
+        await DialogGate.WaitAsync();
+        try
+        {
+            return await ShowCompactDialogCoreAsync(
+                root,
+                xamlRoot,
+                message,
+                title,
+                showCancel,
+                confirmText,
+                cancelText);
+        }
+        finally
+        {
+            DialogGate.Release();
+        }
+    }
+
+    private static async Task<bool?> ShowCompactDialogCoreAsync(
+        FrameworkElement root,
+        XamlRoot xamlRoot,
+        string message,
+        string title,
+        bool showCancel,
+        string confirmText,
+        string? cancelText)
+    {
         var popup = new Popup
         {
             XamlRoot = xamlRoot,

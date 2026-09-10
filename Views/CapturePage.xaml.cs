@@ -18,24 +18,12 @@ public sealed partial class CapturePage : Page
 
     public CaptureViewModel ViewModel { get; }
 
-    public MainViewModel MainViewModel { get; }
-
     public CapturePage()
     {
         ViewModel = Ioc.Default.GetRequiredService<CaptureViewModel>();
-        MainViewModel = Ioc.Default.GetRequiredService<MainViewModel>();
         InitializeComponent();
         Workspace.SizeChanged += Workspace_SizeChanged;
         BuildModeButtons();
-        MainViewModel.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName is nameof(MainViewModel.CaptureNoticeText)
-                or nameof(MainViewModel.CaptureNoticeSeverity))
-            {
-                UpdateCaptureNoticeBar();
-            }
-        };
-        UpdateCaptureNoticeBar();
         ViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CaptureViewModel.SelectedMode))
@@ -230,27 +218,4 @@ public sealed partial class CapturePage : Page
         PreviewCard.VerticalAlignment = VerticalAlignment.Center;
     }
 
-    private void UpdateCaptureNoticeBar()
-    {
-        string? message = MainViewModel.CaptureNoticeText;
-        bool open = !string.IsNullOrEmpty(message);
-        CaptureNoticeBar.IsOpen = open;
-        if (!open)
-        {
-            return;
-        }
-
-        CaptureNoticeBar.Message = message;
-        CaptureNoticeBar.Severity = MainViewModel.CaptureNoticeSeverity switch
-        {
-            CaptureNoticeSeverity.Error => InfoBarSeverity.Error,
-            CaptureNoticeSeverity.Warning => InfoBarSeverity.Warning,
-            _ => InfoBarSeverity.Informational
-        };
-    }
-
-    private void CaptureNoticeBar_Closed(InfoBar sender, InfoBarClosedEventArgs args)
-    {
-        MainViewModel.ClearCaptureNotice();
-    }
 }
