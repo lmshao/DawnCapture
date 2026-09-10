@@ -51,6 +51,7 @@ public partial class CaptureViewModel : ObservableObject
         InitializeAudioDevices();
         InitializeWaveformBars();
         PresetFlyout = CreatePresetFlyout();
+        AudioQualityFlyout = CreateAudioQualityFlyout();
     }
 
     private MenuFlyout CreatePresetFlyout()
@@ -63,6 +64,23 @@ public partial class CaptureViewModel : ObservableObject
             {
                 Text = PresetOptions[index].FullLabel,
                 Command = SelectCapturePresetCommand,
+                CommandParameter = index
+            });
+        }
+
+        return flyout;
+    }
+
+    private MenuFlyout CreateAudioQualityFlyout()
+    {
+        var flyout = new MenuFlyout();
+        for (int i = 0; i < AudioQualityOptions.Count; i++)
+        {
+            int index = i;
+            flyout.Items.Add(new MenuFlyoutItem
+            {
+                Text = AudioQualityOptions[index].FullLabel,
+                Command = SelectAudioQualityCommand,
                 CommandParameter = index
             });
         }
@@ -222,8 +240,21 @@ public partial class CaptureViewModel : ObservableObject
         CapturePresetIndex = index;
     }
 
+    [RelayCommand]
+    private void SelectAudioQuality(int index)
+    {
+        if (index < 0 || index >= AudioQualityOptions.Count)
+        {
+            return;
+        }
+
+        AudioQualityIndex = index;
+    }
+
     partial void OnAudioQualityIndexChanged(int value)
     {
+        OnPropertyChanged(nameof(SelectedAudioQualityTierLabel));
+
         if (_suppressSettingsSave)
         {
             return;
@@ -246,6 +277,7 @@ public partial class CaptureViewModel : ObservableObject
             CapturePresetIndex = RecordingSettingsHelper.ResolveCapturePresetIndex(settings);
             OnPropertyChanged(nameof(SelectedPresetTierLabel));
             AudioQualityIndex = settings.AudioQualityIndex;
+            OnPropertyChanged(nameof(SelectedAudioQualityTierLabel));
             UpdateCodecSummaries(settings.VideoCodecIndex);
             UpdateOutputSummary();
         }
@@ -450,12 +482,23 @@ public partial class CaptureViewModel : ObservableObject
     public string SelectedPresetTierLabel =>
         PresetOptions[Math.Clamp(CapturePresetIndex, 0, PresetOptions.Count - 1)].TierLabel;
 
-    public IReadOnlyList<string> AudioQualityOptions { get; } =
+    public IReadOnlyList<DockComboOption> AudioQualityOptions { get; } =
     [
-        LocalizationService.GetString("AudioQuality_Option_Standard_Short"),
-        LocalizationService.GetString("AudioQuality_Option_High_Short"),
-        LocalizationService.GetString("AudioQuality_Option_Best_Short")
+        new(
+            LocalizationService.GetString("AudioQuality_Tier_Standard"),
+            LocalizationService.GetString("AudioQuality_Option_Standard")),
+        new(
+            LocalizationService.GetString("AudioQuality_Tier_High"),
+            LocalizationService.GetString("AudioQuality_Option_High")),
+        new(
+            LocalizationService.GetString("AudioQuality_Tier_Best"),
+            LocalizationService.GetString("AudioQuality_Option_Best"))
     ];
+
+    public MenuFlyout AudioQualityFlyout { get; }
+
+    public string SelectedAudioQualityTierLabel =>
+        AudioQualityOptions[Math.Clamp(AudioQualityIndex, 0, AudioQualityOptions.Count - 1)].TierLabel;
 
     public string AudioOnlyModeLabel { get; } = LocalizationService.GetString("Capture_Mode_Audio");
 
@@ -718,7 +761,6 @@ public partial class CaptureViewModel : ObservableObject
                     ShowCaptureNotice(
                         LocalizationService.GetString("Status_CountdownCancelled"),
                         CaptureNoticeSeverity.Information);
-                    SetReadyWindowTitle();
                     return;
                 }
             }
@@ -781,22 +823,16 @@ public partial class CaptureViewModel : ObservableObject
         switch (state)
         {
             case RecordingState.Recording:
-                SetRecordingWindowTitle();
                 _mainViewModel.ClearCaptureNotice();
-                break;
-            case RecordingState.Paused:
-                SetPausedWindowTitle();
                 break;
             case RecordingState.Idle:
                 TimerText = "00:00";
-                SetReadyWindowTitle();
                 break;
         }
     }
 
     private void OnRecordingFailed(object? sender, string message)
     {
-        SetReadyWindowTitle();
         _mainViewModel.ShowCaptureNotice(message, CaptureNoticeSeverity.Error);
         _ = DialogHelper.ShowErrorAsync(
             message,
@@ -839,14 +875,12 @@ public partial class CaptureViewModel : ObservableObject
             return;
         }
 
-        SetChoosingWindowTitle();
         foreach (var monitor in Monitors)
         {
             _monitorService.RefreshThumbnail(monitor);
         }
 
         var picked = await DisplayPickerDialog.ShowAsync(Monitors.ToList(), SelectedDisplay);
-        SetReadyWindowTitle();
 
         if (picked != null)
         {
@@ -871,9 +905,7 @@ public partial class CaptureViewModel : ObservableObject
 
     private async Task PickRegionAsync()
     {
-        SetChoosingWindowTitle();
         var region = await RegionPickerHelper.PickRegionAsync();
-        SetReadyWindowTitle();
 
         if (region is null)
         {
@@ -941,9 +973,7 @@ public partial class CaptureViewModel : ObservableObject
 
     private async Task PickWindowAsync()
     {
-        SetChoosingWindowTitle();
         var item = await WindowCaptureHelper.PickWindowAsync();
-        SetReadyWindowTitle();
 
         if (item is null)
         {
@@ -997,7 +1027,6 @@ public partial class CaptureViewModel : ObservableObject
         ShowCaptureNotice(
             LocalizationService.GetString("AppStatus_WindowClosed"),
             CaptureNoticeSeverity.Warning);
-        SetReadyWindowTitle();
         UpdateHeaderCopy();
         UpdatePreviewCopy();
     }
@@ -1281,23 +1310,4 @@ public partial class CaptureViewModel : ObservableObject
         _mainViewModel.ShowCaptureNotice(message, severity);
     }
 
-    private void SetReadyWindowTitle()
-    {
-        _mainViewModel.WindowTitleText = LocalizationService.GetString("Status_Ready");
-    }
-
-    private void SetChoosingWindowTitle()
-    {
-        _mainViewModel.WindowTitleText = LocalizationService.GetString("Status_Title_Choosing");
-    }
-
-    private void SetRecordingWindowTitle()
-    {
-        _mainViewModel.WindowTitleText = LocalizationService.GetString("Status_Title_Recording");
-    }
-
-    private void SetPausedWindowTitle()
-    {
-        _mainViewModel.WindowTitleText = LocalizationService.GetString("Status_Paused");
-    }
 }

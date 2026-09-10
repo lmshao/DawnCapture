@@ -30,9 +30,6 @@ public partial class MainViewModel : ObservableObject
         NavigationRequested?.Invoke(this, pageTag);
 
     [ObservableProperty]
-    private string _windowTitleText = LocalizationService.GetString("Status_Ready");
-
-    [ObservableProperty]
     private string? _captureNoticeText;
 
     [ObservableProperty]

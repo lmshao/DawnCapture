@@ -533,11 +533,34 @@
                                     FontSize="11"
                                     Foreground="{StaticResource DawnTextFaintBrush}"
                                     Text="{x:Bind ViewModel.AudioQualityLabel, Mode=OneWay}" />
-                                <ComboBox
-                                    MinWidth="108"
-                                    MaxWidth="136"
-                                    ItemsSource="{x:Bind ViewModel.AudioQualityOptions, Mode=OneWay}"
-                                    SelectedIndex="{x:Bind ViewModel.AudioQualityIndex, Mode=TwoWay}" />
+                                <Button
+                                    MinWidth="88"
+                                    MaxWidth="112"
+                                    Padding="10,6,8,6"
+                                    HorizontalContentAlignment="Stretch"
+                                    Background="{ThemeResource ComboBoxBackground}"
+                                    BorderBrush="{ThemeResource ComboBoxBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Flyout="{x:Bind ViewModel.AudioQualityFlyout, Mode=OneWay}">
+                                    <Grid ColumnSpacing="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="14"
+                                            Text="{x:Bind ViewModel.SelectedAudioQualityTierLabel, Mode=OneWay}"
+                                            TextTrimming="CharacterEllipsis" />
+                                        <FontIcon
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Foreground="{StaticResource DawnTextMutedBrush}"
+                                            Glyph="&#xE70D;" />
+                                    </Grid>
+                                </Button>
                             </StackPanel>
                         </StackPanel>
                     </Border>

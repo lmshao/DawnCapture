@@ -345,6 +345,9 @@
   <data name="Quality_Option_Compact" xml:space="preserve"><value>Compact / 30 FPS</value></data>
   <data name="Quality_Option_Balanced" xml:space="preserve"><value>Balanced / 30 FPS</value></data>
   <data name="Quality_Option_Smooth" xml:space="preserve"><value>Smooth / 60 FPS</value></data>
+  <data name="AudioQuality_Tier_Standard" xml:space="preserve"><value>Standard</value></data>
+  <data name="AudioQuality_Tier_High" xml:space="preserve"><value>High</value></data>
+  <data name="AudioQuality_Tier_Best" xml:space="preserve"><value>Best</value></data>
   <data name="AudioQuality_Option_Standard" xml:space="preserve"><value>Standard / 128 kbps</value></data>
   <data name="AudioQuality_Option_High" xml:space="preserve"><value>High / 192 kbps</value></data>
   <data name="AudioQuality_Option_Best" xml:space="preserve"><value>Best / 256 kbps</value></data>
