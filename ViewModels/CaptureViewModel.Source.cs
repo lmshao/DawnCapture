@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DawnCapture.Helpers;
@@ -5,10 +9,6 @@ using DawnCapture.Models;
 using DawnCapture.Services;
 using DawnCapture.Views;
 using Microsoft.UI.Xaml.Media;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Windows.Graphics;
 using Windows.Graphics.Capture;
 
@@ -227,6 +227,15 @@ public partial class CaptureViewModel
         try
         {
             await _monitorService.RefreshThumbnailAsync(monitor);
+
+            // Single-monitor startup auto-selects the display before its
+            // thumbnail is ready (SelectedDisplayThumbnail was set to null by
+            // OnSelectedDisplayChanged). Backfill it here once the async
+            // capture completes so the preview is not blank.
+            if (ReferenceEquals(SelectedDisplay, monitor))
+            {
+                SelectedDisplayThumbnail = monitor.Thumbnail;
+            }
         }
         catch (Exception ex)
         {
