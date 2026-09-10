@@ -191,10 +191,10 @@ public partial class CaptureViewModel
         };
     }
 
-    private void CommitDisplay(MonitorDisplay display)
+    private async Task CommitDisplayAsync(MonitorDisplay display)
     {
         var monitor = Monitors.FirstOrDefault(m => m.Handle == display.Handle) ?? display;
-        _monitorService.RefreshThumbnail(monitor);
+        await _monitorService.RefreshThumbnailAsync(monitor);
         SelectedDisplay = monitor;
         SelectedDisplayThumbnail = monitor.Thumbnail;
         SelectedDisplayBadge = monitor.BadgeLabel;
@@ -213,17 +213,36 @@ public partial class CaptureViewModel
         // Multiple monitors: start from the card grid so the user explicitly picks.
         SelectedDisplay = Monitors.Count == 1 ? Monitors[0] : null;
         Log.Info($"Monitors initialized: count={Monitors.Count}, autoSelected={SelectedDisplay?.Name ?? "none"}");
+
+        // Thumbnails are captured off the UI thread so startup never blocks on
+        // full-resolution screen grabs.
+        foreach (var monitor in Monitors)
+        {
+            _ = LoadMonitorThumbnailAsync(monitor);
+        }
+    }
+
+    private async Task LoadMonitorThumbnailAsync(MonitorDisplay monitor)
+    {
+        try
+        {
+            await _monitorService.RefreshThumbnailAsync(monitor);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug($"Monitor thumbnail refresh failed for {monitor.Name}: {ex.Message}");
+        }
     }
 
     [RelayCommand]
-    private void SelectDisplay(MonitorDisplay? display)
+    private async Task SelectDisplay(MonitorDisplay? display)
     {
         if (display == null)
         {
             return;
         }
 
-        CommitDisplay(display);
+        await CommitDisplayAsync(display);
     }
 
     [RelayCommand]
@@ -246,16 +265,13 @@ public partial class CaptureViewModel
             return;
         }
 
-        foreach (var monitor in Monitors)
-        {
-            _monitorService.RefreshThumbnail(monitor);
-        }
+        await Task.WhenAll(Monitors.Select(m => _monitorService.RefreshThumbnailAsync(m)));
 
         var picked = await DisplayPickerDialog.ShowAsync(Monitors.ToList(), SelectedDisplay);
 
         if (picked != null)
         {
-            CommitDisplay(picked);
+            await CommitDisplayAsync(picked);
         }
     }
 

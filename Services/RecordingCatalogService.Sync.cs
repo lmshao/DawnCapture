@@ -33,7 +33,6 @@ public sealed partial class RecordingCatalogService
         List<Guid> duplicateIds = FindDuplicateEntryIds(dbEntries);
         if (duplicateIds.Count > 0)
         {
-            DeleteEntriesByIds(duplicateIds);
             dbEntries = dbEntries
                 .Where(entry => !duplicateIds.Contains(entry.Id))
                 .ToList();
@@ -49,14 +48,51 @@ public sealed partial class RecordingCatalogService
 
         var seenIds = new HashSet<Guid>();
         var seenHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var pendingEntries = new List<RecordingCatalogEntry>();
+        var identityUpdates = new List<(RecordingCatalogEntry Entry, FileInfo FileInfo)>();
 
         foreach (string filePath in EnumerateCandidateFiles(folder, dbByPath.Keys))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await ProcessScannedFileAsync(filePath, dbByPath, dbByHash, seenIds, seenHashes, cancellationToken);
+            await ProcessScannedFileAsync(
+                filePath,
+                dbByPath,
+                dbByHash,
+                seenIds,
+                seenHashes,
+                pendingEntries,
+                identityUpdates,
+                cancellationToken);
         }
 
+        FlushSyncChanges(identityUpdates, pendingEntries, duplicateIds);
         PruneMissingEntries(folder, seenIds, seenHashes);
+    }
+
+    private void FlushSyncChanges(
+        List<(RecordingCatalogEntry Entry, FileInfo FileInfo)> identityUpdates,
+        List<RecordingCatalogEntry> entries,
+        IReadOnlyList<Guid> duplicateIds)
+    {
+        if (identityUpdates.Count == 0 && entries.Count == 0 && duplicateIds.Count == 0)
+        {
+            return;
+        }
+
+        using var connection = OpenConnection();
+        using var transaction = connection.BeginTransaction();
+        foreach ((RecordingCatalogEntry entry, FileInfo fileInfo) in identityUpdates)
+        {
+            UpdateFileIdentity(connection, transaction, entry, fileInfo);
+        }
+
+        foreach (RecordingCatalogEntry entry in entries)
+        {
+            UpsertEntry(connection, transaction, entry);
+        }
+
+        DeleteEntriesByIds(connection, transaction, duplicateIds);
+        transaction.Commit();
     }
 
     private async Task ProcessScannedFileAsync(
@@ -65,6 +101,8 @@ public sealed partial class RecordingCatalogService
         Dictionary<string, RecordingCatalogEntry> dbByHash,
         HashSet<Guid> seenIds,
         HashSet<string> seenHashes,
+        List<RecordingCatalogEntry> pendingEntries,
+        List<(RecordingCatalogEntry Entry, FileInfo FileInfo)> identityUpdates,
         CancellationToken cancellationToken)
     {
         var fileInfo = new FileInfo(filePath);
@@ -82,7 +120,7 @@ public sealed partial class RecordingCatalogService
                 existingByPath.FileSize,
                 existingByPath.LastWriteTimeUtc.UtcDateTime))
         {
-            await BackfillMissingMetadataAsync(existingByPath, fileInfo);
+            await BackfillMissingMetadataAsync(existingByPath, fileInfo, pendingEntries);
             seenIds.Add(existingByPath.Id);
             seenHashes.Add(existingByPath.FileHash);
             return;
@@ -94,12 +132,12 @@ public sealed partial class RecordingCatalogService
         {
             if (string.Equals(existingByPath.FileHash, hash, StringComparison.OrdinalIgnoreCase))
             {
-                UpdateFileIdentity(existingByPath, fileInfo);
-                await BackfillMissingMetadataAsync(existingByPath, fileInfo);
+                identityUpdates.Add((existingByPath, fileInfo));
+                await BackfillMissingMetadataAsync(existingByPath, fileInfo, pendingEntries);
             }
             else
             {
-                await RefreshEntryFromFileAsync(existingByPath, fileInfo, hash);
+                await RefreshEntryFromFileAsync(existingByPath, fileInfo, hash, pendingEntries);
             }
 
             seenIds.Add(existingByPath.Id);
@@ -109,8 +147,8 @@ public sealed partial class RecordingCatalogService
 
         if (dbByHash.TryGetValue(hash, out RecordingCatalogEntry? existingByHash))
         {
-            UpdateFileIdentity(existingByHash, fileInfo);
-            await BackfillMissingMetadataAsync(existingByHash, fileInfo);
+            identityUpdates.Add((existingByHash, fileInfo));
+            await BackfillMissingMetadataAsync(existingByHash, fileInfo, pendingEntries);
             seenIds.Add(existingByHash.Id);
             seenHashes.Add(hash);
             return;
@@ -150,24 +188,9 @@ public sealed partial class RecordingCatalogService
             existingThumbnailWidth: null,
             existingThumbnailHeight: null);
 
-        UpsertEntry(imported);
+        pendingEntries.Add(imported);
         seenIds.Add(imported.Id);
         seenHashes.Add(hash);
-    }
-
-    private static void CleanupLegacySidecars(string folder)
-    {
-        try
-        {
-            foreach (string sidecarPath in Directory.EnumerateFiles(folder, "*.dawncapture.json"))
-            {
-                File.Delete(sidecarPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Debug($"Failed to cleanup legacy sidecars in '{folder}': {ex.Message}");
-        }
     }
 
     private static IEnumerable<string> EnumerateCandidateFiles(string folder, IEnumerable<string> knownPaths)
@@ -201,7 +224,7 @@ public sealed partial class RecordingCatalogService
 
     private void PruneMissingEntries(string folder, HashSet<Guid> seenIds, HashSet<string> seenHashes)
     {
-        var staleIds = LoadAllEntries()
+        var staleIds = LoadEntryRefs()
             .Where(entry => IsInFolder(entry.FilePath, folder))
             .Where(entry => !seenIds.Contains(entry.Id) && !seenHashes.Contains(entry.FileHash))
             .Select(entry => entry.Id)
@@ -226,7 +249,10 @@ public sealed partial class RecordingCatalogService
         transaction.Commit();
     }
 
-    private async Task BackfillMissingMetadataAsync(RecordingCatalogEntry existing, FileInfo fileInfo)
+    private async Task BackfillMissingMetadataAsync(
+        RecordingCatalogEntry existing,
+        FileInfo fileInfo,
+        List<RecordingCatalogEntry> pendingEntries)
     {
         var probe = await RecordingMediaProbe.ProbeAsync(fileInfo.FullName, existing.MediaKind);
 
@@ -277,10 +303,14 @@ public sealed partial class RecordingCatalogService
             existing.ThumbnailWidth,
             existing.ThumbnailHeight);
 
-        UpsertEntry(updated);
+        pendingEntries.Add(updated);
     }
 
-    private async Task RefreshEntryFromFileAsync(RecordingCatalogEntry existing, FileInfo fileInfo, string hash)
+    private async Task RefreshEntryFromFileAsync(
+        RecordingCatalogEntry existing,
+        FileInfo fileInfo,
+        string hash,
+        List<RecordingCatalogEntry> pendingEntries)
     {
         var probe = await RecordingMediaProbe.ProbeAsync(fileInfo.FullName, existing.MediaKind);
 
@@ -315,7 +345,7 @@ public sealed partial class RecordingCatalogService
             existingThumbnailWidth: null,
             existingThumbnailHeight: null);
 
-        UpsertEntry(refreshed);
+        pendingEntries.Add(refreshed);
     }
 
     private static List<Guid> FindDuplicateEntryIds(IReadOnlyList<RecordingCatalogEntry> entries)
@@ -375,15 +405,16 @@ public sealed partial class RecordingCatalogService
         return candidate.RecordedAt >= existing.RecordedAt ? candidate : existing;
     }
 
-    private void DeleteEntriesByIds(IReadOnlyList<Guid> ids)
+    private static void DeleteEntriesByIds(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        IReadOnlyList<Guid> ids)
     {
         if (ids.Count == 0)
         {
             return;
         }
 
-        using var connection = OpenConnection();
-        using var transaction = connection.BeginTransaction();
         foreach (Guid id in ids)
         {
             using var command = connection.CreateCommand();
@@ -392,8 +423,6 @@ public sealed partial class RecordingCatalogService
             command.Parameters.AddWithValue("$id", id.ToString());
             command.ExecuteNonQuery();
         }
-
-        transaction.Commit();
     }
 
     private static bool IsInFolder(string filePath, string folder)

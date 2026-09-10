@@ -152,7 +152,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task ChangeOutputFolderAsync()
     {
-        string? pickedPath = await OutputFolderHelper.PickFolderAsync(OutputFolderFull);
+        string? pickedPath = await OutputFolderHelper.PickFolderAsync();
         if (pickedPath is null)
         {
             return;

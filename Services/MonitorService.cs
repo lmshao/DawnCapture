@@ -8,6 +8,7 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 
 namespace DawnCapture.Services;
 
@@ -15,7 +16,7 @@ public interface IMonitorService
 {
     IReadOnlyList<MonitorDisplay> GetMonitors();
 
-    void RefreshThumbnail(MonitorDisplay monitor);
+    Task RefreshThumbnailAsync(MonitorDisplay monitor);
 }
 
 public class MonitorService : IMonitorService
@@ -60,43 +61,48 @@ public class MonitorService : IMonitorService
                 Name = $"Display {i + 1}",
                 Resolution = $"{m.Width} x {m.Height}",
                 Detail = m.IsPrimary ? $"Primary / {m.Width} x {m.Height}" : $"{m.Width} x {m.Height}",
-                IsPrimary = m.IsPrimary,
-                Thumbnail = CaptureThumbnail(m.X, m.Y, m.Width, m.Height)
+                IsPrimary = m.IsPrimary
             });
         }
 
         return result;
     }
 
-    public void RefreshThumbnail(MonitorDisplay monitor)
+    public async Task RefreshThumbnailAsync(MonitorDisplay monitor)
     {
-        monitor.Thumbnail = CaptureThumbnail(monitor.X, monitor.Y, monitor.Width, monitor.Height);
+        monitor.Thumbnail = await CaptureThumbnailAsync(monitor.X, monitor.Y, monitor.Width, monitor.Height);
     }
 
-    private static ImageSource? CaptureThumbnail(int x, int y, int width, int height)
+    private async Task<ImageSource?> CaptureThumbnailAsync(int x, int y, int width, int height)
     {
         try
         {
-            using var full = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-            using (var graphics = Graphics.FromImage(full))
-            {
-                graphics.CopyFromScreen(x, y, 0, 0, new Size(width, height));
-            }
-
-            var thumbnailWidth = Math.Min(width, MaxThumbnailWidth);
-            var thumbnailHeight = Math.Max(1, (int)Math.Round(height * (double)thumbnailWidth / width));
-            using var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight, PixelFormat.Format32bppArgb);
-            using (var graphics = Graphics.FromImage(thumbnail))
-            {
-                graphics.DrawImage(full, 0, 0, thumbnailWidth, thumbnailHeight);
-            }
-
-            return ToWriteableBitmap(thumbnail);
+            using Bitmap? thumbnail = await Task.Run(() => CaptureThumbnailBitmap(x, y, width, height));
+            return thumbnail is null ? null : ToWriteableBitmap(thumbnail);
         }
         catch
         {
             return null;
         }
+    }
+
+    private static Bitmap? CaptureThumbnailBitmap(int x, int y, int width, int height)
+    {
+        using var full = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+        using (var graphics = Graphics.FromImage(full))
+        {
+            graphics.CopyFromScreen(x, y, 0, 0, new Size(width, height));
+        }
+
+        var thumbnailWidth = Math.Min(width, MaxThumbnailWidth);
+        var thumbnailHeight = Math.Max(1, (int)Math.Round(height * (double)thumbnailWidth / width));
+        var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight, PixelFormat.Format32bppArgb);
+        using (var graphics = Graphics.FromImage(thumbnail))
+        {
+            graphics.DrawImage(full, 0, 0, thumbnailWidth, thumbnailHeight);
+        }
+
+        return thumbnail;
     }
 
     private static WriteableBitmap ToWriteableBitmap(Bitmap bitmap)

@@ -49,7 +49,7 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
             var fileInfo = new FileInfo(fullPath);
             string hash = await RecordingFileHashHelper.ComputeSha256HexAsync(fullPath, cancellationToken);
             var probe = await RecordingMediaProbe.ProbeAsync(fullPath, mediaKind);
-            RecordingCatalogEntry? existing = FindExistingEntry(fullPath, hash);
+            ExistingEntryRef? existing = FindExistingEntry(fullPath, hash);
 
             var entry = BuildEntryFromFile(
                 fileInfo,
@@ -85,14 +85,19 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
             EnsureSchema();
 
             string folder = Path.GetFullPath(outputFolder).TrimEnd('\\', '/');
+            if (folder.EndsWith(':'))
+            {
+                folder += '\\';
+            }
+
             using var connection = OpenConnection();
             using var command = connection.CreateCommand();
             command.CommandText = """
                 SELECT id, file_path, display_name, file_hash, file_size, last_write_time_utc,
                        recorded_at, media_kind, source_kind, duration_ms, video_codec, audio_codec,
-                       width, height, frame_rate, bitrate_kbps, audio_bitrate_kbps, thumbnail, thumbnail_width, thumbnail_height
+                       width, height, frame_rate, bitrate_kbps, audio_bitrate_kbps
                 FROM recordings
-                WHERE file_path LIKE $folder || '%'
+                WHERE file_path = $folder OR file_path LIKE $folder || '\' || '%'
                 ORDER BY recorded_at DESC;
                 """;
             command.Parameters.AddWithValue("$folder", folder);
@@ -101,7 +106,7 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                results.Add(ReadEntry(reader));
+                results.Add(ReadEntrySummary(reader));
             }
 
             return (IReadOnlyList<RecordingCatalogEntry>)results;
@@ -136,6 +141,21 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
             command.Parameters.AddWithValue("$height", height);
             command.Parameters.AddWithValue("$updatedAt", DateTimeOffset.UtcNow.ToString("O"));
             command.ExecuteNonQuery();
+        }, cancellationToken);
+    }
+
+    public Task<byte[]?> GetThumbnailPngAsync(Guid recordingId, CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            EnsureSchema();
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT thumbnail FROM recordings WHERE id = $id;";
+            command.Parameters.AddWithValue("$id", recordingId.ToString());
+            return command.ExecuteScalar() as byte[];
         }, cancellationToken);
     }
 
@@ -222,7 +242,13 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
     private void UpsertEntry(RecordingCatalogEntry entry)
     {
         using var connection = OpenConnection();
+        UpsertEntry(connection, transaction: null, entry);
+    }
+
+    private static void UpsertEntry(SqliteConnection connection, SqliteTransaction? transaction, RecordingCatalogEntry entry)
+    {
         using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = """
             INSERT INTO recordings (
                 id, file_path, display_name, file_hash, file_size, last_write_time_utc,
@@ -258,10 +284,14 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
         command.ExecuteNonQuery();
     }
 
-    private void UpdateFileIdentity(RecordingCatalogEntry existing, FileInfo fileInfo)
+    private static void UpdateFileIdentity(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        RecordingCatalogEntry existing,
+        FileInfo fileInfo)
     {
-        using var connection = OpenConnection();
         using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = """
             UPDATE recordings
             SET file_path = $filePath,
@@ -299,6 +329,27 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
         return results;
     }
 
+    private List<EntryRef> LoadEntryRefs()
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, file_path, file_hash FROM recordings;";
+
+        var results = new List<EntryRef>();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            results.Add(new EntryRef(
+                Guid.Parse(reader.GetString(0)),
+                reader.GetString(1),
+                reader.GetString(2)));
+        }
+
+        return results;
+    }
+
+    private readonly record struct EntryRef(Guid Id, string FilePath, string FileHash);
+
     private static RecordingCatalogEntry ReadEntry(SqliteDataReader reader)
     {
         return new RecordingCatalogEntry
@@ -323,6 +374,30 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
             ThumbnailPng = reader.IsDBNull(17) ? null : (byte[])reader.GetValue(17),
             ThumbnailWidth = reader.IsDBNull(18) ? null : reader.GetInt32(18),
             ThumbnailHeight = reader.IsDBNull(19) ? null : reader.GetInt32(19)
+        };
+    }
+
+    private static RecordingCatalogEntry ReadEntrySummary(SqliteDataReader reader)
+    {
+        return new RecordingCatalogEntry
+        {
+            Id = Guid.Parse(reader.GetString(0)),
+            FilePath = reader.GetString(1),
+            DisplayName = reader.GetString(2),
+            FileHash = reader.GetString(3),
+            FileSize = reader.GetInt64(4),
+            LastWriteTimeUtc = DateTimeOffset.Parse(reader.GetString(5), CultureInfo.InvariantCulture),
+            RecordedAt = DateTimeOffset.Parse(reader.GetString(6), CultureInfo.InvariantCulture),
+            MediaKind = (RecordingMediaKind)reader.GetInt32(7),
+            SourceKind = reader.IsDBNull(8) ? null : (RecordingSourceKind)reader.GetInt32(8),
+            DurationMs = reader.IsDBNull(9) ? null : reader.GetInt64(9),
+            VideoCodec = reader.IsDBNull(10) ? null : reader.GetString(10),
+            AudioCodec = reader.IsDBNull(11) ? null : reader.GetString(11),
+            Width = reader.IsDBNull(12) ? null : reader.GetInt32(12),
+            Height = reader.IsDBNull(13) ? null : reader.GetInt32(13),
+            FrameRate = reader.IsDBNull(14) ? null : reader.GetDouble(14),
+            BitrateKbps = reader.IsDBNull(15) ? null : reader.GetInt32(15),
+            AudioBitrateKbps = reader.IsDBNull(16) ? null : reader.GetInt32(16)
         };
     }
 
@@ -425,18 +500,43 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
 
     private static string NormalizePath(string path) => Path.GetFullPath(path);
 
-    private RecordingCatalogEntry? FindExistingEntry(string fullPath, string hash)
+    private ExistingEntryRef? FindExistingEntry(string fullPath, string hash)
     {
         string normalizedPath = NormalizePath(fullPath);
-        foreach (RecordingCatalogEntry entry in LoadAllEntries())
+        return FindEntryByIdentity("file_path", normalizedPath)
+            ?? FindEntryByIdentity("file_hash", hash);
+    }
+
+    private static ExistingEntryRef? FindEntryByIdentity(string column, string value)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = $"""
+            SELECT id, display_name, thumbnail, thumbnail_width, thumbnail_height
+            FROM recordings
+            WHERE {column} = $value COLLATE NOCASE
+            LIMIT 1;
+            """;
+        command.Parameters.AddWithValue("$value", value);
+
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
         {
-            if (string.Equals(NormalizePath(entry.FilePath), normalizedPath, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(entry.FileHash, hash, StringComparison.OrdinalIgnoreCase))
-            {
-                return entry;
-            }
+            return null;
         }
 
-        return null;
+        return new ExistingEntryRef(
+            Guid.Parse(reader.GetString(0)),
+            reader.GetString(1),
+            reader.IsDBNull(2) ? null : (byte[])reader.GetValue(2),
+            reader.IsDBNull(3) ? null : reader.GetInt32(3),
+            reader.IsDBNull(4) ? null : reader.GetInt32(4));
     }
+
+    private sealed record ExistingEntryRef(
+        Guid Id,
+        string DisplayName,
+        byte[]? ThumbnailPng,
+        int? ThumbnailWidth,
+        int? ThumbnailHeight);
 }

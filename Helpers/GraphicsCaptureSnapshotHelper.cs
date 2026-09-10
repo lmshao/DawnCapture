@@ -8,7 +8,6 @@ using DawnCapture.Services;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Vortice.Direct3D;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 using Vortice.Mathematics;
@@ -23,8 +22,6 @@ public static class GraphicsCaptureSnapshotHelper
     private const int DefaultMaxWidth = 480;
     private const int CaptureTimeoutMs = 5000;
     private const int PollIntervalMs = 16;
-    private static readonly Guid IidDirect3DDxgiInterfaceAccess = new("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1");
-    private static readonly Guid IidD3D11Texture2D = new("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
 
     public static async Task<ImageSource?> CaptureAsync(
         GraphicsCaptureItem item,
@@ -123,7 +120,7 @@ public static class GraphicsCaptureSnapshotHelper
 
         try
         {
-            CreateDevices(out d3dDevice, out d3dContext, out winrtDevice);
+            Direct3D11Interop.CreateDevice(out d3dDevice, out d3dContext, out winrtDevice);
 
             framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
                 winrtDevice,
@@ -217,7 +214,7 @@ public static class GraphicsCaptureSnapshotHelper
             return null;
         }
 
-        var sourcePointer = GetTexture2DPointer(frame.Surface);
+        var sourcePointer = Direct3D11Interop.GetTexture2DPointer(frame.Surface);
         if (sourcePointer == IntPtr.Zero)
         {
             Log.Info("Window preview snapshot failed: unable to access capture surface.");
@@ -309,85 +306,5 @@ public static class GraphicsCaptureSnapshotHelper
         }
 
         return new ThumbnailPixelData(targetWidth, targetHeight, scaled);
-    }
-
-    private static void CreateDevices(
-        out ID3D11Device d3dDevice,
-        out ID3D11DeviceContext d3dContext,
-        out IDirect3DDevice winrtDevice)
-    {
-        var result = D3D11.D3D11CreateDevice(
-            null,
-            DriverType.Hardware,
-            DeviceCreationFlags.BgraSupport,
-            null!,
-            out d3dDevice,
-            out _,
-            out d3dContext);
-
-        if (result.Failure)
-        {
-            result = D3D11.D3D11CreateDevice(
-                null,
-                DriverType.Warp,
-                DeviceCreationFlags.BgraSupport,
-                null!,
-                out d3dDevice,
-                out _,
-                out d3dContext);
-        }
-
-        if (result.Failure)
-        {
-            throw new InvalidOperationException(
-                string.Format(LocalizationService.GetString("Error_CreateD3DDevice"), result));
-        }
-
-        using var dxgiDevice = d3dDevice.QueryInterface<IDXGIDevice>();
-        int hr = CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.NativePointer, out var pWinrtDevice);
-        if (hr != 0)
-        {
-            throw new InvalidOperationException(
-                string.Format(LocalizationService.GetString("Error_CreateDirect3DDevice"), hr));
-        }
-
-        winrtDevice = WinRT.MarshalInterface<IDirect3DDevice>.FromAbi(pWinrtDevice);
-    }
-
-    private static IntPtr GetTexture2DPointer(IDirect3DSurface surface)
-    {
-        var inspectable = ((WinRT.IWinRTObject)surface).NativeObject.ThisPtr;
-        var iidAccess = IidDirect3DDxgiInterfaceAccess;
-        int hr = Marshal.QueryInterface(inspectable, ref iidAccess, out var pAccess);
-        if (hr != 0)
-        {
-            return IntPtr.Zero;
-        }
-
-        try
-        {
-            var access = (IDirect3DDxgiInterfaceAccess)Marshal.GetObjectForIUnknown(pAccess);
-            var iidTexture = IidD3D11Texture2D;
-            hr = access.GetInterface(ref iidTexture, out var pTexture);
-            return hr == 0 ? pTexture : IntPtr.Zero;
-        }
-        finally
-        {
-            Marshal.Release(pAccess);
-        }
-    }
-
-    [DllImport("d3d11.dll", ExactSpelling = true)]
-    private static extern int CreateDirect3D11DeviceFromDXGIDevice(
-        IntPtr dxgiDevice,
-        out IntPtr graphicsDevice);
-
-    [ComImport]
-    [Guid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IDirect3DDxgiInterfaceAccess
-    {
-        [PreserveSig]
-        int GetInterface(ref Guid iid, out IntPtr p);
     }
 }

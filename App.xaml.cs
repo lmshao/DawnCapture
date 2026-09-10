@@ -97,12 +97,12 @@ public partial class App : Application
 
             var settingsService = Ioc.Default.GetRequiredService<ISettingsService>();
             var catalogService = Ioc.Default.GetRequiredService<IRecordingCatalogService>();
-            await catalogService.SyncLibraryAsync(OutputFolderHelper.Resolve(settingsService));
 
             var mainWindow = Ioc.Default.GetRequiredService<MainWindow>();
             MainWindow = mainWindow;
             Ioc.Default.GetRequiredService<ITrayIconService>().Attach(mainWindow);
             mainWindow.Activate();
+            _ = SyncLibraryInBackgroundAsync(catalogService, settingsService);
             TryRegisterNotifications();
             NotifyLastCrashIfAny();
             Log.Info("Main window activated.");
@@ -111,6 +111,24 @@ public partial class App : Application
         {
             Log.Error("OnLaunched failed", ex);
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Warms the recordings catalog after the main window is visible so the
+    /// first-run hashing pass never delays startup.
+    /// </summary>
+    private static async Task SyncLibraryInBackgroundAsync(
+        IRecordingCatalogService catalogService,
+        ISettingsService settingsService)
+    {
+        try
+        {
+            await catalogService.SyncLibraryAsync(OutputFolderHelper.Resolve(settingsService));
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Background library sync failed", ex);
         }
     }
 

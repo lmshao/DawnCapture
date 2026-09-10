@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using DawnCapture.Helpers;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 using Vortice.Mathematics;
@@ -10,9 +11,6 @@ namespace DawnCapture.Services;
 
 public sealed partial class RecordingService
 {
-    private static readonly Guid IidDirect3DDxgiInterfaceAccess = new("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1");
-    private static readonly Guid IidD3D11Texture2D = new("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
-
     private IDirect3DSurface? CropSurface(IDirect3DSurface sourceSurface, RectInt32 crop)
     {
         if (_d3dDevice is null || _d3dContext is null)
@@ -20,7 +18,7 @@ public sealed partial class RecordingService
             return null;
         }
 
-        var pSource = GetTexture2DPointer(sourceSurface);
+        var pSource = Direct3D11Interop.GetTexture2DPointer(sourceSurface);
         if (pSource == IntPtr.Zero)
         {
             return null;
@@ -61,29 +59,6 @@ public sealed partial class RecordingService
         finally
         {
             Marshal.Release(pWinrtSurface);
-        }
-    }
-
-    private IntPtr GetTexture2DPointer(IDirect3DSurface surface)
-    {
-        var inspectable = ((WinRT.IWinRTObject)surface).NativeObject.ThisPtr;
-        var iidAccess = IidDirect3DDxgiInterfaceAccess;
-        int hr = Marshal.QueryInterface(inspectable, ref iidAccess, out var pAccess);
-        if (hr != 0)
-        {
-            return IntPtr.Zero;
-        }
-
-        try
-        {
-            var access = (IDirect3DDxgiInterfaceAccess)Marshal.GetObjectForIUnknown(pAccess);
-            var iidTexture = IidD3D11Texture2D;
-            hr = access.GetInterface(ref iidTexture, out var pTexture);
-            return hr == 0 ? pTexture : IntPtr.Zero;
-        }
-        finally
-        {
-            Marshal.Release(pAccess);
         }
     }
 
@@ -142,7 +117,7 @@ public sealed partial class RecordingService
             return null;
         }
 
-        var pSource = GetTexture2DPointer(sourceSurface);
+        var pSource = Direct3D11Interop.GetTexture2DPointer(sourceSurface);
         if (pSource == IntPtr.Zero)
         {
             return null;
@@ -187,21 +162,9 @@ public sealed partial class RecordingService
     }
 
     [DllImport("d3d11.dll", ExactSpelling = true)]
-    private static extern int CreateDirect3D11DeviceFromDXGIDevice(
-        IntPtr dxgiDevice,
-        out IntPtr graphicsDevice);
-
-    [DllImport("d3d11.dll", ExactSpelling = true)]
     private static extern int CreateDirect3D11SurfaceFromDXGISurface(
         IntPtr dxgiSurface,
         out IntPtr graphicsSurface);
-
-    [DllImport("user32.dll")]
-    private static extern bool EnumDisplayMonitors(
-        IntPtr hdc,
-        IntPtr lprcClip,
-        MonitorEnumProc lpfnEnum,
-        IntPtr dwData);
 
     [DllImport("user32.dll")]
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
@@ -211,9 +174,6 @@ public sealed partial class RecordingService
 
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr hwnd, int nCmdShow);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 
     [DllImport("combase.dll", ExactSpelling = true)]
     private static extern int WindowsCreateString(
@@ -231,19 +191,7 @@ public sealed partial class RecordingService
         out IntPtr factory);
 
     [DllImport("user32.dll")]
-    private static extern bool GetCursorPos(out NativePoint lpPoint);
-
-    [DllImport("user32.dll")]
     private static extern IntPtr MonitorFromPoint(NativePoint pt, uint dwFlags);
-
-    [ComImport]
-    [Guid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IDirect3DDxgiInterfaceAccess
-    {
-        [PreserveSig]
-        int GetInterface(ref Guid iid, out IntPtr p);
-    }
 
     [ComImport]
     [Guid("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356")]
@@ -256,8 +204,6 @@ public sealed partial class RecordingService
         [PreserveSig]
         int CreateForMonitor(IntPtr monitor, ref Guid riid, out IntPtr result);
     }
-
-    private delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect lprcMonitor, IntPtr dwData);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct NativeRect

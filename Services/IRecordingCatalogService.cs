@@ -30,6 +30,8 @@ public interface IRecordingCatalogService
         int height,
         CancellationToken cancellationToken = default);
 
+    Task<byte[]?> GetThumbnailPngAsync(Guid recordingId, CancellationToken cancellationToken = default);
+
     Task UpdateDisplayNameAsync(
         Guid recordingId,
         string displayName,

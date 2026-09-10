@@ -5,13 +5,9 @@ using System.Threading.Tasks;
 using DawnCapture.Helpers;
 using DawnCapture.Models;
 using DawnCapture.Services.Audio;
-using Vortice.Direct3D;
-using Vortice.Direct3D11;
-using Vortice.DXGI;
 using Windows.Graphics;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
-using Windows.Graphics.DirectX.Direct3D11;
 
 namespace DawnCapture.Services;
 
@@ -126,42 +122,7 @@ public sealed partial class RecordingService
             return;
         }
 
-        var result = D3D11.D3D11CreateDevice(
-            null,
-            DriverType.Hardware,
-            DeviceCreationFlags.BgraSupport,
-            null!,
-            out _d3dDevice,
-            out _,
-            out _d3dContext);
-
-        if (result.Failure)
-        {
-            result = D3D11.D3D11CreateDevice(
-                null,
-                DriverType.Warp,
-                DeviceCreationFlags.BgraSupport,
-                null!,
-                out _d3dDevice,
-                out _,
-                out _d3dContext);
-        }
-
-        if (result.Failure)
-        {
-            throw new InvalidOperationException(
-                string.Format(LocalizationService.GetString("Error_CreateD3DDevice"), result));
-        }
-
-        using var dxgiDevice = _d3dDevice.QueryInterface<IDXGIDevice>();
-        int hr = CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.NativePointer, out var pWinrtDevice);
-        if (hr != 0)
-        {
-            throw new InvalidOperationException(
-                string.Format(LocalizationService.GetString("Error_CreateDirect3DDevice"), hr));
-        }
-
-        _winrtDevice = WinRT.MarshalInterface<IDirect3DDevice>.FromAbi(pWinrtDevice);
+        Direct3D11Interop.CreateDevice(out _d3dDevice, out _d3dContext, out _winrtDevice);
     }
 
     private void OnFrameArrived(Direct3D11CaptureFramePool sender, object args)

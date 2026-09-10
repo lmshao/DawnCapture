@@ -75,7 +75,7 @@ public static class OutputFolderHelper
         }
     }
 
-    public static async Task<string?> PickFolderAsync(string? suggestedPath = null)
+    public static async Task<string?> PickFolderAsync()
     {
         if (App.MainWindow is null)
         {
@@ -88,7 +88,6 @@ public static class OutputFolderHelper
 
         var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         InitializeWithWindow.Initialize(picker, hwnd);
-        _ = suggestedPath;
 
         var folder = await picker.PickSingleFolderAsync();
         return folder?.Path;

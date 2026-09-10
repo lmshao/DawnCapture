@@ -360,9 +360,15 @@ public partial class RecordingsViewModel : ObservableObject
                 return;
             }
 
-            if (item.ThumbnailPng is { Length: > 0 })
+            byte[]? cached = item.ThumbnailPng;
+            if (cached is null)
             {
-                byte[] cached = item.ThumbnailPng;
+                cached = await _catalogService.GetThumbnailPngAsync(item.RecordingId, cancellationToken);
+            }
+
+            if (cached is { Length: > 0 })
+            {
+                byte[] png = cached;
                 dispatcher.TryEnqueue(() =>
                 {
                     if (cancellationToken.IsCancellationRequested)
@@ -370,7 +376,7 @@ public partial class RecordingsViewModel : ObservableObject
                         return;
                     }
 
-                    item.Thumbnail = RecordingThumbnailHelper.CreateBitmapFromPng(cached);
+                    item.Thumbnail = RecordingThumbnailHelper.CreateBitmapFromPng(png);
                     item.HasThumbnail = true;
                 });
                 return;

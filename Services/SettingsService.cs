@@ -53,7 +53,20 @@ public sealed class SettingsService : ISettingsService
             }
 
             var json = JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_filePath, json);
+
+            // Write to a temp file and swap atomically so an interrupted write
+            // never leaves a corrupt settings.json behind.
+            string tempPath = _filePath + ".tmp";
+            File.WriteAllText(tempPath, json);
+            if (File.Exists(_filePath))
+            {
+                File.Replace(tempPath, _filePath, null);
+            }
+            else
+            {
+                File.Move(tempPath, _filePath);
+            }
+
             SettingsChanged?.Invoke(this, EventArgs.Empty);
             return true;
         }

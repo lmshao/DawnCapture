@@ -441,7 +441,7 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task BrowseFolderAsync()
     {
-        string? pickedPath = await OutputFolderHelper.PickFolderAsync(OutputFolder);
+        string? pickedPath = await OutputFolderHelper.PickFolderAsync();
         if (pickedPath is null)
         {
             return;

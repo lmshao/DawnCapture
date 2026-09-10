@@ -1,9 +1,10 @@
-using System;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml.Media;
+using System;
 
 namespace DawnCapture.Models;
 
-public sealed class MonitorDisplay
+public sealed partial class MonitorDisplay : ObservableObject
 {
     public IntPtr Handle { get; init; }
 
@@ -25,7 +26,8 @@ public sealed class MonitorDisplay
 
     public bool IsPrimary { get; init; }
 
-    public ImageSource? Thumbnail { get; set; }
+    [ObservableProperty]
+    private ImageSource? _thumbnail;
 
     public string BadgeLabel =>
         IsPrimary

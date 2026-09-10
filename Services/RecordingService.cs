@@ -61,6 +61,7 @@ public sealed partial class RecordingService : IRecordingService
     private bool _isRecording;
     private bool _isPaused;
     private bool _isStopping;
+    private int _stopGuard;
     private string? _currentOutputPath;
     private int _effectiveVideoBitrateKbps;
     private int _effectiveVideoCodecIndex;
@@ -354,61 +355,73 @@ public sealed partial class RecordingService : IRecordingService
 
     public async Task StopAsync()
     {
-        if (State is not (RecordingState.Recording or RecordingState.Paused))
+        if (Interlocked.Exchange(ref _stopGuard, 1) != 0)
         {
             return;
         }
 
-        State = RecordingState.Stopping;
-        _stopwatch.Stop();
-        _isStopping = true;
-        _closedEvent.Set();
-        _audioPipeline?.BeginFlush();
-
-        if (_transcodeTask is not null)
+        try
         {
-            try
+            if (State is not (RecordingState.Recording or RecordingState.Paused))
             {
-                await _transcodeTask;
+                return;
             }
-            catch
+
+            State = RecordingState.Stopping;
+            _stopwatch.Stop();
+            _isStopping = true;
+            _closedEvent.Set();
+            _audioPipeline?.BeginFlush();
+
+            if (_transcodeTask is not null)
             {
-                // Finalization errors are reported by the task continuation.
+                try
+                {
+                    await _transcodeTask;
+                }
+                catch
+                {
+                    // Finalization errors are reported by the task continuation.
+                }
+            }
+
+            string? completedOutputPath = _currentOutputPath;
+            TimeSpan recordedDuration = _stopwatch.Elapsed;
+            RecordingSourceKind sourceKind = _currentSourceKind;
+            long framesWritten = _framesWritten;
+            long audioSamplesWritten = _audioSamplesWritten;
+
+            _isRecording = false;
+            _isStopping = false;
+            CleanupCapture();
+            State = RecordingState.Idle;
+            RestoreMainWindow();
+
+            bool isAudioOnly = sourceKind == RecordingSourceKind.Audio;
+            if (isAudioOnly)
+            {
+                Log.Info($"Audio-only recording stopped: {audioSamplesWritten} audio samples written.");
+            }
+            else
+            {
+                Log.Info($"Recording stopped: {framesWritten} frames written.");
+            }
+
+            bool hasOutput = isAudioOnly ? audioSamplesWritten > 0 : framesWritten > 0;
+            if (!hasOutput)
+            {
+                TryDeleteOutputFile(completedOutputPath);
+                RaiseFailed(LocalizationService.GetString(
+                    isAudioOnly ? "Failure_NoAudioSamples" : "Failure_NoFrames"));
+            }
+            else
+            {
+                await TryRegisterRecordingAsync(completedOutputPath, recordedDuration, sourceKind);
             }
         }
-
-        string? completedOutputPath = _currentOutputPath;
-        TimeSpan recordedDuration = _stopwatch.Elapsed;
-        RecordingSourceKind sourceKind = _currentSourceKind;
-        long framesWritten = _framesWritten;
-        long audioSamplesWritten = _audioSamplesWritten;
-
-        _isRecording = false;
-        _isStopping = false;
-        CleanupCapture();
-        State = RecordingState.Idle;
-        RestoreMainWindow();
-
-        bool isAudioOnly = sourceKind == RecordingSourceKind.Audio;
-        if (isAudioOnly)
+        finally
         {
-            Log.Info($"Audio-only recording stopped: {audioSamplesWritten} audio samples written.");
-        }
-        else
-        {
-            Log.Info($"Recording stopped: {framesWritten} frames written.");
-        }
-
-        bool hasOutput = isAudioOnly ? audioSamplesWritten > 0 : framesWritten > 0;
-        if (!hasOutput)
-        {
-            TryDeleteOutputFile(completedOutputPath);
-            RaiseFailed(LocalizationService.GetString(
-                isAudioOnly ? "Failure_NoAudioSamples" : "Failure_NoFrames"));
-        }
-        else
-        {
-            await TryRegisterRecordingAsync(completedOutputPath, recordedDuration, sourceKind);
+            Interlocked.Exchange(ref _stopGuard, 0);
         }
     }
 
