@@ -11,8 +11,14 @@ public static class PackageAssets
 {
     public const string Root = "Assets";
 
+    /// <summary>Hand-maintained vector masters under <c>Assets/brand/</c> (source only; not shipped).</summary>
+    public const string LogoMasterSvg = "Assets/brand/dawncapture-logo-master.svg";
+    public const string LogoSymbolSvg = "Assets/brand/dawncapture-logo-symbol.svg";
+    public const string LogoMarkSvg = "Assets/brand/dawncapture-logo-mark.svg";
+
     // Runtime (unpackaged + MSIX)
     public const string AppIcon = "Assets/AppIcon.ico";
+    /// <summary>256×256 PNG for in-app About header (downscaled in UI, never upscaled).</summary>
     public const string AboutLogo = "Assets/AboutLogo.png";
 
     // MSIX visual elements (Package.appxmanifest)

@@ -52,8 +52,8 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Image
-                                Width="48"
-                                Height="48"
+                                Width="56"
+                                Height="56"
                                 VerticalAlignment="Top"
                                 Source="{x:Bind helpers:PackageAssets.AboutLogoSource, Mode=OneTime}"
                                 Stretch="Uniform" />
