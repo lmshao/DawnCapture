@@ -299,8 +299,8 @@
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>请选择录制区域</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>录制期间请保持选区不变。</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>取消</value></data>
-  <data name="Settings_CloseAction" xml:space="preserve"><value>关闭按钮</value></data>
-  <data name="Settings_CloseAction_Desc" xml:space="preserve"><value>选择点击窗口关闭按钮时是最小化到托盘还是退出应用。</value></data>
+  <data name="Settings_CloseAction.Text" xml:space="preserve"><value>关闭按钮</value></data>
+  <data name="Settings_CloseAction_Desc.Text" xml:space="preserve"><value>选择点击窗口关闭按钮时是最小化到托盘还是退出应用。</value></data>
   <data name="Settings_CloseAction_MinimizeToTray.Content" xml:space="preserve"><value>最小化到托盘（保持运行）</value></data>
   <data name="Settings_CloseAction_ExitApplication.Content" xml:space="preserve"><value>退出应用</value></data>
   <data name="Tray_Tooltip_Idle" xml:space="preserve"><value>DawnCapture</value></data>

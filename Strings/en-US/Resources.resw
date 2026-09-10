@@ -300,8 +300,8 @@
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>Select a recording region</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>Keep the selected region unchanged while recording.</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="Settings_CloseAction" xml:space="preserve"><value>Close button</value></data>
-  <data name="Settings_CloseAction_Desc" xml:space="preserve"><value>Choose whether the window close button hides DawnCapture to the tray or exits the app.</value></data>
+  <data name="Settings_CloseAction.Text" xml:space="preserve"><value>Close button</value></data>
+  <data name="Settings_CloseAction_Desc.Text" xml:space="preserve"><value>Choose whether the window close button hides DawnCapture to the tray or exits the app.</value></data>
   <data name="Settings_CloseAction_MinimizeToTray.Content" xml:space="preserve"><value>Minimize to tray (keep running)</value></data>
   <data name="Settings_CloseAction_ExitApplication.Content" xml:space="preserve"><value>Exit application</value></data>
   <data name="Tray_Tooltip_Idle" xml:space="preserve"><value>DawnCapture</value></data>
