@@ -1,3 +1,4 @@
+using DawnCapture.Helpers;
 using DawnCapture.Models;
 using DawnCapture.Services;
 using Microsoft.UI.Xaml;
@@ -56,7 +57,7 @@ public sealed class DeleteRecordingDialog : ContentDialog
             Title = LocalizationService.GetString("Recordings_DeleteTitle"),
             Content = new StackPanel
             {
-                MinWidth = 320,
+                MinWidth = ContentDialogHelper.StandardContentMinWidth,
                 Spacing = 6,
                 Children =
                     {
@@ -66,23 +67,12 @@ public sealed class DeleteRecordingDialog : ContentDialog
                     }
             },
             PrimaryButtonText = LocalizationService.GetString("Recordings_DeletePrimary"),
-            SecondaryButtonText = LocalizationService.GetString("Recordings_DeleteCancel"),
+            SecondaryButtonText = ContentDialogHelper.CancelText,
             DefaultButton = ContentDialogButton.Secondary
         };
 
-        dialog.Loaded += (_, _) => TintPrimaryButton(dialog);
+        ContentDialogHelper.WireDangerPrimary(dialog);
 
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
-    }
-
-    private static void TintPrimaryButton(ContentDialog dialog)
-    {
-        if (VisualTreeHelper.GetChild(dialog, 0) is not FrameworkElement root || root.FindName("PrimaryButton") is not Button primary)
-        {
-            return;
-        }
-
-        primary.Background = (Brush)Application.Current.Resources["DawnDangerBrush"];
-        primary.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
     }
 }

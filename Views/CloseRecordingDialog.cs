@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using DawnCapture.Helpers;
 using DawnCapture.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -36,11 +37,11 @@ public sealed class CloseRecordingDialog : ContentDialog
             {
                 Text = LocalizationService.GetString("MainWindow_CloseRecordingMessage"),
                 TextWrapping = TextWrapping.WrapWholeWords,
-                MinWidth = 300
+                MinWidth = ContentDialogHelper.StandardContentMinWidth
             },
             PrimaryButtonText = LocalizationService.GetString("MainWindow_CloseRecordingStopAndSave"),
             SecondaryButtonText = LocalizationService.GetString("MainWindow_CloseRecordingContinue"),
-            CloseButtonText = LocalizationService.GetString("MainWindow_CloseRecordingCancel"),
+            CloseButtonText = ContentDialogHelper.CancelText,
             DefaultButton = ContentDialogButton.Secondary
         };
 

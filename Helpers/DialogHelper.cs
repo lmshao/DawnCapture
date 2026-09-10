@@ -15,7 +15,7 @@ namespace DawnCapture.Helpers;
 
 public static class DialogHelper
 {
-    private const double CardMaxWidth = 268;
+    private const double CardMaxWidth = ContentDialogHelper.StandardContentMinWidth;
     private static readonly SemaphoreSlim DialogGate = new(1, 1);
 
     public static Task ShowErrorAsync(string message, string? title = null) =>
@@ -36,7 +36,7 @@ public static class DialogHelper
             title ?? LocalizationService.GetString("Recordings_ErrorTitle"),
             showCancel: true,
             confirmText: confirmText ?? LocalizationService.GetString("Recordings_Ok"),
-            cancelText: cancelText ?? LocalizationService.GetString("Recordings_DeleteCancel"));
+            cancelText: cancelText ?? ContentDialogHelper.CancelText);
 
         return result == true;
     }
@@ -101,6 +101,7 @@ public static class DialogHelper
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(20, 18, 20, 16),
+            MinWidth = CardMaxWidth,
             MaxWidth = CardMaxWidth,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
@@ -158,7 +159,7 @@ public static class DialogHelper
                 Margin = new Thickness(0, 4, 0, 0)
             };
 
-            var cancelButton = CreateDialogButton(cancelText ?? LocalizationService.GetString("Recordings_DeleteCancel"));
+            var cancelButton = CreateDialogButton(cancelText ?? ContentDialogHelper.CancelText);
             cancelButton.Click += (_, _) => Complete(false);
             buttonRow.Children.Add(cancelButton);
 

@@ -193,7 +193,6 @@
   <data name="Recordings_DeleteRestoreHint" xml:space="preserve"><value>回收站清空之前，你可以随时将它恢复。</value></data>
   <data name="Recordings_DeleteSize" xml:space="preserve"><value>文件大小：{0}</value></data>
   <data name="Recordings_DeletePrimary" xml:space="preserve"><value>删除</value></data>
-  <data name="Recordings_DeleteCancel" xml:space="preserve"><value>取消</value></data>
   <data name="Recordings_DeleteFailed" xml:space="preserve"><value>无法将文件移入回收站。请确认文件未被其他应用占用。</value></data>
   <data name="Recordings_ErrorTitle" xml:space="preserve"><value>出现问题</value></data>
   <data name="Recordings_Ok" xml:space="preserve"><value>确定</value></data>
@@ -208,7 +207,6 @@
   <data name="DisplayDialog_Title" xml:space="preserve"><value>选择显示器</value></data>
   <data name="DisplayDialog_Desc" xml:space="preserve"><value>选择要录制的显示器。确认前当前来源保持不变。</value></data>
   <data name="DisplayDialog_Use" xml:space="preserve"><value>使用此显示器</value></data>
-  <data name="DisplayDialog_Cancel" xml:space="preserve"><value>取消</value></data>
   <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>请选择显示器</value></data>
   <data name="AppStatus_EnableOneAudio" xml:space="preserve"><value>请至少启用一个音频来源</value></data>
   <data name="AppStatus_SelectWindow" xml:space="preserve"><value>请选择窗口</value></data>
@@ -300,6 +298,7 @@
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>已选区域 / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>请选择录制区域</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>录制期间请保持选区不变。</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>取消</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>浏览...</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>

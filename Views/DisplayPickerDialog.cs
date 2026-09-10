@@ -1,3 +1,4 @@
+using DawnCapture.Helpers;
 using DawnCapture.Models;
 using DawnCapture.Services;
 using Microsoft.UI.Xaml;
@@ -34,7 +35,7 @@ public sealed class DisplayPickerDialog : ContentDialog
 
         Content = new StackPanel
         {
-            MinWidth = 360,
+            MinWidth = ContentDialogHelper.WideContentMinWidth,
             Spacing = 12,
             Children =
             {
@@ -66,7 +67,7 @@ public sealed class DisplayPickerDialog : ContentDialog
             XamlRoot = xamlRoot,
             Title = LocalizationService.GetString("DisplayDialog_Title"),
             PrimaryButtonText = LocalizationService.GetString("DisplayDialog_Use"),
-            SecondaryButtonText = LocalizationService.GetString("DisplayDialog_Cancel"),
+            SecondaryButtonText = ContentDialogHelper.CancelText,
             DefaultButton = ContentDialogButton.Primary
         };
 

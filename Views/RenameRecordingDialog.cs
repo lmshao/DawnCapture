@@ -1,3 +1,4 @@
+using DawnCapture.Helpers;
 using DawnCapture.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -57,7 +58,7 @@ public sealed class RenameRecordingDialog : ContentDialog
 
         Content = new StackPanel
         {
-            MinWidth = 320,
+            MinWidth = ContentDialogHelper.StandardContentMinWidth,
             Spacing = 8,
             Children =
                 {
@@ -88,7 +89,7 @@ public sealed class RenameRecordingDialog : ContentDialog
             XamlRoot = xamlRoot,
             Title = LocalizationService.GetString("Recordings_RenameTitle"),
             PrimaryButtonText = LocalizationService.GetString("Recordings_RenamePrimary"),
-            SecondaryButtonText = LocalizationService.GetString("Recordings_DeleteCancel"),
+            SecondaryButtonText = ContentDialogHelper.CancelText,
             DefaultButton = ContentDialogButton.Primary
         };
 

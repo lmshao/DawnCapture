@@ -194,7 +194,6 @@
   <data name="Recordings_DeleteRestoreHint" xml:space="preserve"><value>You can restore it from the Recycle Bin until it is emptied.</value></data>
   <data name="Recordings_DeleteSize" xml:space="preserve"><value>File size: {0}</value></data>
   <data name="Recordings_DeletePrimary" xml:space="preserve"><value>Delete</value></data>
-  <data name="Recordings_DeleteCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Recordings_DeleteFailed" xml:space="preserve"><value>Failed to move the file to the Recycle Bin. Make sure it is not open in another app.</value></data>
   <data name="Recordings_ErrorTitle" xml:space="preserve"><value>Something went wrong</value></data>
   <data name="Recordings_Ok" xml:space="preserve"><value>OK</value></data>
@@ -209,7 +208,6 @@
   <data name="DisplayDialog_Title" xml:space="preserve"><value>Choose a display</value></data>
   <data name="DisplayDialog_Desc" xml:space="preserve"><value>Select the display to capture. Your current source stays active until you confirm.</value></data>
   <data name="DisplayDialog_Use" xml:space="preserve"><value>Use display</value></data>
-  <data name="DisplayDialog_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="AppStatus_SelectDisplay" xml:space="preserve"><value>Select a display</value></data>
   <data name="AppStatus_EnableOneAudio" xml:space="preserve"><value>Enable at least one audio source</value></data>
   <data name="AppStatus_SelectWindow" xml:space="preserve"><value>Select a window</value></data>
@@ -301,6 +299,7 @@
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>Selected region / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>Select a recording region</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>Keep the selected region unchanged while recording.</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>Browse...</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>

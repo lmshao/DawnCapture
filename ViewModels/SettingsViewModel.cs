@@ -262,7 +262,7 @@ public partial class SettingsViewModel : ObservableObject
             LocalizationService.GetString("Settings_LanguageRestart_Message"),
             LocalizationService.GetString("Settings_LanguageRestart_Title"),
             confirmText: LocalizationService.GetString("Settings_LanguageRestart_Confirm"),
-            cancelText: LocalizationService.GetString("Recordings_DeleteCancel"));
+            cancelText: ContentDialogHelper.CancelText);
 
         if (!confirmed)
         {
