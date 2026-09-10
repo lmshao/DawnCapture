@@ -15,6 +15,10 @@ namespace DawnCapture;
 
 public partial class App : Application
 {
+    private const string SingleInstanceKey = "DawnCapture.SingleInstance";
+
+    private AppInstance? _singleInstance;
+
     public App()
     {
         var settingsService = new SettingsService();
@@ -75,12 +79,17 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        var instance = AppInstance.FindOrRegisterForKey("DawnCapture.SingleInstance");
-        if (!instance.IsCurrent)
+        _singleInstance = AppInstance.FindOrRegisterForKey(SingleInstanceKey);
+        if (!_singleInstance.IsCurrent)
         {
-            Log.Info("Another instance is already running; this instance exits.");
+            Log.Info("Another instance is already running; redirecting activation.");
+            AppActivationArguments activationArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+            await _singleInstance.RedirectActivationToAsync(activationArgs);
+            Exit();
             return;
         }
+
+        _singleInstance.Activated += OnAppInstanceActivated;
 
         try
         {
@@ -103,6 +112,27 @@ public partial class App : Application
             Log.Error("OnLaunched failed", ex);
             throw;
         }
+    }
+
+    private void OnAppInstanceActivated(object? sender, AppActivationArguments args)
+    {
+        Log.Info("Activation received from a second instance.");
+        ActivateMainWindowFromRedirect();
+    }
+
+    private static void ActivateMainWindowFromRedirect()
+    {
+        if (MainWindow is not MainWindow mainWindow)
+        {
+            Log.Info("Redirected activation ignored because the main window is not ready.");
+            return;
+        }
+
+        mainWindow.DispatcherQueue.TryEnqueue(() =>
+        {
+            mainWindow.RestoreFromTray();
+            Log.Info("Main window restored after redirected activation.");
+        });
     }
 
     private static void NotifyLastCrashIfAny()

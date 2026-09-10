@@ -220,49 +220,14 @@
                                 Style="{StaticResource AccentButtonStyle}" />
                         </StackPanel>
 
-                        <ItemsRepeater
-                            x:Name="MonitorGrid"
-                            HorizontalAlignment="Stretch"
+                        <Viewbox
+                            x:Name="MonitorDesktopViewbox"
+                            HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            ItemsSource="{x:Bind ViewModel.Monitors, Mode=OneWay}"
+                            Stretch="Uniform"
                             Visibility="{x:Bind ViewModel.ShowMonitorGrid, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <ItemsRepeater.Layout>
-                                <UniformGridLayout MinItemWidth="200" MinColumnSpacing="12" MinRowSpacing="12" />
-                            </ItemsRepeater.Layout>
-                            <ItemsRepeater.ItemTemplate>
-                                <DataTemplate x:DataType="models:MonitorDisplay">
-                                    <Button
-                                        Height="154"
-                                        Padding="10"
-                                        HorizontalAlignment="Stretch"
-                                        HorizontalContentAlignment="Left"
-                                        VerticalContentAlignment="Top"
-                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                        BorderBrush="{StaticResource DawnStrokeBrush}"
-                                        BorderThickness="1"
-                                        Command="{Binding ElementName=RootPage, Path=ViewModel.SelectDisplayCommand}"
-                                        CommandParameter="{x:Bind}"
-                                        CornerRadius="7">
-                                        <StackPanel Spacing="0">
-                                            <Border
-                                                Height="90"
-                                                Background="{StaticResource DawnSurfaceMutedBrush}"
-                                                BorderBrush="{StaticResource DawnStrokeStrongBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="4">
-                                                <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill" />
-                                            </Border>
-                                            <TextBlock Margin="0,9,0,0" FontWeight="SemiBold" Text="{x:Bind Name}" />
-                                            <TextBlock
-                                                Margin="0,3,0,0"
-                                                FontSize="11"
-                                                Foreground="{StaticResource DawnTextFaintBrush}"
-                                                Text="{x:Bind Detail}" />
-                                        </StackPanel>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsRepeater.ItemTemplate>
-                        </ItemsRepeater>
+                            <Canvas x:Name="MonitorSpatialCanvas" />
+                        </Viewbox>
 
                         <!-- Selected display: full-area desktop snapshot -->
                         <Grid

@@ -70,6 +70,7 @@ public sealed partial class MainWindow : Window
     {
         AppWindow.Show(true);
         Activate();
+        _ = SetForegroundWindow(WindowNative.GetWindowHandle(this));
     }
 
     public async Task TryRequestExitAsync()
@@ -208,6 +209,9 @@ public sealed partial class MainWindow : Window
 
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
 
     private void NavButton_Click(object sender, RoutedEventArgs e)
     {

@@ -1,13 +1,16 @@
 using CommunityToolkit.Mvvm.DependencyInjection;
+using DawnCapture.Helpers;
 using DawnCapture.Models;
 using DawnCapture.Services;
 using DawnCapture.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 
 namespace DawnCapture.Views;
 
@@ -38,7 +41,17 @@ public sealed partial class CapturePage : Page
         };
 
         ViewModel.RecordButtonLabel = LocalizationService.GetString("Dock_StartRecording");
+        ViewModel.Monitors.CollectionChanged += OnMonitorsCollectionChanged;
         UpdateModeSelection();
+    }
+
+    private void OnMonitorsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        _monitorSpatialCardCount = -1;
+        if (PreviewColumn.ActualWidth > 0)
+        {
+            UpdatePreviewLayout(Workspace.ActualHeight);
+        }
     }
 
     private void BuildModeButtons()
@@ -216,6 +229,155 @@ public sealed partial class CapturePage : Page
 
         PreviewCard.Height = cardChrome + outlineHeight;
         PreviewCard.VerticalAlignment = VerticalAlignment.Center;
+
+        UpdateMonitorSpatialLayout(contentWidth, contentHeight);
+    }
+
+    private int _monitorSpatialCardCount = -1;
+
+    /// <summary>
+    /// Places monitor pickers on a canvas using Win32 virtual-desktop coordinates
+    /// (left/right/up/down relative layout), scaled to fit the preview frame.
+    /// </summary>
+    private void UpdateMonitorSpatialLayout(double contentWidth, double contentHeight)
+    {
+        if (ViewModel.Monitors.Count == 0 || contentWidth <= 0 || contentHeight <= 0)
+        {
+            return;
+        }
+
+        if (_monitorSpatialCardCount != ViewModel.Monitors.Count)
+        {
+            RebuildMonitorSpatialCanvas();
+        }
+
+        var desktop = MonitorLayoutHelper.GetDesktopBounds(ViewModel.Monitors);
+        MonitorSpatialCanvas.Width = desktop.Width;
+        MonitorSpatialCanvas.Height = desktop.Height;
+        MonitorDesktopViewbox.MaxWidth = contentWidth;
+        MonitorDesktopViewbox.MaxHeight = contentHeight;
+    }
+
+    private void RebuildMonitorSpatialCanvas()
+    {
+        MonitorSpatialCanvas.Children.Clear();
+        var desktop = MonitorLayoutHelper.GetDesktopBounds(ViewModel.Monitors);
+        var edgeStroke = MonitorLayoutHelper.GetPreviewEdgeStrokeThickness(desktop);
+        var monitorOutline = GetMonitorPreviewOutlineBrush();
+
+        foreach (var monitor in ViewModel.Monitors)
+        {
+            var (left, top) = MonitorLayoutHelper.GetCanvasPosition(monitor, desktop);
+
+            var thumbnailHost = new Border
+            {
+                Background = (Brush)Application.Current.Resources["DawnSurfaceMutedBrush"],
+                CornerRadius = new CornerRadius(2),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+
+            var thumbnail = new Image { Stretch = Stretch.UniformToFill };
+            thumbnail.SetBinding(Image.SourceProperty, new Binding
+            {
+                Source = monitor,
+                Path = new PropertyPath(nameof(MonitorDisplay.Thumbnail)),
+                Mode = BindingMode.OneWay
+            });
+            thumbnailHost.Child = thumbnail;
+
+            var nameText = new TextBlock
+            {
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Text = monitor.Name,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+
+            var detailText = new TextBlock
+            {
+                Margin = new Thickness(0, 3, 0, 0),
+                FontSize = 11,
+                Foreground = (Brush)Application.Current.Resources["DawnTextFaintBrush"],
+                Text = monitor.Detail,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+
+            var labelPanel = new StackPanel { Spacing = 0 };
+            labelPanel.Children.Add(nameText);
+            labelPanel.Children.Add(detailText);
+
+            var content = new Grid();
+            content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(thumbnailHost, 0);
+            Grid.SetRow(labelPanel, 1);
+            content.Children.Add(thumbnailHost);
+            content.Children.Add(labelPanel);
+
+            var button = new Button
+            {
+                Padding = new Thickness(8, 6, 8, 6),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                VerticalContentAlignment = VerticalAlignment.Stretch,
+                Background = GetThemeBrush("LayerFillColorDefaultBrush", "DawnSurfaceMutedBrush"),
+                BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(0),
+                Content = content,
+                Command = ViewModel.SelectDisplayCommand,
+                CommandParameter = monitor
+            };
+
+            var frame = new Border
+            {
+                Width = monitor.Width,
+                Height = monitor.Height,
+                Background = GetThemeBrush("CardBackgroundFillColorDefaultBrush", "LayerFillColorDefaultBrush"),
+                BorderBrush = monitorOutline,
+                BorderThickness = new Thickness(edgeStroke),
+                CornerRadius = new CornerRadius(0),
+                Child = button
+            };
+
+            Canvas.SetLeft(frame, left);
+            Canvas.SetTop(frame, top);
+            MonitorSpatialCanvas.Children.Add(frame);
+        }
+
+        _monitorSpatialCardCount = ViewModel.Monitors.Count;
+    }
+
+    private static Brush GetThemeBrush(string primaryKey, string fallbackKey)
+    {
+        if (Application.Current.Resources.TryGetValue(primaryKey, out object? primary) && primary is Brush primaryBrush)
+        {
+            return primaryBrush;
+        }
+
+        return Application.Current.Resources[fallbackKey] as Brush
+            ?? new SolidColorBrush(Microsoft.UI.Colors.Gray);
+    }
+
+    private static Brush GetMonitorPreviewOutlineBrush()
+    {
+        ReadOnlySpan<string> keys =
+        [
+            "ControlStrongStrokeColorDefaultBrush",
+            "CardStrokeColorDefaultBrush",
+            "TextFillColorSecondaryBrush",
+            "ControlStrokeColorDefaultBrush"
+        ];
+
+        foreach (var key in keys)
+        {
+            if (Application.Current.Resources.TryGetValue(key, out object? value) && value is Brush brush)
+            {
+                return brush;
+            }
+        }
+
+        return GetThemeBrush("DawnTextMutedBrush", "DawnStrokeStrongBrush");
     }
 
 }
