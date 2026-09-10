@@ -19,6 +19,9 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
     private readonly object _sync = new();
     private bool _schemaInitialized;
 
+    // How long a connection waits for a competing writer before surfacing SQLITE_BUSY.
+    private const int BusyTimeoutMilliseconds = 5000;
+
     public Task SyncLibraryAsync(string outputFolder, CancellationToken cancellationToken = default)
     {
         return Task.Run(
@@ -436,6 +439,16 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
             }
 
             using var connection = OpenConnection();
+
+            // WAL is a database-level, persistent setting: it lets readers (thumbnail loads) and
+            // writers (registration after a stop, background library sync) overlap instead of
+            // serialising on the rollback journal. ExecuteScalar because the pragma returns a row.
+            using (var journalCommand = connection.CreateCommand())
+            {
+                journalCommand.CommandText = "PRAGMA journal_mode=WAL;";
+                journalCommand.ExecuteScalar();
+            }
+
             using var command = connection.CreateCommand();
             command.CommandText = """
                 CREATE TABLE IF NOT EXISTS recordings (
@@ -495,6 +508,16 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
         Directory.CreateDirectory(directory);
         var connection = new SqliteConnection($"Data Source={Path.Combine(directory, "library.db")}");
         connection.Open();
+
+        // Connection-scoped, so it must be (re)applied on every connection. Without it a writer
+        // that finds the database locked fails immediately — which is how a finished recording can
+        // end up on disk but missing from the library.
+        using (var pragma = connection.CreateCommand())
+        {
+            pragma.CommandText = $"PRAGMA busy_timeout={BusyTimeoutMilliseconds};";
+            pragma.ExecuteNonQuery();
+        }
+
         return connection;
     }
 

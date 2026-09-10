@@ -68,6 +68,8 @@ public sealed partial class MainWindow : Window
 
     private bool _closingAfterStop;
     private bool _forceExit;
+    private bool _exitInProgress;
+    private bool _exitConfirmed;
 
     private void OnMainWindowActivated(object sender, WindowActivatedEventArgs args)
     {
@@ -106,6 +108,12 @@ public sealed partial class MainWindow : Window
 
     public async Task TryRequestExitAsync()
     {
+        if (_exitInProgress)
+        {
+            return;
+        }
+
+        _exitInProgress = true;
         _forceExit = true;
         try
         {
@@ -114,21 +122,43 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
+            _exitConfirmed = true;
             Close();
         }
         finally
         {
             _forceExit = false;
+            _exitInProgress = false;
+            _exitConfirmed = false;
         }
     }
 
     /// <summary>
     /// Close (X): minimize to tray, or exit — with recording confirmation only on exit.
+    /// <para>
+    /// This handler must stay synchronous: <see cref="AppWindowClosingEventArgs"/> has no deferral,
+    /// so <c>args.Cancel</c> is ignored once the method returns. Whenever the decision needs to
+    /// await, the close is cancelled up front and the whole exit flow is re-issued through
+    /// <see cref="TryRequestExitAsync"/>, which re-enters here with <c>_exitConfirmed</c> set.
+    /// </para>
     /// </summary>
-    private async void OnMainWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    private void OnMainWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
         if (_closingAfterStop)
         {
+            args.Cancel = true;
+            return;
+        }
+
+        if (_exitConfirmed)
+        {
+            // Exit was approved on the async path — let the window close.
+            return;
+        }
+
+        if (_exitInProgress)
+        {
+            // An exit confirmation is already on screen; keep the window alive until it resolves.
             args.Cancel = true;
             return;
         }
@@ -142,10 +172,11 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (!await ConfirmStopRecordingIfNeededAsync())
+        var recordingService = Ioc.Default.GetRequiredService<IRecordingService>();
+        if (recordingService.State is RecordingState.Recording or RecordingState.Paused)
         {
             args.Cancel = true;
-            return;
+            _ = TryRequestExitAsync();
         }
     }
 
