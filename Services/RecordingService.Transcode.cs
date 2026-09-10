@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using DawnCapture.Helpers;
 using DawnCapture.Models;
@@ -109,8 +110,16 @@ public sealed partial class RecordingService
                 return false;
             }
 
+            // One token per recording, so a stop or a failed start can cancel the
+            // encoder instead of abandoning it mid-write (see CleanupCaptureAsync).
+            _transcodeCancellation?.Dispose();
+            _transcodeCancellation = new CancellationTokenSource();
+            var transcodeToken = _transcodeCancellation.Token;
+
             var transcodeResult = prepared;
-            _transcodeTask = Task.Run(async () => await transcodeResult.TranscodeAsync());
+            _transcodeTask = Task.Run(
+                async () => await transcodeResult.TranscodeAsync().AsTask(transcodeToken),
+                transcodeToken);
 
             _ = _transcodeTask.ContinueWith(
                 t =>
@@ -192,14 +201,22 @@ public sealed partial class RecordingService
 
         _transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
 
-        _transcodeTask = Task.Run(async () =>
-        {
-            var prepared = await _transcoder.PrepareMediaStreamSourceTranscodeAsync(
-                _mediaStreamSource,
-                _outputStream,
-                _audioEncodingProfile);
-            await prepared.TranscodeAsync();
-        });
+        _transcodeCancellation?.Dispose();
+        _transcodeCancellation = new CancellationTokenSource();
+        var transcodeToken = _transcodeCancellation.Token;
+
+        _transcodeTask = Task.Run(
+            async () =>
+            {
+                var prepared = await _transcoder
+                    .PrepareMediaStreamSourceTranscodeAsync(
+                        _mediaStreamSource,
+                        _outputStream,
+                        _audioEncodingProfile)
+                    .AsTask(transcodeToken);
+                await prepared.TranscodeAsync().AsTask(transcodeToken);
+            },
+            transcodeToken);
 
         _ = _transcodeTask.ContinueWith(
             t =>

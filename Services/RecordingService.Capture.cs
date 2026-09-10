@@ -58,7 +58,7 @@ public sealed partial class RecordingService
                 _windowResizeWarned = false;
                 if (!EnsureWindowCompositeResources(_windowEncodeSize))
                 {
-                    CleanupCapture();
+                    await CleanupCaptureAsync();
                     State = RecordingState.Idle;
                     RaiseFailed(LocalizationService.GetString("Failure_CreateWindowComposite"));
                     return false;
@@ -71,7 +71,7 @@ public sealed partial class RecordingService
 
             if (!await CreateMediaObjectsAsync(captureSize, _audioOptions))
             {
-                CleanupCapture();
+                await CleanupCaptureAsync();
                 return false;
             }
 
@@ -94,7 +94,7 @@ public sealed partial class RecordingService
                 catch (Exception ex)
                 {
                     _isRecording = false;
-                    CleanupCapture();
+                    await CleanupCaptureAsync();
                     State = RecordingState.Idle;
                     RaiseFailed(ex.Message);
                     return false;
@@ -108,7 +108,7 @@ public sealed partial class RecordingService
         }
         catch (Exception ex)
         {
-            CleanupCapture();
+            await CleanupCaptureAsync();
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
             return false;
@@ -133,7 +133,7 @@ public sealed partial class RecordingService
             return;
         }
 
-        if (!_isRecording || _isPaused)
+        if (!_isRecording || _isPaused || _isStopping)
         {
             frame.Dispose();
             return;
@@ -192,10 +192,59 @@ public sealed partial class RecordingService
 
     private void OnItemClosed(GraphicsCaptureItem sender, object args)
     {
-        if (_isRecording)
+        if (_isRecording && !_isStopping)
         {
             _ = StopAsync();
         }
+    }
+
+    /// <summary>
+    /// Tears down WGC delivery (session, pool, pending frames) without touching the
+    /// transcode pipeline. Safe to call when already stopped.
+    /// </summary>
+    private void StopGraphicsCaptureSession()
+    {
+        if (_session is not null)
+        {
+            try
+            {
+                _session.Dispose();
+            }
+            catch
+            {
+                // Ignore cleanup exceptions.
+            }
+
+            _session = null;
+        }
+
+        if (_framePool is not null)
+        {
+            try
+            {
+                _framePool.FrameArrived -= OnFrameArrived;
+                _framePool.Dispose();
+            }
+            catch
+            {
+                // Ignore cleanup exceptions.
+            }
+
+            _framePool = null;
+        }
+
+        if (_item is not null)
+        {
+            _item.Closed -= OnItemClosed;
+            _item = null;
+        }
+
+        lock (_frameLock)
+        {
+            DrainVideoFramesLocked();
+        }
+
+        _frameEvent.Reset();
     }
 
     private bool WaitForVideoSample(
@@ -270,7 +319,7 @@ public sealed partial class RecordingService
                 }
             }
 
-            if (WaitHandle.WaitAny(new[] { _closedEvent, _frameEvent }, 10) == 0)
+            if (WaitHandle.WaitAny(new WaitHandle[] { _closedEvent, _frameEvent }, 10) == 0)
             {
                 return false;
             }

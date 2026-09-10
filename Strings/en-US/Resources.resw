@@ -76,6 +76,7 @@
   <data name="Failure_CreateRegionCapture" xml:space="preserve"><value>Unable to create a capture session for the selected region.</value></data>
   <data name="Failure_NoFrames" xml:space="preserve"><value>No video frames were written. Make sure the capture target is still visible.</value></data>
   <data name="Failure_TranscodePrepare" xml:space="preserve"><value>Unable to prepare video encoding on this device.</value></data>
+  <data name="Failure_TranscodeTimeout" xml:space="preserve"><value>The encoder did not finish finalizing in time. This recording was aborted and not saved. Please try again.</value></data>
   <data name="Window_RegionPickerTitle" xml:space="preserve"><value>Select Recording Region</value></data>
   <data name="Window_RecordingControlTitle" xml:space="preserve"><value>Recording Controls</value></data>
   <data name="Language_System" xml:space="preserve"><value>System default</value></data>

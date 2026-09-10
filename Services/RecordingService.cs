@@ -26,8 +26,22 @@ public sealed partial class RecordingService : IRecordingService
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly Stopwatch _stopwatch = new();
     private readonly object _frameLock = new();
-    private readonly ManualResetEvent _frameEvent = new(false);
+    private readonly AutoResetEvent _frameEvent = new(false);
     private readonly ManualResetEvent _closedEvent = new(false);
+
+    /// <summary>
+    /// Upper bound for the transcode finalization awaited by <see cref="StopAsync"/>.
+    /// The encoder has to flush both streams and write the container index before the
+    /// task completes; if it stalls, the stop path must stay responsive instead of
+    /// parking in <see cref="RecordingState.Stopping"/> forever.
+    /// </summary>
+    private static readonly TimeSpan TranscodeFinalizeTimeout = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// Upper bound for the second wait performed during teardown, after the transcode
+    /// cancellation token has been signalled.
+    /// </summary>
+    private static readonly TimeSpan TranscodeTeardownTimeout = TimeSpan.FromSeconds(5);
 
     private ID3D11Device? _d3dDevice;
     private ID3D11DeviceContext? _d3dContext;
@@ -46,6 +60,7 @@ public sealed partial class RecordingService : IRecordingService
     private MediaTranscoder? _transcoder;
     private IRandomAccessStream? _outputStream;
     private Task? _transcodeTask;
+    private CancellationTokenSource? _transcodeCancellation;
     private MediaEncodingProfile? _audioEncodingProfile;
 
     private long _frameDuration = 333_333;
@@ -151,7 +166,7 @@ public sealed partial class RecordingService : IRecordingService
         }
         catch (Exception ex)
         {
-            CleanupCapture();
+            await CleanupCaptureAsync();
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
             return false;
@@ -207,7 +222,7 @@ public sealed partial class RecordingService : IRecordingService
         }
         catch (Exception ex)
         {
-            CleanupCapture();
+            await CleanupCaptureAsync();
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
             return false;
@@ -284,7 +299,7 @@ public sealed partial class RecordingService : IRecordingService
         catch (Exception ex)
         {
             Log.Error("StartRegionAsync failed", ex);
-            CleanupCapture();
+            await CleanupCaptureAsync();
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
             return false;
@@ -332,7 +347,7 @@ public sealed partial class RecordingService : IRecordingService
             catch (Exception ex)
             {
                 _isRecording = false;
-                CleanupCapture();
+                await CleanupCaptureAsync();
                 State = RecordingState.Idle;
                 RaiseFailed(ex.Message);
                 return false;
@@ -346,7 +361,7 @@ public sealed partial class RecordingService : IRecordingService
         catch (Exception ex)
         {
             Log.Error("StartAudioOnlyAsync failed", ex);
-            CleanupCapture();
+            await CleanupCaptureAsync();
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
             return false;
@@ -367,17 +382,29 @@ public sealed partial class RecordingService : IRecordingService
                 return;
             }
 
+            bool transcodeTimedOut = false;
+
             State = RecordingState.Stopping;
             _stopwatch.Stop();
             _isStopping = true;
-            _closedEvent.Set();
+
+            // Stop feeding the encoder before waiting for finalize (P0-5): WGC must
+            // not enqueue frames while MediaTranscoder drains audio/video to EOS.
+            _isRecording = false;
+            StopGraphicsCaptureSession();
             _audioPipeline?.BeginFlush();
+            _closedEvent.Set();
 
             if (_transcodeTask is not null)
             {
                 try
                 {
-                    await _transcodeTask;
+                    await _transcodeTask.WaitAsync(TranscodeFinalizeTimeout);
+                }
+                catch (TimeoutException)
+                {
+                    transcodeTimedOut = true;
+                    _transcodeCancellation?.Cancel();
                 }
                 catch
                 {
@@ -391,24 +418,21 @@ public sealed partial class RecordingService : IRecordingService
             long framesWritten = _framesWritten;
             long audioSamplesWritten = _audioSamplesWritten;
 
-            _isRecording = false;
             _isStopping = false;
-            CleanupCapture();
+            await CleanupCaptureAsync();
             State = RecordingState.Idle;
             RestoreMainWindow();
 
             bool isAudioOnly = sourceKind == RecordingSourceKind.Audio;
-            if (isAudioOnly)
-            {
-                Log.Info($"Audio-only recording stopped: {audioSamplesWritten} audio samples written.");
-            }
-            else
-            {
-                Log.Info($"Recording stopped: {framesWritten} frames written.");
-            }
-
             bool hasOutput = isAudioOnly ? audioSamplesWritten > 0 : framesWritten > 0;
-            if (!hasOutput)
+            if (transcodeTimedOut)
+            {
+                Log.Error(
+                    $"Recording aborted: transcode finalize timed out after {framesWritten} video frames / {audioSamplesWritten} audio samples.");
+                TryDeleteOutputFile(completedOutputPath);
+                RaiseFailed(LocalizationService.GetString("Failure_TranscodeTimeout"));
+            }
+            else if (!hasOutput)
             {
                 TryDeleteOutputFile(completedOutputPath);
                 RaiseFailed(LocalizationService.GetString(
@@ -416,6 +440,15 @@ public sealed partial class RecordingService : IRecordingService
             }
             else
             {
+                if (isAudioOnly)
+                {
+                    Log.Info($"Audio-only recording stopped: {audioSamplesWritten} audio samples written.");
+                }
+                else
+                {
+                    Log.Info($"Recording stopped: {framesWritten} frames written.");
+                }
+
                 await TryRegisterRecordingAsync(completedOutputPath, recordedDuration, sourceKind);
             }
         }
@@ -509,50 +542,40 @@ public sealed partial class RecordingService : IRecordingService
         State = RecordingState.Recording;
     }
 
-    private void CleanupCapture()
+    private async Task CleanupCaptureAsync()
     {
         _isRecording = false;
         _closedEvent.Set();
 
-        if (_session is not null)
+        // The running transcode task still reads _mediaStreamSource and writes
+        // _outputStream, so it has to be cancelled and awaited before either object
+        // is disposed. A plain field reset here used to leave the task racing with
+        // the releases below (for example when a start path fails after the transcode
+        // has already been kicked off).
+        var transcodeTask = _transcodeTask;
+        if (transcodeTask is not null && !transcodeTask.IsCompleted)
         {
+            _transcodeCancellation?.Cancel();
             try
             {
-                _session.Dispose();
+                await transcodeTask.WaitAsync(TranscodeTeardownTimeout);
+            }
+            catch (TimeoutException)
+            {
+                Log.Error(
+                    $"Transcode task still running {TranscodeTeardownTimeout.TotalSeconds:0}s after cancellation; releasing its resources anyway.");
             }
             catch
             {
-                // Ignore cleanup exceptions.
+                // Finalization errors are reported by the task continuation.
             }
-
-            _session = null;
         }
 
-        if (_framePool is not null)
-        {
-            try
-            {
-                _framePool.FrameArrived -= OnFrameArrived;
-                _framePool.Dispose();
-            }
-            catch
-            {
-                // Ignore cleanup exceptions.
-            }
+        _transcodeTask = null;
+        _transcodeCancellation?.Dispose();
+        _transcodeCancellation = null;
 
-            _framePool = null;
-        }
-
-        if (_item is not null)
-        {
-            _item.Closed -= OnItemClosed;
-            _item = null;
-        }
-
-        lock (_frameLock)
-        {
-            DrainVideoFramesLocked();
-        }
+        StopGraphicsCaptureSession();
 
         if (_regionMarker is not null)
         {
@@ -622,7 +645,6 @@ public sealed partial class RecordingService : IRecordingService
             _mediaStreamSource = null;
         }
 
-        _transcodeTask = null;
         _transcoder = null;
         _audioEncodingProfile = null;
         _currentOutputPath = null;

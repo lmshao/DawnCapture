@@ -335,6 +335,7 @@
   <data name="Recordings_Empty_CTA.Content" xml:space="preserve"><value>开始录制</value></data>
   <data name="Notification_OpenFolder" xml:space="preserve"><value>打开文件夹</value></data>
   <data name="Failure_TranscodePrepare" xml:space="preserve"><value>无法在此设备上准备视频编码。</value></data>
+  <data name="Failure_TranscodeTimeout" xml:space="preserve"><value>编码器未在预期时间内完成收尾，本次录制已被中止且未保存。请重试。</value></data>
   <data name="About_ThirdPartyNotices_Title" xml:space="preserve"><value>第三方声明</value></data>
   <data name="About_PrivacyPolicy_Title" xml:space="preserve"><value>隐私政策</value></data>
   <data name="About_ThirdPartyNotices.Content" xml:space="preserve"><value>第三方声明</value></data>
