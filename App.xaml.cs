@@ -60,6 +60,7 @@ public partial class App : Application
         services.AddSingleton<IRecordingService, RecordingService>();
         services.AddSingleton<IMonitorService, MonitorService>();
         services.AddSingleton<IGlobalHotkeyService, GlobalHotkeyService>();
+        services.AddSingleton<ITrayIconService, TrayIconService>();
 
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<CaptureViewModel>();
@@ -89,8 +90,10 @@ public partial class App : Application
             var catalogService = Ioc.Default.GetRequiredService<IRecordingCatalogService>();
             await catalogService.SyncLibraryAsync(OutputFolderHelper.Resolve(settingsService));
 
-            MainWindow = Ioc.Default.GetRequiredService<MainWindow>();
-            MainWindow.Activate();
+            var mainWindow = Ioc.Default.GetRequiredService<MainWindow>();
+            MainWindow = mainWindow;
+            Ioc.Default.GetRequiredService<ITrayIconService>().Attach(mainWindow);
+            mainWindow.Activate();
             TryRegisterNotifications();
             NotifyLastCrashIfAny();
             Log.Info("Main window activated.");

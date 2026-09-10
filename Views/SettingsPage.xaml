@@ -431,6 +431,28 @@
                             <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
                         </Grid.ColumnDefinitions>
                         <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" x:Uid="Settings_CloseAction" Text="Close button" />
+                            <TextBlock
+                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                FontSize="11"
+                                Text="Choose whether the window close button hides DawnCapture to the tray or exits the app."
+                                x:Uid="Settings_CloseAction_Desc" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Style="{StaticResource DawnSettingsComboBoxStyle}"
+                            SelectedIndex="{x:Bind ViewModel.CloseMainWindowActionIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="Settings_CloseAction_MinimizeToTray" Content="Minimize to tray (keep running)" />
+                            <ComboBoxItem x:Uid="Settings_CloseAction_ExitApplication" Content="Exit application" />
+                        </ComboBox>
+                    </Grid>
+
+                    <Grid Style="{StaticResource DawnSettingsRowStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="260" />
+                            <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
                             <TextBlock FontWeight="SemiBold" x:Uid="Settings_Language" Text="Language" />
                             <TextBlock
                                 Foreground="{StaticResource DawnTextFaintBrush}"

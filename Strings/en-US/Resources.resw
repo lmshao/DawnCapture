@@ -300,6 +300,19 @@
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>Select a recording region</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>Keep the selected region unchanged while recording.</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Settings_CloseAction" xml:space="preserve"><value>Close button</value></data>
+  <data name="Settings_CloseAction_Desc" xml:space="preserve"><value>Choose whether the window close button hides DawnCapture to the tray or exits the app.</value></data>
+  <data name="Settings_CloseAction_MinimizeToTray.Content" xml:space="preserve"><value>Minimize to tray (keep running)</value></data>
+  <data name="Settings_CloseAction_ExitApplication.Content" xml:space="preserve"><value>Exit application</value></data>
+  <data name="Tray_Tooltip_Idle" xml:space="preserve"><value>DawnCapture</value></data>
+  <data name="Tray_Tooltip_Recording" xml:space="preserve"><value>DawnCapture — Recording</value></data>
+  <data name="Tray_Tooltip_Paused" xml:space="preserve"><value>DawnCapture — Paused</value></data>
+  <data name="Tray_Menu_Show" xml:space="preserve"><value>Show DawnCapture</value></data>
+  <data name="Tray_Menu_StartRecording" xml:space="preserve"><value>Start recording</value></data>
+  <data name="Tray_Menu_StopRecording" xml:space="preserve"><value>Stop recording</value></data>
+  <data name="Tray_Menu_Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Tray_Menu_Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="Tray_Menu_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>Browse...</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>

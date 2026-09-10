@@ -31,4 +31,6 @@ public sealed class AppSettings
     public HotkeyBinding HotkeyToggleRecording { get; set; } = HotkeyBinding.ToggleRecordingDefault;
 
     public HotkeyBinding HotkeyTogglePause { get; set; } = HotkeyBinding.TogglePauseDefault;
+
+    public CloseMainWindowAction CloseMainWindowAction { get; set; } = CloseMainWindowAction.MinimizeToTray;
 }

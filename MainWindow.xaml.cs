@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using DawnCapture.Helpers;
@@ -58,43 +59,86 @@ public sealed partial class MainWindow : Window
     }
 
     private bool _closingAfterStop;
+    private bool _forceExit;
+
+    public void HideToTray()
+    {
+        AppWindow.Hide();
+    }
+
+    public void RestoreFromTray()
+    {
+        AppWindow.Show(true);
+        Activate();
+    }
+
+    public async Task TryRequestExitAsync()
+    {
+        _forceExit = true;
+        try
+        {
+            if (!await ConfirmStopRecordingIfNeededAsync())
+            {
+                return;
+            }
+
+            Close();
+        }
+        finally
+        {
+            _forceExit = false;
+        }
+    }
 
     /// <summary>
-    /// Ask what to do with an active recording when the main window closes:
-    /// stop and save it, or keep recording and cancel the close.
+    /// Close (X): minimize to tray, or exit — with recording confirmation only on exit.
     /// </summary>
     private async void OnMainWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
         if (_closingAfterStop)
         {
-            // A stop is already in flight; keep the window open until Close()
-            // runs at the end of that stop.
             args.Cancel = true;
             return;
         }
 
-        var recordingService = Ioc.Default.GetRequiredService<IRecordingService>();
-        if (recordingService.State is not (RecordingState.Recording or RecordingState.Paused))
+        var settingsService = Ioc.Default.GetRequiredService<ISettingsService>();
+        if (!_forceExit &&
+            settingsService.Current.CloseMainWindowAction == CloseMainWindowAction.MinimizeToTray)
         {
+            args.Cancel = true;
+            HideToTray();
             return;
         }
 
-        args.Cancel = true;
+        if (!await ConfirmStopRecordingIfNeededAsync())
+        {
+            args.Cancel = true;
+            return;
+        }
+    }
+
+    private async Task<bool> ConfirmStopRecordingIfNeededAsync()
+    {
+        var recordingService = Ioc.Default.GetRequiredService<IRecordingService>();
+        if (recordingService.State is not (RecordingState.Recording or RecordingState.Paused))
+        {
+            return true;
+        }
 
         if (!await CloseRecordingDialog.ConfirmStopAndSaveAsync())
         {
-            return;
+            return false;
         }
 
         _closingAfterStop = true;
         try
         {
             await recordingService.StopAsync();
+            return true;
         }
         finally
         {
             _closingAfterStop = false;
-            Close();
         }
     }
 

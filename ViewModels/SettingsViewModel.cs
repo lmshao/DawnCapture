@@ -41,6 +41,7 @@ public partial class SettingsViewModel : ObservableObject
         _captureCursor = _settingsService.Current.CaptureCursor;
         _countdownEnabled = _settingsService.Current.CountdownEnabled;
         _notificationEnabled = _settingsService.Current.NotificationEnabled;
+        _closeMainWindowActionIndex = (int)_settingsService.Current.CloseMainWindowAction;
         _selectedLanguage = Languages.FirstOrDefault(
             option => option.Code == _settingsService.Current.Language) ?? Languages[0];
 
@@ -69,6 +70,7 @@ public partial class SettingsViewModel : ObservableObject
             CaptureCursor = settings.CaptureCursor;
             CountdownEnabled = settings.CountdownEnabled;
             NotificationEnabled = settings.NotificationEnabled;
+            CloseMainWindowActionIndex = (int)settings.CloseMainWindowAction;
             RefreshHotkeyDisplays();
             RefreshHotkeyRegistrationWarning();
         }
@@ -119,6 +121,9 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _notificationEnabled = true;
+
+    [ObservableProperty]
+    private int _closeMainWindowActionIndex;
 
     [ObservableProperty]
     private LanguageOption _selectedLanguage = null!;
@@ -233,6 +238,14 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     partial void OnNotificationEnabledChanged(bool value)
+    {
+        if (!_suppressPersist)
+        {
+            PersistSettings();
+        }
+    }
+
+    partial void OnCloseMainWindowActionIndexChanged(int value)
     {
         if (!_suppressPersist)
         {
@@ -484,6 +497,7 @@ public partial class SettingsViewModel : ObservableObject
         _settingsService.Current.CaptureCursor = CaptureCursor;
         _settingsService.Current.CountdownEnabled = CountdownEnabled;
         _settingsService.Current.NotificationEnabled = NotificationEnabled;
+        _settingsService.Current.CloseMainWindowAction = (CloseMainWindowAction)CloseMainWindowActionIndex;
         if (!_settingsService.Save())
         {
             _ = DialogHelper.ShowErrorAsync(LocalizationService.GetString("Settings_SaveFailed"));

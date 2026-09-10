@@ -299,6 +299,19 @@
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>请选择录制区域</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>录制期间请保持选区不变。</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Settings_CloseAction" xml:space="preserve"><value>关闭按钮</value></data>
+  <data name="Settings_CloseAction_Desc" xml:space="preserve"><value>选择点击窗口关闭按钮时是最小化到托盘还是退出应用。</value></data>
+  <data name="Settings_CloseAction_MinimizeToTray.Content" xml:space="preserve"><value>最小化到托盘（保持运行）</value></data>
+  <data name="Settings_CloseAction_ExitApplication.Content" xml:space="preserve"><value>退出应用</value></data>
+  <data name="Tray_Tooltip_Idle" xml:space="preserve"><value>DawnCapture</value></data>
+  <data name="Tray_Tooltip_Recording" xml:space="preserve"><value>DawnCapture — 录制中</value></data>
+  <data name="Tray_Tooltip_Paused" xml:space="preserve"><value>DawnCapture — 已暂停</value></data>
+  <data name="Tray_Menu_Show" xml:space="preserve"><value>显示 DawnCapture</value></data>
+  <data name="Tray_Menu_StartRecording" xml:space="preserve"><value>开始录制</value></data>
+  <data name="Tray_Menu_StopRecording" xml:space="preserve"><value>停止录制</value></data>
+  <data name="Tray_Menu_Pause" xml:space="preserve"><value>暂停</value></data>
+  <data name="Tray_Menu_Resume" xml:space="preserve"><value>继续录制</value></data>
+  <data name="Tray_Menu_Exit" xml:space="preserve"><value>退出</value></data>
   <data name="Common_Browse.Content" xml:space="preserve"><value>浏览...</value></data>
   <data name="Settings_FrameRate_30.Content" xml:space="preserve"><value>30 FPS</value></data>
   <data name="Settings_FrameRate_60.Content" xml:space="preserve"><value>60 FPS</value></data>
