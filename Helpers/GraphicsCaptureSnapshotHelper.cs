@@ -202,7 +202,7 @@ public static class GraphicsCaptureSnapshotHelper
         return null;
     }
 
-    private static ThumbnailPixelData? ExtractPixelsFromFrame(
+    internal static ThumbnailPixelData? ExtractPixelsFromFrame(
         Direct3D11CaptureFrame frame,
         ID3D11Device device,
         ID3D11DeviceContext context,

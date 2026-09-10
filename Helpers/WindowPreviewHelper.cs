@@ -7,7 +7,7 @@ namespace DawnCapture.Helpers;
 
 public static class WindowPreviewHelper
 {
-    private const int DefaultMaxWidth = 480;
+    internal const int DefaultMaxWidth = 480;
 
     public static Task<ImageSource?> CaptureThumbnailAsync(
         GraphicsCaptureItem item,

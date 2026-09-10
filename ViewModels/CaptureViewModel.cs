@@ -23,7 +23,12 @@ public partial class CaptureViewModel : ObservableObject
     private CancellationTokenSource? _windowThumbnailCts;
     private CancellationTokenSource? _regionThumbnailCts;
     private DispatcherTimer? _waveformTimer;
+    private DispatcherTimer? _previewTimer;
+    private WindowLivePreviewSession? _windowPreviewSession;
     private double _waveformPhase;
+    private bool _isForegroundActive;
+    private bool _isPreviewRefreshRunning;
+    private int _previewEpoch;
 
     private static readonly double[] DefaultWaveformHeights = AudioWaveformHelper.DefaultHeights;
 
@@ -103,6 +108,248 @@ public partial class CaptureViewModel : ObservableObject
         }
 
         UpdateAudioStatusBadges();
+    }
+
+    public void SetForegroundActive(bool value)
+    {
+        if (_isForegroundActive == value)
+        {
+            return;
+        }
+
+        _isForegroundActive = value;
+        Log.Info($"Preview foreground state changed: active={value}.");
+        UpdatePreviewEngine();
+
+        // Switching back to the app should show the latest frame immediately
+        // instead of waiting for the next 1s tick.
+        if (value)
+        {
+            RequestImmediatePreviewRefresh();
+        }
+    }
+
+    private bool ShouldRunPreview()
+    {
+        if (!_isForegroundActive || IsRecording || !HasSource)
+        {
+            return false;
+        }
+
+        return SelectedMode switch
+        {
+            CaptureModeKind.FullScreen => SelectedDisplay is not null,
+            CaptureModeKind.Window => SelectedWindow is not null && !IsLoadingWindowThumbnail,
+            CaptureModeKind.Region => SelectedRegion is not null && !IsLoadingRegionThumbnail,
+            _ => false
+        };
+    }
+
+    private void UpdatePreviewEngine()
+    {
+        if (ShouldRunPreview())
+        {
+            _previewTimer ??= CreatePreviewTimer();
+            _previewTimer.Start();
+
+            if (SelectedMode == CaptureModeKind.Window)
+            {
+                EnsureWindowPreviewSession();
+            }
+
+            return;
+        }
+
+        _previewTimer?.Stop();
+        InvalidatePreviewEpoch();
+        _isPreviewRefreshRunning = false;
+
+        if (SelectedMode == CaptureModeKind.Window && SelectedWindow is not null)
+        {
+            StopWindowPreviewSession(dispose: false);
+        }
+        else
+        {
+            StopWindowPreviewSession(dispose: true);
+        }
+    }
+
+    private DispatcherTimer CreatePreviewTimer()
+    {
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        timer.Tick += OnPreviewTimerTick;
+        return timer;
+    }
+
+    private async void OnPreviewTimerTick(object? sender, object e)
+    {
+        await RunPreviewRefreshAsync();
+    }
+
+    private void RequestImmediatePreviewRefresh()
+    {
+        if (_isPreviewRefreshRunning || !ShouldRunPreview())
+        {
+            return;
+        }
+
+        _ = RunPreviewRefreshAsync();
+    }
+
+    private async Task RunPreviewRefreshAsync()
+    {
+        if (_isPreviewRefreshRunning || !ShouldRunPreview())
+        {
+            return;
+        }
+
+        _isPreviewRefreshRunning = true;
+        int epoch = _previewEpoch;
+        try
+        {
+            await RefreshSelectedPreviewAsync(epoch);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug($"Preview refresh failed: {ex.Message}");
+        }
+        finally
+        {
+            _isPreviewRefreshRunning = false;
+        }
+    }
+
+    private async Task RefreshSelectedPreviewAsync(int epoch)
+    {
+        switch (SelectedMode)
+        {
+            case CaptureModeKind.FullScreen when SelectedDisplay is { } display:
+            {
+                await _monitorService.RefreshThumbnailAsync(display);
+                if (IsPreviewStillCurrent(epoch, display))
+                {
+                    SelectedDisplayThumbnail = display.Thumbnail;
+                }
+
+                break;
+            }
+            case CaptureModeKind.Region when SelectedRegion is { } region:
+            {
+                var thumbnail = await RegionPreviewHelper.CaptureThumbnailAsync(region.ScreenBounds);
+                if (IsPreviewStillCurrent(epoch, region))
+                {
+                    RegionThumbnail = thumbnail;
+                }
+
+                break;
+            }
+            case CaptureModeKind.Window when SelectedWindow is { } window && _windowPreviewSession is { } session:
+            {
+                var pixels = await session.TryExtractLatestPixelsAsync(WindowPreviewHelper.DefaultMaxWidth);
+
+                // A just-restarted session needs a moment to deliver its first
+                // frame; wait briefly so switching back shows a fresh image.
+                for (int attempt = 0; pixels is null && attempt < 4 && IsPreviewStillCurrent(epoch, window); attempt++)
+                {
+                    await Task.Delay(60);
+                    pixels = await session.TryExtractLatestPixelsAsync(WindowPreviewHelper.DefaultMaxWidth);
+                }
+
+                if (IsPreviewStillCurrent(epoch, window))
+                {
+                    WindowThumbnail = pixels is { } data
+                        ? RecordingThumbnailHelper.CreateWriteableBitmap(data)
+                        : WindowThumbnail;
+                }
+
+                break;
+            }
+        }
+    }
+
+    private bool IsPreviewStillCurrent(int epoch, MonitorDisplay display)
+    {
+        return epoch == _previewEpoch
+            && SelectedMode == CaptureModeKind.FullScreen
+            && ReferenceEquals(SelectedDisplay, display)
+            && _isForegroundActive
+            && !IsRecording;
+    }
+
+    private bool IsPreviewStillCurrent(int epoch, RegionCaptureTarget region)
+    {
+        return epoch == _previewEpoch
+            && SelectedMode == CaptureModeKind.Region
+            && ReferenceEquals(SelectedRegion, region)
+            && _isForegroundActive
+            && !IsRecording;
+    }
+
+    private bool IsPreviewStillCurrent(int epoch, WindowCaptureTarget window)
+    {
+        return epoch == _previewEpoch
+            && SelectedMode == CaptureModeKind.Window
+            && ReferenceEquals(SelectedWindow, window)
+            && _isForegroundActive
+            && !IsRecording;
+    }
+
+    private void EnsureWindowPreviewSession()
+    {
+        if (SelectedWindow is not { } window)
+        {
+            return;
+        }
+
+        _windowPreviewSession ??= new WindowLivePreviewSession();
+        try
+        {
+            _windowPreviewSession.Start(window.Item);
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Window live preview session start failed for '{window.DisplayName}': {ex.Message}");
+            StopWindowPreviewSession(dispose: true);
+        }
+    }
+
+    private void StopWindowPreviewSession(bool dispose)
+    {
+        if (_windowPreviewSession is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (dispose)
+            {
+                _windowPreviewSession.Dispose();
+                _windowPreviewSession = null;
+            }
+            else
+            {
+                _windowPreviewSession.Stop();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Debug($"Window live preview session stop failed: {ex.Message}");
+            _windowPreviewSession = null;
+        }
+    }
+
+    private void InvalidatePreviewEpoch()
+    {
+        _previewEpoch++;
+    }
+
+    private void StopPreviewEngineBeforeRecording()
+    {
+        _previewTimer?.Stop();
+        InvalidatePreviewEpoch();
+        _isPreviewRefreshRunning = false;
+        StopWindowPreviewSession(dispose: false);
     }
 
     [ObservableProperty]
@@ -225,6 +472,7 @@ public partial class CaptureViewModel : ObservableObject
         ShowController = value;
         UpdateHeaderCopy();
         UpdatePreviewCopy();
+        UpdatePreviewEngine();
 
         if (value && SelectedMode == CaptureModeKind.AudioOnly)
         {
@@ -354,6 +602,10 @@ public partial class CaptureViewModel : ObservableObject
                 }
             }
 
+            // The recording pipeline owns its own WGC session for window capture,
+            // so the live preview session must be released before starting.
+            StopPreviewEngineBeforeRecording();
+
             switch (SelectedMode)
             {
                 case CaptureModeKind.FullScreen:
@@ -373,6 +625,10 @@ public partial class CaptureViewModel : ObservableObject
                     await _recordingService.StartAudioOnlyAsync(audioOptions);
                     break;
             }
+
+            // If recording failed to start, IsRecording never changed and the
+            // preview engine would otherwise stay stopped. Re-evaluate here.
+            UpdatePreviewEngine();
         }
         else if (_recordingService.State is RecordingState.Recording or RecordingState.Paused)
         {

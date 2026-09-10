@@ -124,6 +124,7 @@ public partial class CaptureViewModel
         UpdateHeaderCopy();
         UpdatePreviewCopy();
         UpdateOutputSummary();
+        UpdatePreviewEngine();
     }
 
     partial void OnSelectedModeChanged(CaptureModeKind value)
@@ -143,6 +144,7 @@ public partial class CaptureViewModel
         UpdateHeaderCopy();
         UpdatePreviewCopy();
         UpdateOutputSummary();
+        UpdatePreviewEngine();
     }
 
     partial void OnSelectedRegionChanged(RegionCaptureTarget? value)
@@ -153,6 +155,7 @@ public partial class CaptureViewModel
         UpdateHeaderCopy();
         UpdatePreviewCopy();
         UpdateOutputSummary();
+        UpdatePreviewEngine();
     }
 
     partial void OnSelectedWindowChanged(WindowCaptureTarget? value)
@@ -163,6 +166,7 @@ public partial class CaptureViewModel
         UpdateHeaderCopy();
         UpdatePreviewCopy();
         UpdateOutputSummary();
+        UpdatePreviewEngine();
     }
 
     private void ApplySelectedMode()
@@ -198,6 +202,7 @@ public partial class CaptureViewModel
         SelectedDisplay = monitor;
         SelectedDisplayThumbnail = monitor.Thumbnail;
         SelectedDisplayBadge = monitor.BadgeLabel;
+        UpdatePreviewEngine();
         Log.Info($"Display committed: {monitor.Name} ({monitor.Resolution}), Handle=0x{monitor.Handle:X}");
     }
 
@@ -235,6 +240,7 @@ public partial class CaptureViewModel
             if (ReferenceEquals(SelectedDisplay, monitor))
             {
                 SelectedDisplayThumbnail = monitor.Thumbnail;
+                UpdatePreviewEngine();
             }
         }
         catch (Exception ex)
@@ -323,6 +329,12 @@ public partial class CaptureViewModel
         }
 
         var target = new RegionCaptureTarget(normalized);
+
+        // Set the loading flag before publishing the new selection so the
+        // selection-change handler does not start the 1s periodic refresh
+        // while the initial thumbnail is still being captured.
+        IsLoadingRegionThumbnail = true;
+        RegionThumbnail = null;
         SelectedRegion = target;
         Log.Info($"Region committed: {target.Summary}");
 
@@ -330,8 +342,6 @@ public partial class CaptureViewModel
         _regionThumbnailCts?.Dispose();
         _regionThumbnailCts = new CancellationTokenSource();
         var cts = _regionThumbnailCts;
-        IsLoadingRegionThumbnail = true;
-        RegionThumbnail = null;
 
         try
         {
@@ -350,6 +360,7 @@ public partial class CaptureViewModel
             if (!cts.IsCancellationRequested)
             {
                 IsLoadingRegionThumbnail = false;
+                UpdatePreviewEngine();
             }
         }
     }
@@ -365,6 +376,7 @@ public partial class CaptureViewModel
         RegionBadge = string.Empty;
         IsLoadingRegionThumbnail = false;
         SyncHasSource();
+        UpdatePreviewEngine();
     }
 
     private async Task PickWindowAsync()
@@ -385,6 +397,12 @@ public partial class CaptureViewModel
 
         var target = new WindowCaptureTarget(item);
         target.Closed += OnSelectedWindowClosed;
+
+        // Publish the loading state before the new selection so the
+        // selection-change handler does not start the 1s periodic refresh
+        // (and its WGC session) while the initial thumbnail is being captured.
+        IsLoadingWindowThumbnail = true;
+        WindowThumbnail = null;
         SelectedWindow = target;
         Log.Info($"Window committed: {target.DisplayName} ({target.Resolution})");
 
@@ -392,8 +410,6 @@ public partial class CaptureViewModel
         _windowThumbnailCts?.Dispose();
         _windowThumbnailCts = new CancellationTokenSource();
         var cts = _windowThumbnailCts;
-        IsLoadingWindowThumbnail = true;
-        WindowThumbnail = null;
 
         try
         {
@@ -412,6 +428,7 @@ public partial class CaptureViewModel
             if (!cts.IsCancellationRequested)
             {
                 IsLoadingWindowThumbnail = false;
+                UpdatePreviewEngine();
             }
         }
     }
@@ -429,6 +446,8 @@ public partial class CaptureViewModel
 
     private void ClearSelectedWindow()
     {
+        StopWindowPreviewSession(dispose: true);
+
         _windowThumbnailCts?.Cancel();
         _windowThumbnailCts?.Dispose();
         _windowThumbnailCts = null;
@@ -444,6 +463,7 @@ public partial class CaptureViewModel
         WindowBadge = string.Empty;
         IsLoadingWindowThumbnail = false;
         SyncHasSource();
+        UpdatePreviewEngine();
     }
 
     private void UpdateHeaderCopy()

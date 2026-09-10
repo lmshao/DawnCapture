@@ -25,6 +25,9 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<string, Button> _navButtons = new();
     private string _currentNav = "Capture";
     private IGlobalHotkeyService? _globalHotkeyService;
+    private CaptureViewModel? _captureViewModel;
+    private bool _windowActivated;
+    private bool _windowVisible;
 
     public MainViewModel ViewModel { get; }
 
@@ -53,6 +56,11 @@ public sealed partial class MainWindow : Window
         UpdateCaptureNoticeBar();
         UpdateStorageAvailabilityBrush();
         ViewModel.NavigationRequested += (_, tag) => NavigateTo(tag);
+        _captureViewModel = Ioc.Default.GetRequiredService<CaptureViewModel>();
+        Activated += OnMainWindowActivated;
+        AppWindow.Changed += OnAppWindowChanged;
+        _windowVisible = AppWindow.IsVisible;
+        UpdatePreviewForegroundState();
         RegisterGlobalHotkeys();
         AppWindow.Closing += OnMainWindowClosing;
         Closed += (_, _) => _globalHotkeyService?.Dispose();
@@ -60,6 +68,29 @@ public sealed partial class MainWindow : Window
 
     private bool _closingAfterStop;
     private bool _forceExit;
+
+    private void OnMainWindowActivated(object sender, WindowActivatedEventArgs args)
+    {
+        _windowActivated = args.WindowActivationState != WindowActivationState.Deactivated;
+        UpdatePreviewForegroundState();
+    }
+
+    private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        bool visible = AppWindow.IsVisible;
+        if (visible == _windowVisible)
+        {
+            return;
+        }
+
+        _windowVisible = visible;
+        UpdatePreviewForegroundState();
+    }
+
+    private void UpdatePreviewForegroundState()
+    {
+        _captureViewModel?.SetForegroundActive(_windowActivated && _windowVisible);
+    }
 
     public void HideToTray()
     {
