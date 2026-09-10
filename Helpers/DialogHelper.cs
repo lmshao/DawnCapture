@@ -41,12 +41,34 @@ public static class DialogHelper
         return result == true;
     }
 
+    /// <summary>
+    /// Shows a confirmation dialog whose primary button is tinted as a
+    /// destructive action. Returns true only when the user confirms.
+    /// </summary>
+    public static async Task<bool> ShowDangerConfirmAsync(
+        string message,
+        string? title = null,
+        string? confirmText = null,
+        string? cancelText = null)
+    {
+        bool? result = await ShowCompactDialogAsync(
+            message,
+            title ?? LocalizationService.GetString("Recordings_ErrorTitle"),
+            showCancel: true,
+            confirmText: confirmText ?? LocalizationService.GetString("Recordings_Ok"),
+            cancelText: cancelText ?? ContentDialogHelper.CancelText,
+            danger: true);
+
+        return result == true;
+    }
+
     private static async Task<bool?> ShowCompactDialogAsync(
         string message,
         string title,
         bool showCancel,
         string confirmText,
-        string? cancelText = null)
+        string? cancelText = null,
+        bool danger = false)
     {
         if (App.MainWindow?.Content is not FrameworkElement root || root.XamlRoot is not { } xamlRoot)
         {
@@ -63,7 +85,8 @@ public static class DialogHelper
                 title,
                 showCancel,
                 confirmText,
-                cancelText);
+                cancelText,
+                danger);
         }
         finally
         {
@@ -78,7 +101,8 @@ public static class DialogHelper
         string title,
         bool showCancel,
         string confirmText,
-        string? cancelText)
+        string? cancelText,
+        bool danger = false)
     {
         var popup = new Popup
         {
@@ -163,7 +187,7 @@ public static class DialogHelper
             cancelButton.Click += (_, _) => Complete(false);
             buttonRow.Children.Add(cancelButton);
 
-            var confirmButton = CreateDialogButton(confirmText, isPrimary: true);
+            var confirmButton = CreateDialogButton(confirmText, isPrimary: true, isDanger: danger);
             confirmButton.Click += (_, _) => Complete(true);
             buttonRow.Children.Add(confirmButton);
 
@@ -220,7 +244,7 @@ public static class DialogHelper
         return await tcs.Task;
     }
 
-    private static Button CreateDialogButton(string label, bool isPrimary = false)
+    private static Button CreateDialogButton(string label, bool isPrimary = false, bool isDanger = false)
     {
         var button = new Button
         {
@@ -229,6 +253,18 @@ public static class DialogHelper
             HorizontalAlignment = HorizontalAlignment.Center,
             HorizontalContentAlignment = HorizontalAlignment.Center
         };
+
+        if (isPrimary && isDanger)
+        {
+            if (Application.Current.Resources.TryGetValue("DawnDangerBrush", out object? danger) &&
+                danger is Brush dangerBrush)
+            {
+                button.Background = dangerBrush;
+                button.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
+            }
+
+            return button;
+        }
 
         if (isPrimary &&
             Application.Current.Resources.TryGetValue("AccentButtonStyle", out object? style) &&

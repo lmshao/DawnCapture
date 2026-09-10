@@ -120,19 +120,29 @@ public partial class MainViewModel : ObservableObject
 
         _settingsService.Current.OutputFolder = normalizedPath;
         _settingsService.Save();
+        return await RefreshOutputFolderAsync();
+    }
+
+    /// <summary>
+    /// Re-reads the configured output folder, re-syncs the recordings library and
+    /// notifies listeners. Used after restoring default settings, which may have
+    /// changed the output folder without going through the folder picker.
+    /// </summary>
+    public async Task<OutputFolderChangeResult> RefreshOutputFolderAsync()
+    {
         RefreshStorage();
 
         try
         {
-            await _catalogService.SyncLibraryAsync(normalizedPath);
+            await _catalogService.SyncLibraryAsync(OutputFolderFull);
         }
         catch (Exception ex)
         {
-            Log.Error($"Failed to sync recordings library after output folder change to '{normalizedPath}'", ex);
+            Log.Error($"Failed to sync recordings library for '{OutputFolderFull}'", ex);
             return OutputFolderChangeResult.Failed(LocalizationService.GetString("OutputFolder_SyncFailed"));
         }
 
-        OutputFolderChanged?.Invoke(this, normalizedPath);
+        OutputFolderChanged?.Invoke(this, OutputFolderFull);
         return OutputFolderChangeResult.Success();
     }
 

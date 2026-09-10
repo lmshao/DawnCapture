@@ -468,6 +468,37 @@
                             SelectedItem="{x:Bind ViewModel.SelectedLanguage, Mode=TwoWay}" />
                     </Grid>
                 </StackPanel>
+
+                <StackPanel Spacing="0">
+                    <Border BorderBrush="{StaticResource DawnStrokeStrongBrush}" BorderThickness="0,0,0,1">
+                        <TextBlock Style="{StaticResource DawnSettingsGroupTitleStyle}" x:Uid="Settings_Group_Reset" Text="Reset" />
+                    </Border>
+
+                    <Grid Style="{StaticResource DawnSettingsRowStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="260" />
+                            <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" x:Uid="Settings_Reset" Text="Restore default settings" />
+                            <TextBlock
+                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                FontSize="11"
+                                Text="Reset every preference, including the output folder, hotkeys, and language. Recordings are not deleted."
+                                x:Uid="Settings_Reset_Desc" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Background="{StaticResource DawnDangerBrush}"
+                            Foreground="White"
+                            Command="{x:Bind ViewModel.ResetToDefaultsCommand}"
+                            IsEnabled="{x:Bind ViewModel.CanResetSettings, Mode=OneWay}"
+                            x:Uid="Settings_Reset_Button"
+                            Content="Restore defaults" />
+                    </Grid>
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
     </Grid>

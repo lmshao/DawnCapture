@@ -344,4 +344,14 @@
   <data name="About_LegalReadFailed" xml:space="preserve"><value>无法读取该文件。</value></data>
   <data name="App_LastSessionCrashedTitle" xml:space="preserve"><value>意外退出</value></data>
   <data name="App_LastSessionCrashed" xml:space="preserve"><value>DawnCapture 上次运行时意外退出。若问题反复出现，请将日志文件发送给开发者：{0}</value></data>
+  <data name="Settings_Group_Reset.Text" xml:space="preserve"><value>重置</value></data>
+  <data name="Settings_Reset.Text" xml:space="preserve"><value>恢复默认设置</value></data>
+  <data name="Settings_Reset_Desc.Text" xml:space="preserve"><value>将所有偏好设置恢复为默认值，包括输出目录、快捷键和语言。不会删除已录制的文件。</value></data>
+  <data name="Settings_Reset_Button.Content" xml:space="preserve"><value>恢复默认设置</value></data>
+  <data name="Settings_ResetConfirm_Title" xml:space="preserve"><value>恢复默认设置？</value></data>
+  <data name="Settings_ResetConfirm_Message" xml:space="preserve"><value>这将重置所有偏好设置，包括输出目录、快捷键和语言。不会删除已录制的文件。此操作无法撤销。</value></data>
+  <data name="Settings_ResetConfirm_Confirm" xml:space="preserve"><value>恢复默认</value></data>
+  <data name="Settings_Reset_RecordingActive" xml:space="preserve"><value>请先停止当前录制，再恢复默认设置。</value></data>
+  <data name="Settings_Reset_LanguageRestart_Title" xml:space="preserve"><value>语言已重置</value></data>
+  <data name="Settings_Reset_LanguageRestart_Message" xml:space="preserve"><value>语言已恢复为跟随系统设置。是否立即重启 DawnCapture 以应用？</value></data>
 </root>

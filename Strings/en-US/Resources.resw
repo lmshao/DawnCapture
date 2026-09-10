@@ -344,4 +344,14 @@
   <data name="About_LegalReadFailed" xml:space="preserve"><value>Unable to read the file.</value></data>
   <data name="App_LastSessionCrashedTitle" xml:space="preserve"><value>Unexpected exit</value></data>
   <data name="App_LastSessionCrashed" xml:space="preserve"><value>DawnCapture exited unexpectedly during its last session. If this keeps happening, please send the log file to the developer: {0}</value></data>
+  <data name="Settings_Group_Reset.Text" xml:space="preserve"><value>Reset</value></data>
+  <data name="Settings_Reset.Text" xml:space="preserve"><value>Restore default settings</value></data>
+  <data name="Settings_Reset_Desc.Text" xml:space="preserve"><value>Reset every preference, including the output folder, hotkeys, and language. Recordings are not deleted.</value></data>
+  <data name="Settings_Reset_Button.Content" xml:space="preserve"><value>Restore defaults</value></data>
+  <data name="Settings_ResetConfirm_Title" xml:space="preserve"><value>Reset settings?</value></data>
+  <data name="Settings_ResetConfirm_Message" xml:space="preserve"><value>This will reset all preferences, including the output folder, hotkeys, and language. Recordings are not deleted. This cannot be undone.</value></data>
+  <data name="Settings_ResetConfirm_Confirm" xml:space="preserve"><value>Reset</value></data>
+  <data name="Settings_Reset_RecordingActive" xml:space="preserve"><value>Stop the current recording before restoring the default settings.</value></data>
+  <data name="Settings_Reset_LanguageRestart_Title" xml:space="preserve"><value>Language reset</value></data>
+  <data name="Settings_Reset_LanguageRestart_Message" xml:space="preserve"><value>The language was reset to follow the system setting. Restart DawnCapture now to apply it?</value></data>
 </root>

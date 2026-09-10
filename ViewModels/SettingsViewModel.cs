@@ -20,15 +20,18 @@ public partial class SettingsViewModel : ObservableObject
     private readonly ISettingsService _settingsService;
     private readonly MainViewModel _mainViewModel;
     private readonly IGlobalHotkeyService _globalHotkeyService;
+    private readonly IRecordingService _recordingService;
 
     public SettingsViewModel(
         ISettingsService settingsService,
         MainViewModel mainViewModel,
-        IGlobalHotkeyService globalHotkeyService)
+        IGlobalHotkeyService globalHotkeyService,
+        IRecordingService recordingService)
     {
         _settingsService = settingsService;
         _mainViewModel = mainViewModel;
         _globalHotkeyService = globalHotkeyService;
+        _recordingService = recordingService;
         _outputFolder = _settingsService.Current.OutputFolder;
         _outputFolderDisplay = PathDisplayHelper.MiddleEllipsis(_outputFolder, 44);
         _frameRateIndex = RecordingSettingsHelper.FrameRateToSettingsIndex(_settingsService.Current.FrameRate);
@@ -47,6 +50,8 @@ public partial class SettingsViewModel : ObservableObject
 
         _mainViewModel.OutputFolderChanged += (_, path) => OutputFolder = path;
         _settingsService.SettingsChanged += OnExternalSettingsChanged;
+        _recordingService.StateChanged += OnRecordingStateChanged;
+        IsRecording = _recordingService.State is RecordingState.Recording or RecordingState.Paused;
         RefreshHotkeyDisplays();
         RefreshHotkeyRegistrationWarning();
     }
@@ -57,6 +62,7 @@ public partial class SettingsViewModel : ObservableObject
     private void OnExternalSettingsChanged(object? sender, EventArgs e)
     {
         _suppressPersist = true;
+        _suppressLanguageChange = true;
         try
         {
             var settings = _settingsService.Current;
@@ -71,11 +77,13 @@ public partial class SettingsViewModel : ObservableObject
             CountdownEnabled = settings.CountdownEnabled;
             NotificationEnabled = settings.NotificationEnabled;
             CloseMainWindowActionIndex = (int)settings.CloseMainWindowAction;
+            SelectedLanguage = Languages.FirstOrDefault(option => option.Code == settings.Language) ?? Languages[0];
             RefreshHotkeyDisplays();
             RefreshHotkeyRegistrationWarning();
         }
         finally
         {
+            _suppressLanguageChange = false;
             _suppressPersist = false;
         }
     }
@@ -121,6 +129,13 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _notificationEnabled = true;
+
+    [ObservableProperty]
+    private bool _isRecording;
+
+    public bool CanResetSettings => !IsRecording;
+
+    partial void OnIsRecordingChanged(bool value) => OnPropertyChanged(nameof(CanResetSettings));
 
     [ObservableProperty]
     private int _closeMainWindowActionIndex;
@@ -436,6 +451,72 @@ public partial class SettingsViewModel : ObservableObject
         TogglePauseHotkeyDisplay = HotkeyCaptureTarget == HotkeyCaptureTarget.TogglePause
             ? LocalizationService.GetString("Settings_Hotkey_CapturePrompt")
             : HotkeyHelper.FormatDisplay(_settingsService.Current.HotkeyTogglePause);
+    }
+
+    private void OnRecordingStateChanged(object? sender, RecordingState state)
+    {
+        IsRecording = state is RecordingState.Recording or RecordingState.Paused;
+    }
+
+    [RelayCommand]
+    private async Task ResetToDefaultsAsync()
+    {
+        if (_recordingService.State is RecordingState.Recording or RecordingState.Paused)
+        {
+            await DialogHelper.ShowErrorAsync(
+                LocalizationService.GetString("Settings_Reset_RecordingActive"),
+                LocalizationService.GetString("Settings_ResetConfirm_Title"));
+            return;
+        }
+
+        bool confirmed = await DialogHelper.ShowDangerConfirmAsync(
+            LocalizationService.GetString("Settings_ResetConfirm_Message"),
+            LocalizationService.GetString("Settings_ResetConfirm_Title"),
+            confirmText: LocalizationService.GetString("Settings_ResetConfirm_Confirm"),
+            cancelText: ContentDialogHelper.CancelText);
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        string previousLanguage = _settingsService.Current.Language;
+        if (!_settingsService.ResetToDefaults())
+        {
+            await DialogHelper.ShowErrorAsync(LocalizationService.GetString("Settings_SaveFailed"));
+            return;
+        }
+
+        // The reset may have changed the hotkeys; re-register the defaults.
+        _globalHotkeyService.Apply(
+            _settingsService.Current.HotkeyToggleRecording,
+            _settingsService.Current.HotkeyTogglePause);
+        RefreshHotkeyDisplays();
+        RefreshHotkeyRegistrationWarning();
+
+        // The output folder may have changed; re-sync the recordings library.
+        OutputFolderChangeResult folderResult = await _mainViewModel.RefreshOutputFolderAsync();
+        if (folderResult.ErrorMessage is not null)
+        {
+            await DialogHelper.ShowErrorAsync(folderResult.ErrorMessage);
+        }
+
+        if (string.Equals(previousLanguage, _settingsService.Current.Language, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        bool restart = await DialogHelper.ShowConfirmAsync(
+            LocalizationService.GetString("Settings_Reset_LanguageRestart_Message"),
+            LocalizationService.GetString("Settings_Reset_LanguageRestart_Title"),
+            confirmText: LocalizationService.GetString("Settings_LanguageRestart_Confirm"),
+            cancelText: ContentDialogHelper.CancelText);
+
+        if (restart)
+        {
+            LocalizationService.ApplyLanguage(_settingsService.Current.Language);
+            await RestartApplicationAsync();
+        }
     }
 
     [RelayCommand]

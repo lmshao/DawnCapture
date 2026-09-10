@@ -76,4 +76,18 @@ public sealed class SettingsService : ISettingsService
             return false;
         }
     }
+
+    public bool ResetToDefaults()
+    {
+        AppSettings previous = Current;
+        Current = new AppSettings();
+        if (Save())
+        {
+            return true;
+        }
+
+        // Keep memory and disk consistent when the reset cannot be persisted.
+        Current = previous;
+        return false;
+    }
 }
