@@ -198,7 +198,7 @@ public partial class RecordingsViewModel : ObservableObject
             return;
         }
 
-        string? newName = await RenameRecordingDialog.ShowAsync(item.FilePath, item.Name);
+        string? newName = await RenameRecordingDialog.ShowAsync(item.FilePath, item.BaseName);
         if (newName is null)
         {
             return;

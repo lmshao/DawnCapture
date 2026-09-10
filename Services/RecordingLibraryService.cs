@@ -176,12 +176,17 @@ public sealed class RecordingLibraryService : IRecordingLibraryService
 
             DateTimeOffset updatedAt = entry.LastWriteTimeUtc;
 
+            (string videoSpecs, string audioSpecs) = RecordingOutputSummaryHelper.FormatCatalogEntryLines(entry);
+            string extension = Path.GetExtension(entry.FilePath);
+
             return new RecordingListItem
             {
                 RecordingId = entry.Id,
                 FilePath = entry.FilePath,
-                Name = entry.DisplayName,
-                FormatLabel = FormatMediaLabel(entry, fileInfo),
+                Name = entry.DisplayName + extension,
+                BaseName = entry.DisplayName,
+                VideoSpecsLabel = videoSpecs,
+                AudioSpecsLabel = audioSpecs,
                 UpdatedAtLabel = FormatUpdatedAt(updatedAt),
                 SizeLabel = FormatSize(entry.FileSize),
                 FileSizeBytes = entry.FileSize,
@@ -197,12 +202,6 @@ public sealed class RecordingLibraryService : IRecordingLibraryService
             Log.Error($"Failed to load recording metadata for '{entry.FilePath}'", ex);
             return null;
         }
-    }
-
-    private static string FormatMediaLabel(RecordingCatalogEntry entry, FileInfo fileInfo)
-    {
-        _ = fileInfo;
-        return RecordingOutputSummaryHelper.FormatCatalogEntry(entry);
     }
 
     private static string FormatUpdatedAt(DateTimeOffset updatedAt)

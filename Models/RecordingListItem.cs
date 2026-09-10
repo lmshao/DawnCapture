@@ -12,7 +12,15 @@ public partial class RecordingListItem : ObservableObject
 
     public required string Name { get; init; }
 
-    public required string FormatLabel { get; init; }
+    public required string BaseName { get; init; }
+
+    public required string VideoSpecsLabel { get; init; }
+
+    public required string AudioSpecsLabel { get; init; }
+
+    public bool HasVideoSpecs => VideoSpecsLabel.Length > 0;
+
+    public bool HasAudioSpecs => AudioSpecsLabel.Length > 0;
 
     public required string UpdatedAtLabel { get; init; }
 

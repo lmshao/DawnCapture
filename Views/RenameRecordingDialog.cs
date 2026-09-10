@@ -17,16 +17,35 @@ public sealed class RenameRecordingDialog : ContentDialog
     private readonly TextBox _nameBox;
     private readonly TextBlock _errorText;
     private readonly string _filePath;
+    private readonly string _extension;
 
-    private RenameRecordingDialog(string filePath, string currentName)
+    private RenameRecordingDialog(string filePath, string currentBaseName)
     {
         _filePath = filePath;
+        _extension = Path.GetExtension(filePath);
 
         _nameBox = new TextBox
         {
-            Text = currentName,
+            Text = currentBaseName,
             MaxLength = 200
         };
+
+        var extensionLabel = new TextBlock
+        {
+            Text = _extension,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(6, 0, 0, 10),
+            Foreground = (Brush)Application.Current.Resources["DawnTextFaintBrush"],
+            IsHitTestVisible = false
+        };
+
+        var nameRow = new Grid();
+        nameRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        nameRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(_nameBox, 0);
+        Grid.SetColumn(extensionLabel, 1);
+        nameRow.Children.Add(_nameBox);
+        nameRow.Children.Add(extensionLabel);
 
         _errorText = new TextBlock
         {
@@ -42,7 +61,7 @@ public sealed class RenameRecordingDialog : ContentDialog
             Spacing = 8,
             Children =
                 {
-                    _nameBox,
+                    nameRow,
                     _errorText
                 }
         };
@@ -57,14 +76,14 @@ public sealed class RenameRecordingDialog : ContentDialog
 
     public string? RenamedName { get; private set; }
 
-    public static async Task<string?> ShowAsync(string filePath, string currentName)
+    public static async Task<string?> ShowAsync(string filePath, string currentBaseName)
     {
         if (App.MainWindow?.Content?.XamlRoot is not { } xamlRoot)
         {
             return null;
         }
 
-        var dialog = new RenameRecordingDialog(filePath, currentName)
+        var dialog = new RenameRecordingDialog(filePath, currentBaseName)
         {
             XamlRoot = xamlRoot,
             Title = LocalizationService.GetString("Recordings_RenameTitle"),

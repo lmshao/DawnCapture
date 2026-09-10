@@ -8,24 +8,26 @@ namespace DawnCapture.Helpers;
 
 public static class RecordingOutputSummaryHelper
 {
-    public static string FormatCatalogEntry(RecordingCatalogEntry entry)
+    public static (string VideoLine, string AudioLine) FormatCatalogEntryLines(RecordingCatalogEntry entry)
     {
         if (entry.MediaKind == RecordingMediaKind.Audio)
         {
-            return FormatAudioSpecs(RecordingMediaProbe.SanitizeAacBitrateKbps(entry.BitrateKbps));
+            return (string.Empty, BuildAudioSpecsLine(RecordingMediaProbe.SanitizeAacBitrateKbps(entry.BitrateKbps)));
         }
 
-        bool includeAudio = !string.IsNullOrWhiteSpace(entry.AudioCodec);
-        return FormatVideoSpecs(
+        bool hasAudio = !string.IsNullOrWhiteSpace(entry.AudioCodec);
+        string videoLine = BuildVideoSpecsLine(
             entry.VideoCodec,
             resolution: null,
             entry.Width,
             entry.Height,
             entry.FrameRate,
             entry.BitrateKbps,
-            RecordingMediaProbe.SanitizeAacBitrateKbps(entry.AudioBitrateKbps),
-            includeAudio,
             approximateVideoBitrate: false);
+        string audioLine = hasAudio
+            ? BuildAudioSpecsLine(RecordingMediaProbe.SanitizeAacBitrateKbps(entry.AudioBitrateKbps))
+            : string.Empty;
+        return (videoLine, audioLine);
     }
 
     public static string FormatVideoSpecs(
@@ -87,6 +89,54 @@ public static class RecordingOutputSummaryHelper
             LocalizationService.GetString("Output_Summary_VideoWithAudio"),
             FormatVideoSection(videoParts),
             audioSection);
+    }
+
+    private static string BuildVideoSpecsLine(
+        string? videoCodec,
+        string? resolution,
+        int? width,
+        int? height,
+        double? frameRate,
+        int? videoBitrateKbps,
+        bool approximateVideoBitrate)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(videoCodec))
+        {
+            parts.Add(NormalizeVideoCodec(videoCodec));
+        }
+
+        string resolved = !string.IsNullOrWhiteSpace(resolution)
+            ? resolution
+            : FormatResolution(width, height);
+        if (!string.IsNullOrWhiteSpace(resolved))
+        {
+            parts.Add(resolved);
+        }
+
+        if (frameRate is > 0)
+        {
+            parts.Add($"{FormatFrameRate(frameRate.Value)} fps");
+        }
+
+        if (videoBitrateKbps is > 0)
+        {
+            parts.Add(FormatVideoBitrateMbps(videoBitrateKbps.Value, approximateVideoBitrate));
+        }
+
+        return parts.Count > 0 ? string.Join(" · ", parts) : string.Empty;
+    }
+
+    private static string BuildAudioSpecsLine(int? audioBitrateKbps)
+    {
+        var audioParts = new List<string> { "AAC", $"{RecordingAudioOptions.DefaultSampleRateKhz} kHz" };
+        if (audioBitrateKbps is > 0)
+        {
+            audioParts.Add($"{audioBitrateKbps} kbps");
+        }
+
+        return string.Join(" · ", audioParts);
     }
 
     private static string FormatVideoSection(IReadOnlyList<string> videoParts)
