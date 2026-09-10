@@ -201,7 +201,6 @@
   <data name="MainWindow_CloseRecordingMessage" xml:space="preserve"><value>Closing the window will stop and save the recording. You can also keep recording and close later.</value></data>
   <data name="MainWindow_CloseRecordingStopAndSave" xml:space="preserve"><value>Stop and save</value></data>
   <data name="MainWindow_CloseRecordingContinue" xml:space="preserve"><value>Keep recording</value></data>
-  <data name="MainWindow_CloseRecordingCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="About_Version" xml:space="preserve"><value>DawnCapture {0}</value></data>
   <data name="About_Title" xml:space="preserve"><value>Capture the moments that matter.</value></data>
   <data name="About_Author" xml:space="preserve"><value>Created by SHAO Liming · {0}</value></data>
@@ -261,7 +260,6 @@
   <data name="Settings_Hotkey_Warning_Item" xml:space="preserve"><value>{0} ({1})</value></data>
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>Frame rate</value></data>
   <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>Capture presets on the home page change frame rate and quality tier together.</value></data>
-  <data name="Settings_Quality.Text" xml:space="preserve"><value>Video bitrate</value></data>
   <data name="Settings_BitrateMode.Text" xml:space="preserve"><value>Video bitrate mode</value></data>
   <data name="Settings_BitrateMode_Desc.Text" xml:space="preserve"><value>Adaptive scales with capture size; fixed uses an exact target.</value></data>
   <data name="Settings_BitrateMode_Adaptive.Content" xml:space="preserve"><value>Scale with capture size</value></data>

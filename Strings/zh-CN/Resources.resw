@@ -200,7 +200,6 @@
   <data name="MainWindow_CloseRecordingMessage" xml:space="preserve"><value>关闭窗口将停止录制并保存录像；也可以继续录制，稍后再关闭。</value></data>
   <data name="MainWindow_CloseRecordingStopAndSave" xml:space="preserve"><value>停止并保存</value></data>
   <data name="MainWindow_CloseRecordingContinue" xml:space="preserve"><value>继续录制</value></data>
-  <data name="MainWindow_CloseRecordingCancel" xml:space="preserve"><value>取消关闭</value></data>
   <data name="About_Version" xml:space="preserve"><value>DawnCapture {0}</value></data>
   <data name="About_Title" xml:space="preserve"><value>记录重要时刻。</value></data>
   <data name="About_Author" xml:space="preserve"><value>作者：SHAO Liming · {0}</value></data>
@@ -260,7 +259,6 @@
   <data name="Settings_Hotkey_Warning_Item" xml:space="preserve"><value>{0}（{1}）</value></data>
   <data name="Settings_FrameRate.Text" xml:space="preserve"><value>帧率</value></data>
   <data name="Settings_FrameRate_Desc.Text" xml:space="preserve"><value>首页「录制预设」会同时修改帧率与画质档位。</value></data>
-  <data name="Settings_Quality.Text" xml:space="preserve"><value>视频码率</value></data>
   <data name="Settings_BitrateMode.Text" xml:space="preserve"><value>视频码率模式</value></data>
   <data name="Settings_BitrateMode_Desc.Text" xml:space="preserve"><value>随分辨率调整会按捕获尺寸缩放；固定码率则始终使用设定值。</value></data>
   <data name="Settings_BitrateMode_Adaptive.Content" xml:space="preserve"><value>随捕获尺寸调整</value></data>
