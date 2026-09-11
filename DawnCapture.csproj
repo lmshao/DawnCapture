@@ -74,7 +74,19 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <!--
+      Reference the components directly: the Microsoft.WindowsAppSDK metapackage
+      also pulls in AI/ML/Search/Widgets, ~50 MB of unused self-contained payload
+      (onnxruntime.dll, DirectML.dll). DWrite supplies DWriteCore.dll and Runtime
+      supplies the framework metadata the MSIX path needs. Keep the versions in
+      step with Microsoft.WindowsAppSDK.Runtime.
+    -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.Base" Version="2.0.4" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Foundation" Version="2.3.9" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.1.6" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.3.6" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.DWrite" Version="2.1.0" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="2.4.0" />
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
@@ -92,8 +104,12 @@
 
   <!-- Publish Properties -->
   <PropertyGroup>
-    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <!--
+      Off in both channels on purpose: start-up goes 496 ms -> 651 ms, but
+      Microsoft.Windows.SDK.NET.dll drops from 54.1 MB to 23.7 MB and the
+      portable zip by 15.0 MB (18%). Steady state is unaffected (Tier-1 + PGO).
+    -->
+    <PublishReadyToRun>False</PublishReadyToRun>
     <!--
       Trimming is disabled for Release: WinUI 3 + CommunityToolkit.Mvvm
       reflection + System.Text.Json all break when trimmed (observed
@@ -145,5 +161,22 @@
       SourceFiles="$(TargetDir)$(AssemblyName).pri"
       DestinationFolder="$(PublishDir)"
       Condition="Exists('$(TargetDir)$(AssemblyName).pri')" />
+  </Target>
+
+  <!--
+    Shipping artifacts need no symbols: the ZIP channel drops all PDBs plus the
+    DiaSymReader native reader. MSIX is left alone - stripping it would mean
+    repacking a signed .msix.
+  -->
+  <Target Name="StripPublishDebugArtifacts"
+          AfterTargets="Publish"
+          Condition="'$(WindowsPackageType)' == 'None'">
+    <ItemGroup>
+      <_PublishDebugArtifact Include="$(PublishDir)**\*.pdb" />
+      <_PublishDebugArtifact Include="$(PublishDir)Microsoft.DiaSymReader.Native.*.dll" />
+    </ItemGroup>
+    <Delete Files="@(_PublishDebugArtifact)" />
+    <Message Importance="Normal"
+             Text="Stripped @(_PublishDebugArtifact->Count()) debug artifact(s) from $(PublishDir)" />
   </Target>
 </Project>

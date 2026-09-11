@@ -8,6 +8,9 @@
 #   bin\DawnCapture-<version>-<arch>-portable.zip
 #   bin\DawnCapture-<version>-<arch>-sideload.zip
 #
+# Both artifacts are single-architecture: the sideload bundle keeps only the
+# runtime dependency of its own -Architecture.
+#
 # Usage:
 #   distribute.ps1           # shows this help
 #   distribute.ps1 zip       # portable zip
@@ -144,6 +147,31 @@ function Build-ZipPackage
         throw "System.Runtime.dll looks trimmed; publish must use PublishTrimmed=false."
     }
 
+    # Guard against the unused Windows App SDK payload (AI/ML/Search/Widgets,
+    # ~50 MB) coming back; see the component references in DawnCapture.csproj.
+    $unusedPayload = Get-ChildItem $publishDir -File | Where-Object {
+        $_.Name -in @("onnxruntime.dll", "DirectML.dll", "Microsoft.ML.OnnxRuntime.dll") -or
+        $_.Name -like "Microsoft.Windows.AI.*" -or
+        $_.Name -like "Microsoft.Windows.AI.dll" -or
+        $_.Name -like "Microsoft.Windows.Search.*" -or
+        $_.Name -like "Microsoft.Windows.Widgets.*" -or
+        $_.Name -like "Microsoft.Windows.SemanticSearch*"
+    }
+    if ($unusedPayload)
+    {
+        $names = ($unusedPayload | Select-Object -ExpandProperty Name) -join ", "
+        $mb = [Math]::Round(($unusedPayload | Measure-Object Length -Sum).Sum / 1MB, 1)
+        throw "Unused Windows App SDK payload ($mb MB) found in publish output: $names"
+    }
+
+    # Debug artifacts are stripped by the StripPublishDebugArtifacts target.
+    $debugArtifacts = Get-ChildItem $publishDir -File |
+        Where-Object { $_.Extension -eq ".pdb" -or $_.Name -like "Microsoft.DiaSymReader.Native.*" }
+    if ($debugArtifacts)
+    {
+        throw "Debug artifacts found in publish output: $($debugArtifacts.Name -join ', ')"
+    }
+
     if (Test-Path $zipPath)
     {
         Remove-Item $zipPath -Force
@@ -268,8 +296,30 @@ function Build-MsixPackage
         throw "Signature subject mismatch: expected $Publisher, got $($sig.SignerCertificate.Subject)."
     }
 
+    # Keep only this architecture's runtime dependency. The packaging targets
+    # emit x64/arm64/x86/win32 (131.7 MB), but an app package only ever resolves
+    # the framework for its own architecture, and Add-AppDevPackage.ps1 reads
+    # x64/x86/arm/arm64 only - never win32. Removes 87.1 MB from the bundle.
     $depDir = Join-Path $msixDir "Dependencies"
-    if (-not (Test-Path $depDir) -or (Get-ChildItem $depDir -Recurse -Filter "*.msix" | Measure-Object).Count -eq 0)
+    if (-not (Test-Path $depDir))
+    {
+        throw "Runtime dependencies are missing from the package folder."
+    }
+
+    $keptDepDir = Join-Path $depDir $Architecture
+    if (-not (Test-Path $keptDepDir))
+    {
+        throw "Missing $keptDepDir - the sideload bundle would install no runtime dependency."
+    }
+
+    Get-ChildItem $depDir -Directory |
+        Where-Object { $_.FullName -ne $keptDepDir } |
+        ForEach-Object {
+            Write-Host "    dropping unused $($_.Name) dependency" -ForegroundColor Gray
+            Remove-Item $_.FullName -Recurse -Force
+        }
+
+    if ((Get-ChildItem $depDir -Recurse -Filter "*.msix" | Measure-Object).Count -eq 0)
     {
         throw "Runtime dependencies are missing from the package folder."
     }
