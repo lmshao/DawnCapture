@@ -11,14 +11,14 @@
 
   <Identity
     Name="5a9d9dbe-cdf2-45c6-8868-3eb111170803"
-    Publisher="CN=邵黎明"
+    Publisher="CN=SHAO Liming"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="5a9d9dbe-cdf2-45c6-8868-3eb111170803" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>DawnCapture</DisplayName>
-    <PublisherDisplayName>邵黎明</PublisherDisplayName>
+    <PublisherDisplayName>SHAO Liming</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 

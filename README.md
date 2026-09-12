@@ -37,13 +37,26 @@ dotnet format whitespace DawnCapture.csproj --verify-no-changes --no-restore
 ## 分发
 
 ```powershell
-# 便携 ZIP 或 MSIX 侧载包（无参数显示帮助）
-./distribute.ps1 zip     # bin\DawnCapture-<ver>-<arch>-portable.zip
-./distribute.ps1 msix    # bin\DawnCapture-<ver>-<arch>-sideload.zip（含安装脚本）
+# 三种渠道（无参数显示帮助）
+./distribute.ps1 zip        # bin\DawnCapture-<ver>-<arch>-portable.zip   便携包，解压即用
+./distribute.ps1 installer  # bin\DawnCapture-<ver>-<arch>-setup.exe     安装包
+./distribute.ps1 msix       # bin\DawnCapture-<ver>-<arch>-sideload.zip  侧载包（含安装脚本）
 ./distribute.ps1 all
 ```
 
-> 计划通过 Microsoft Store 分发：商店提交由微软签名。MSIX 自签名侧载包仅供本地测试，安装需将证书信任到 `LocalMachine\TrustedPeople`。
+| 渠道 | 体积 | 需要签名 | 目标机前置条件 |
+|---|---|---|---|
+| `zip` | 66.2 MB | 不需要 | 解压即用 |
+| `installer` | **42.9 MB** | **不需要** | 双击安装；per-user 安装，无 UAC，无前置运行时 |
+| `msix` | 88.0 MB | **必须**（自签名） | 证书信任到 `LocalMachine\TrustedPeople` 后运行 `Add-AppDevPackage.ps1` |
+
+> `installer` 渠道依赖 [Inno Setup 6](https://jrsoftware.org/isdl.php)（`ISCC.exe`）；未安装时脚本会提示安装命令：
+> `winget install --id JRSoftware.InnoSetup -e`
+>
+> 免签名原理、关键决策、实测数据与已知边界记录在安装脚本 `installer\inno\DawnCapture.iss` 的注释中。
+> 未签名的安装包从网络下载后会触发 SmartScreen 提示（可点「更多信息 → 仍要运行」）；Windows 11 若开启 Smart App Control 会拦截且用户无法绕过。
+
+> 计划通过 Microsoft Store 分发：商店提交由微软签名。MSIX 自签名侧载包仅供本地测试。
 
 ## 数据存储
 

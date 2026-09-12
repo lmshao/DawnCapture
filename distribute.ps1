@@ -1,21 +1,24 @@
 # DawnCapture one-stop distribution builder
 #
 # Builds installable packages for every distribution channel:
-#   ZIP  - portable folder: no certificate, no install, unzip and run
-#   MSIX - signed sideload bundle (msix + cert + runtime + install helper)
+#   ZIP       - portable folder: no certificate, no install, unzip and run
+#   MSIX      - signed sideload bundle (msix + cert + runtime + install helper)
+#   INSTALLER - unsigned per-user Setup.exe built with Inno Setup 6
 #
 # Artifacts (Name-Version-Arch-Channel):
 #   bin\DawnCapture-<version>-<arch>-portable.zip
 #   bin\DawnCapture-<version>-<arch>-sideload.zip
+#   bin\DawnCapture-<version>-<arch>-setup.exe
 #
-# Both artifacts are single-architecture: the sideload bundle keeps only the
+# All artifacts are single-architecture: the sideload bundle keeps only the
 # runtime dependency of its own -Architecture.
 #
 # Usage:
 #   distribute.ps1           # shows this help
 #   distribute.ps1 zip       # portable zip
 #   distribute.ps1 msix      # msix bundle
-#   distribute.ps1 all       # both
+#   distribute.ps1 installer # unsigned Setup.exe
+#   distribute.ps1 all       # all three
 #   distribute.ps1 zip arm64 # arch / version options
 #
 # Build-only: the script cleans the Release build cache first, then packages
@@ -25,11 +28,15 @@
 # Note: keep this file ASCII-only. PowerShell 5.1 reads BOM-less files as
 # ANSI, so Chinese literals would break. The publisher is read from
 # Package.appxmanifest instead.
+[CmdletBinding(PositionalBinding = $false)]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("zip", "msix", "all", "")]
+    [ValidateSet("zip", "msix", "installer", "all", "")]
     [string]$Method = "",
     [string]$Configuration = "Release",
+    # Position 1 so that "distribute.ps1 zip arm64" means the architecture,
+    # as the usage line has always documented. Everything else is named-only.
+    [Parameter(Position = 1)]
     [string]$Architecture = "x64",
     [string]$Version = "",
     [string]$Publisher = "",
@@ -48,7 +55,8 @@ if (-not $Method)
     Write-Host "  distribute.ps1             shows this help"
     Write-Host "  distribute.ps1 zip         portable zip (unzip and run)"
     Write-Host "  distribute.ps1 msix        sideload bundle (msix + cert + runtime)"
-    Write-Host "  distribute.ps1 all         both packages"
+    Write-Host "  distribute.ps1 installer   Setup.exe (Inno Setup, unsigned)"
+    Write-Host "  distribute.ps1 all         every package"
     Write-Host ""
     Write-Host "Options:" -ForegroundColor White
     Write-Host "  -Architecture x64|arm64|x86   default x64"
@@ -59,6 +67,7 @@ if (-not $Method)
     Write-Host "Artifacts (Name-Version-Arch-Channel):" -ForegroundColor White
     Write-Host "  bin\DawnCapture-<version>-<arch>-portable.zip"
     Write-Host "  bin\DawnCapture-<version>-<arch>-sideload.zip"
+    Write-Host "  bin\DawnCapture-<version>-<arch>-setup.exe"
     exit 0
 }
 
@@ -85,6 +94,7 @@ if (-not $Publisher)
 # Industry-style artifact names: Name-Version-Arch-Channel.
 $zipPath = Join-Path $root "bin\DawnCapture-${Version}-${Architecture}-portable.zip"
 $sideloadZip = Join-Path $root "bin\DawnCapture-${Version}-${Architecture}-sideload.zip"
+$setupPath = Join-Path $root "bin\DawnCapture-${Version}-${Architecture}-setup.exe"
 $msixDir = Join-Path $root "AppPackages\DawnCapture_${Version}_${Architecture}_Release"
 $finalMsix = Join-Path $msixDir "DawnCapture-${Version}-${Architecture}.msix"
 
@@ -111,12 +121,21 @@ foreach ($dir in @(
 }
 
 # ---------------------------------------------------------------------------
-# ZIP: unpackaged self-contained publish, packaged as a portable folder zip.
+# Shared payload: the unpackaged self-contained publish. The portable ZIP and
+# the Setup.exe wrap exactly this folder, so it is published and guarded once.
 # ---------------------------------------------------------------------------
-function Build-ZipPackage
+function Invoke-PortablePublish
 {
+    # The portable zip and the Setup.exe wrap the same payload, so with
+    # "-Method all" the second caller reuses what the first one produced.
+    if ($script:portablePayloadReady)
+    {
+        Write-Host "==> Reusing published payload" -ForegroundColor Cyan
+        return
+    }
+
     Write-Host ""
-    Write-Host "==> [ZIP] Publishing unpackaged app ($Configuration/$Architecture)" -ForegroundColor Cyan
+    Write-Host "==> Publishing unpackaged app ($Configuration/$Architecture)" -ForegroundColor Cyan
     if (Test-Path $publishDir)
     {
         Remove-Item $publishDir -Recurse -Force
@@ -172,6 +191,18 @@ function Build-ZipPackage
         throw "Debug artifacts found in publish output: $($debugArtifacts.Name -join ', ')"
     }
 
+    $script:portablePayloadReady = $true
+}
+
+# ---------------------------------------------------------------------------
+# ZIP: the shared payload, packaged as a portable folder zip.
+# ---------------------------------------------------------------------------
+function Build-ZipPackage
+{
+    Write-Host ""
+    Write-Host "==> [ZIP] Portable zip" -ForegroundColor Cyan
+    Invoke-PortablePublish
+
     if (Test-Path $zipPath)
     {
         Remove-Item $zipPath -Force
@@ -182,6 +213,102 @@ function Build-ZipPackage
 
     $sizeMb = [Math]::Round((Get-Item $zipPath).Length / 1MB, 1)
     Write-Host "OK: $zipPath ($sizeMb MB)" -ForegroundColor Green
+}
+
+# ---------------------------------------------------------------------------
+# INSTALLER: a single unsigned Setup.exe built with Inno Setup 6.
+#
+# Inno Setup emits an ordinary Win32 executable, and Windows does not gate
+# PE images on Authenticode - so this channel installs without any
+# certificate. That is the whole point: the MSIX channel needs a signing
+# certificate trusted by the target machine, this one does not.
+#
+# There is no prerequisite detection because there is nothing to detect: the
+# payload carries .NET 8 and the Windows App SDK, and no native binary imports
+# VCRUNTIME140/MSVCP140 (only the OS-provided UCRT, present since Windows 10).
+# The script lives in installer\inno\DawnCapture.iss, whose header comments carry
+# the full rationale and the SmartScreen caveat.
+# ---------------------------------------------------------------------------
+function Resolve-Iscc
+{
+    $cmd = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
+    if ($cmd)
+    {
+        return $cmd.Source
+    }
+
+    foreach ($candidate in @(
+        (Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 6\ISCC.exe"),
+        (Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"),
+        (Join-Path $env:ProgramFiles "Inno Setup 6\ISCC.exe")
+    ))
+    {
+        if ($candidate -and (Test-Path $candidate))
+        {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
+function Build-InstallerPackage
+{
+    Write-Host ""
+    Write-Host "==> [SETUP] Setup.exe" -ForegroundColor Cyan
+    Invoke-PortablePublish
+
+    $iscc = Resolve-Iscc
+    if (-not $iscc)
+    {
+        throw "ISCC.exe not found. Install Inno Setup 6 first: winget install --id JRSoftware.InnoSetup -e"
+    }
+
+    if (Test-Path $setupPath)
+    {
+        Remove-Item $setupPath -Force
+    }
+
+    # The manifest carries the publisher as an Open Packaging Convention string
+    # ("CN=Name"); the installer wants the bare display name.
+    $publisherName = $Publisher -replace "^CN=", ""
+
+    # The welcome page quotes the disk space requirement before Inno's own Ready
+    # page can show it, so the number has to come from the payload being wrapped
+    # rather than from a literal inside the .iss. Ceiling on purpose: the sentence
+    # is a promise about room, so rounding down would understate it.
+    $payloadMb = [Math]::Ceiling(
+        (Get-ChildItem $publishDir -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+    Write-Host "    payload: $payloadMb MB" -ForegroundColor Gray
+
+    Write-Host "==> [SETUP] Compiling with Inno Setup" -ForegroundColor Cyan
+    # Absolute paths: ISCC resolves /D paths against its own working directory,
+    # and the solution build rewrites bin\Release.
+    & $iscc `
+        "/DPayloadDir=$publishDir" `
+        "/DAppVersion=$Version" `
+        "/DAppPublisher=$publisherName" `
+        "/DAppArch=$Architecture" `
+        "/DAppSizeMB=$payloadMb" `
+        (Join-Path $root "installer\inno\DawnCapture.iss")
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "ISCC failed with exit code $LASTEXITCODE"
+    }
+
+    if (-not (Test-Path $setupPath))
+    {
+        throw "Expected artifact was not produced: $setupPath"
+    }
+
+    # Report the signature rather than assert on it: this channel is expected
+    # to be unsigned, but with no SignTool configured the status is simply
+    # informational. If it ever reads Valid, a SignTool was added.
+    $signature = Get-AuthenticodeSignature $setupPath
+    Write-Host "    signature: $($signature.Status)" -ForegroundColor Gray
+
+    $sizeMb = [Math]::Round((Get-Item $setupPath).Length / 1MB, 1)
+    Write-Host "OK: $setupPath ($sizeMb MB)" -ForegroundColor Green
 }
 
 # ---------------------------------------------------------------------------
@@ -342,12 +469,18 @@ function Build-MsixPackage
 }
 
 # ---------------------------------------------------------------------------
-# Main dispatch. ZIP first so the unpackaged publish is never polluted by
-# the MSIX-configured build output.
+# Main dispatch. The unpackaged channels run before MSIX so their publish is
+# never polluted by the MSIX-configured build output, which reuses the same
+# publish directory.
 # ---------------------------------------------------------------------------
 if ($Method -eq "zip" -or $Method -eq "all")
 {
     Build-ZipPackage
+}
+
+if ($Method -eq "installer" -or $Method -eq "all")
+{
+    Build-InstallerPackage
 }
 
 if ($Method -eq "msix" -or $Method -eq "all")
@@ -372,4 +505,11 @@ if ($Method -eq "msix" -or $Method -eq "all")
     Write-Host "MSIX: $sideloadZip" -ForegroundColor White
     Write-Host "       Sideload bundle (msix + cert + runtime + install helper)." -ForegroundColor Gray
     Write-Host "       Unzip on the target PC and run Add-AppDevPackage.ps1." -ForegroundColor Gray
+}
+
+if ($Method -eq "installer" -or $Method -eq "all")
+{
+    Write-Host "SETUP: $setupPath" -ForegroundColor White
+    Write-Host "       Single unsigned .exe. Per-user install, no admin, no prerequisites." -ForegroundColor Gray
+    Write-Host "       Windows may show a SmartScreen prompt until it earns reputation." -ForegroundColor Gray
 }

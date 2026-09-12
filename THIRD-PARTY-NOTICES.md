@@ -1,5 +1,6 @@
 DawnCapture uses the following third-party components, each distributed
-under its own license. All of them are MIT-licensed.
+under its own license. Every runtime component is MIT-licensed; the build
+tooling section at the end covers the Inno Setup license.
 
 — NuGet dependencies
 
@@ -36,6 +37,22 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+— Build tooling (not a runtime dependency)
+
+The Windows installer (bin\DawnCapture-<version>-x64-setup.exe) is built with
+Inno Setup 6 — © 1997-2026 Jordan Russell, © 2000-2026 Martijn Laan.
+See https://jrsoftware.org/isinfo.php
+Distributed under the Inno Setup License. The license grants permission to
+use the software for any purpose, including commercial applications; the
+authors separately request that commercial users purchase a license, and
+ISCC prints a "Non-commercial use only" notice during compilation.
+
+The Simplified Chinese wizard translation (ChineseSimplified.isl, the Inno Setup
+language file that ships with the installer script) is a user-contributed
+translation listed on the official Inno Setup translations page — maintainer
+Zhenghan Yang (Kira), MIT-licensed project at
+https://github.com/kira-96/Inno-Setup-Chinese-Simplified-Translation
 
 — Notes
 
