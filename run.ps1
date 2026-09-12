@@ -6,7 +6,7 @@ Set-Location $root
 $project = Join-Path $root "DawnCapture.csproj"
 $configuration = "Debug"
 $platform = "x64"
-$framework = "net8.0-windows10.0.19041.0"
+$framework = "net10.0-windows10.0.19041.0"
 $runtimeIdentifier = "win-x64"
 $executable = Join-Path $root "bin\$platform\$configuration\$framework\$runtimeIdentifier\DawnCapture.exe"
 

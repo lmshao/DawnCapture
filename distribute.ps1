@@ -72,7 +72,7 @@ if (-not $Method)
 }
 
 $project = Join-Path $root "DawnCapture.csproj"
-$framework = "net8.0-windows10.0.19041.0"
+$framework = "net10.0-windows10.0.19041.0"
 $runtimeId = "win-$($Architecture.ToLower())"
 $publishDir = Join-Path $root "bin\$Configuration\$framework\$runtimeId\publish"
 
@@ -224,7 +224,7 @@ function Build-ZipPackage
 # certificate trusted by the target machine, this one does not.
 #
 # There is no prerequisite detection because there is nothing to detect: the
-# payload carries .NET 8 and the Windows App SDK, and no native binary imports
+# payload carries .NET 10 and the Windows App SDK, and no native binary imports
 # VCRUNTIME140/MSVCP140 (only the OS-provided UCRT, present since Windows 10).
 # The script lives in installer\inno\DawnCapture.iss, whose header comments carry
 # the full rationale and the SmartScreen caveat.

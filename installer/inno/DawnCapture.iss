@@ -25,7 +25,7 @@
 ; ----------------------------------------------------------------------------
 ; Why there is no prerequisite detection anywhere in this script
 ; ----------------------------------------------------------------------------
-; The payload is a self-contained publish: it carries .NET 8, the Windows App
+; The payload is a self-contained publish: it carries .NET 10, the Windows App
 ; SDK, and links only against the OS-provided UCRT (verified: no
 ; VCRUNTIME140 / MSVCP140 import in any native binary). So there is nothing to
 ; check for and nothing to bootstrap. The [Files] section below is the whole
@@ -36,7 +36,7 @@
 ; Overridable so distribute.ps1 can point at a freshly published folder.
 ; SourcePath is the directory holding this .iss file.
 #ifndef PayloadDir
-  #define PayloadDir SourcePath + "..\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish"
+  #define PayloadDir SourcePath + "..\..\bin\Release\net10.0-windows10.0.19041.0\win-x64\publish"
 #endif
 
 ; --- Application identity ----------------------------------------------------
@@ -83,7 +83,7 @@
 ; build can pass /DAppSizeMB=<n> from the publish folder; the fallback only
 ; applies to a hand-run compile.
 #ifndef AppSizeMB
-  #define AppSizeMB "173"
+  #define AppSizeMB "175"
 #endif
 
 ; Fail early and legibly if the payload folder is missing or incomplete,

@@ -64,7 +64,7 @@ internal static class Direct3D11Interop
     {
         var inspectable = ((WinRT.IWinRTObject)surface).NativeObject.ThisPtr;
         var iidAccess = IidDirect3DDxgiInterfaceAccess;
-        int hr = Marshal.QueryInterface(inspectable, ref iidAccess, out var pAccess);
+        int hr = Marshal.QueryInterface(inspectable, in iidAccess, out var pAccess);
         if (hr != 0)
         {
             return IntPtr.Zero;
