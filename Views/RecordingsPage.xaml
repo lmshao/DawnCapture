@@ -86,6 +86,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="96" />
                         <ColumnDefinition Width="*" MinWidth="180" />
+                        <ColumnDefinition Width="72" />
                         <ColumnDefinition Width="128" />
                         <ColumnDefinition Width="72" />
                         <ColumnDefinition Width="44" />
@@ -111,6 +112,20 @@
                         VerticalAlignment="Center"
                         Background="Transparent"
                         BorderThickness="0"
+                        Command="{x:Bind ViewModel.SortByDurationCommand}">
+                        <TextBlock
+                            Foreground="{StaticResource DawnTextFaintBrush}"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Text="{x:Bind ViewModel.DurationColumnHeader, Mode=OneWay}" />
+                    </Button>
+                    <Button
+                        Grid.Column="3"
+                        Padding="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderThickness="0"
                         Command="{x:Bind ViewModel.SortByUpdatedAtCommand}">
                         <TextBlock
                             Foreground="{StaticResource DawnTextFaintBrush}"
@@ -119,7 +134,7 @@
                             Text="{x:Bind ViewModel.UpdatedColumnHeader, Mode=OneWay}" />
                     </Button>
                     <Button
-                        Grid.Column="3"
+                        Grid.Column="4"
                         Padding="0"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
@@ -155,6 +170,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="96" />
                                 <ColumnDefinition Width="*" MinWidth="180" />
+                                <ColumnDefinition Width="72" />
                                 <ColumnDefinition Width="128" />
                                 <ColumnDefinition Width="72" />
                                 <ColumnDefinition Width="44" />
@@ -241,16 +257,22 @@
                                 VerticalAlignment="Center"
                                 Foreground="{StaticResource DawnTextFaintBrush}"
                                 FontSize="11"
-                                Text="{x:Bind UpdatedAtLabel}" />
+                                Text="{x:Bind DurationLabel}" />
                             <TextBlock
                                 Grid.Column="3"
+                                VerticalAlignment="Center"
+                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                FontSize="11"
+                                Text="{x:Bind UpdatedAtLabel}" />
+                            <TextBlock
+                                Grid.Column="4"
                                 VerticalAlignment="Center"
                                 Foreground="{StaticResource DawnTextFaintBrush}"
                                 FontSize="11"
                                 Text="{x:Bind SizeLabel}" />
 
                             <Button
-                                Grid.Column="4"
+                                Grid.Column="5"
                                 Width="36"
                                 Height="36"
                                 Margin="0,0,10,0"
@@ -290,7 +312,7 @@
                             </Button>
 
                             <Border
-                                Grid.ColumnSpan="5"
+                                Grid.ColumnSpan="6"
                                 Margin="0,10,0,-10"
                                 VerticalAlignment="Bottom"
                                 BorderBrush="{StaticResource DawnStrokeBrush}"

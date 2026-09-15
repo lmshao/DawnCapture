@@ -22,6 +22,11 @@ public partial class RecordingListItem : ObservableObject
 
     public bool HasAudioSpecs => AudioSpecsLabel.Length > 0;
 
+    /// <summary>Media duration; null when the file could not be probed.</summary>
+    public long? DurationMs { get; init; }
+
+    public required string DurationLabel { get; init; }
+
     public required string UpdatedAtLabel { get; init; }
 
     public required string SizeLabel { get; init; }

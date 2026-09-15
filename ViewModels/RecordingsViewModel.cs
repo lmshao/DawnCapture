@@ -83,6 +83,8 @@ public partial class RecordingsViewModel : ObservableObject
 
     public string SizeSortIndicator => GetSortIndicator(RecordingSortField.FileSize);
 
+    public string DurationSortIndicator => GetSortIndicator(RecordingSortField.Duration);
+
     public string NameColumnHeader =>
         LocalizationService.GetString("Recordings_Column_Name") + NameSortIndicator;
 
@@ -92,6 +94,9 @@ public partial class RecordingsViewModel : ObservableObject
     public string SizeColumnHeader =>
         LocalizationService.GetString("Recordings_Column_Size") + SizeSortIndicator;
 
+    public string DurationColumnHeader =>
+        LocalizationService.GetString("Recordings_Column_Duration") + DurationSortIndicator;
+
     partial void OnSearchQueryChanged(string value) => ApplyFilter();
 
     partial void OnSortFieldChanged(RecordingSortField value)
@@ -99,9 +104,11 @@ public partial class RecordingsViewModel : ObservableObject
         OnPropertyChanged(nameof(NameSortIndicator));
         OnPropertyChanged(nameof(UpdatedSortIndicator));
         OnPropertyChanged(nameof(SizeSortIndicator));
+        OnPropertyChanged(nameof(DurationSortIndicator));
         OnPropertyChanged(nameof(NameColumnHeader));
         OnPropertyChanged(nameof(UpdatedColumnHeader));
         OnPropertyChanged(nameof(SizeColumnHeader));
+        OnPropertyChanged(nameof(DurationColumnHeader));
         ApplyFilter();
     }
 
@@ -110,9 +117,11 @@ public partial class RecordingsViewModel : ObservableObject
         OnPropertyChanged(nameof(NameSortIndicator));
         OnPropertyChanged(nameof(UpdatedSortIndicator));
         OnPropertyChanged(nameof(SizeSortIndicator));
+        OnPropertyChanged(nameof(DurationSortIndicator));
         OnPropertyChanged(nameof(NameColumnHeader));
         OnPropertyChanged(nameof(UpdatedColumnHeader));
         OnPropertyChanged(nameof(SizeColumnHeader));
+        OnPropertyChanged(nameof(DurationColumnHeader));
         ApplyFilter();
     }
 
@@ -124,6 +133,9 @@ public partial class RecordingsViewModel : ObservableObject
 
     [RelayCommand]
     private void SortBySize() => ToggleSort(RecordingSortField.FileSize, defaultDescending: true);
+
+    [RelayCommand]
+    private void SortByDuration() => ToggleSort(RecordingSortField.Duration, defaultDescending: true);
 
     public async Task RefreshAsync()
     {
@@ -304,6 +316,9 @@ public partial class RecordingsViewModel : ObservableObject
             RecordingSortField.FileSize => SortDescending
                 ? filtered.OrderByDescending(x => x.FileSizeBytes)
                 : filtered.OrderBy(x => x.FileSizeBytes),
+            RecordingSortField.Duration => SortDescending
+                ? filtered.OrderByDescending(x => x.DurationMs ?? 0)
+                : filtered.OrderBy(x => x.DurationMs ?? 0),
             _ => SortDescending
                 ? filtered.OrderByDescending(x => x.UpdatedAt)
                 : filtered.OrderBy(x => x.UpdatedAt)

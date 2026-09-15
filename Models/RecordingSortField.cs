@@ -4,5 +4,6 @@ public enum RecordingSortField
 {
     UpdatedAt,
     FileSize,
-    Name
+    Name,
+    Duration
 }

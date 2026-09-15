@@ -178,6 +178,7 @@
   <data name="Recordings_Column_Name" xml:space="preserve"><value>Name</value></data>
   <data name="Recordings_Column_Updated" xml:space="preserve"><value>Updated</value></data>
   <data name="Recordings_Column_Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Recordings_Column_Duration" xml:space="preserve"><value>Duration</value></data>
   <data name="Recordings_Codec_Unknown" xml:space="preserve"><value>Unknown</value></data>
   <data name="Recordings_More.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>More</value></data>
   <data name="Recordings_Action_Play.Text" xml:space="preserve"><value>Play</value></data>

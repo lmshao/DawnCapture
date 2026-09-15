@@ -190,6 +190,8 @@ public sealed class RecordingLibraryService : IRecordingLibraryService
                 UpdatedAtLabel = FormatUpdatedAt(updatedAt),
                 SizeLabel = FormatSize(entry.FileSize),
                 FileSizeBytes = entry.FileSize,
+                DurationMs = entry.DurationMs,
+                DurationLabel = FormatDuration(entry.DurationMs),
                 UpdatedAt = updatedAt,
                 IsAudio = entry.MediaKind == RecordingMediaKind.Audio,
                 ThumbnailPng = entry.ThumbnailPng,
@@ -230,4 +232,17 @@ public sealed class RecordingLibraryService : IRecordingLibraryService
     }
 
     private static string FormatSize(long bytes) => FileSizeFormatHelper.Format(bytes);
+
+    private static string FormatDuration(long? durationMs)
+    {
+        if (durationMs is not { } milliseconds || milliseconds <= 0)
+        {
+            return "—";
+        }
+
+        var duration = TimeSpan.FromMilliseconds(milliseconds);
+        return duration.TotalHours >= 1
+            ? duration.ToString(@"hh\:mm\:ss")
+            : duration.ToString(@"mm\:ss");
+    }
 }
