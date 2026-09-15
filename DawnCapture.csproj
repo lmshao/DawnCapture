@@ -179,4 +179,32 @@
     <Message Importance="Normal"
              Text="Stripped @(_PublishDebugArtifact->Count()) debug artifact(s) from $(PublishDir)" />
   </Target>
+
+  <!--
+    Unpackaged payload trim: keeps the Windows App SDK resource folders for the languages
+    in Strings\, drops the files listed below and the folders the prune emptied. Phone.dll
+    stays - it is a WinUI framework assembly.
+  -->
+  <Target Name="PruneUnusedPayload"
+          AfterTargets="Publish"
+          Condition="'$(WindowsPackageType)' == 'None'">
+    <ItemGroup>
+      <_AppLanguage Include="$(MSBuildProjectDirectory)\Strings\*\*.resw" />
+      <_UnusedLangResource Include="$(PublishDir)*\*.mui" Exclude="@(_AppLanguage->'$(PublishDir)%(RecursiveDir)*.mui')" />
+      <_UnusedPayloadFile Include="$(PublishDir)createdump.exe" />
+      <_UnusedPayloadFile Include="$(PublishDir)Microsoft.UI.Designer.dll" />
+      <_UnusedPayloadFile Include="$(PublishDir)map.html" />
+      <_UnusedPayloadFile Include="$(PublishDir)Microsoft.Web.WebView2.Core.dll" />
+      <_UnusedPayloadFile Include="$(PublishDir)Microsoft.Web.WebView2.Core.Projection.dll" />
+      <_UnusedPayloadFile Include="$(PublishDir)WebView2Loader.dll" />
+    </ItemGroup>
+    <Delete Files="@(_UnusedLangResource);@(_UnusedPayloadFile)" />
+    <ItemGroup>
+      <_EmptiedLangFolder Include="@(_UnusedLangResource->'%(RootDir)%(Directory)'->Distinct())" />
+    </ItemGroup>
+    <Exec Command="rmdir &quot;%(_EmptiedLangFolder.Identity)&quot; 2&gt;nul"
+          IgnoreExitCode="true" />
+    <Message Importance="Normal"
+             Text="Pruned @(_UnusedLangResource->Count()) language resource(s) and @(_UnusedPayloadFile->Count()) unused file(s) from $(PublishDir)" />
+  </Target>
 </Project>

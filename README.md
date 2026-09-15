@@ -46,8 +46,8 @@ dotnet format whitespace DawnCapture.csproj --verify-no-changes --no-restore
 
 | 渠道 | 体积 | 需要签名 | 目标机前置条件 |
 |---|---|---|---|
-| `zip` | 66.8 MB | 不需要 | 解压即用 |
-| `installer` | **44.8 MB** | **不需要** | 双击安装；per-user 安装，无 UAC，无前置运行时 |
+| `zip` | 64.5 MB | 不需要 | 解压即用 |
+| `installer` | **44.1 MB** | **不需要** | 双击安装；per-user 安装，无 UAC，无前置运行时 |
 | `msix` | 91.3 MB | **必须**（自签名） | 证书信任到 `LocalMachine\TrustedPeople` 后运行 `Add-AppDevPackage.ps1` |
 
 > `installer` 渠道依赖 [Inno Setup 6](https://jrsoftware.org/isdl.php)（`ISCC.exe`）；未安装时脚本会提示安装命令：
