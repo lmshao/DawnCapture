@@ -33,4 +33,15 @@ public sealed class AppSettings
     public HotkeyBinding HotkeyTogglePause { get; set; } = HotkeyBinding.TogglePauseDefault;
 
     public CloseMainWindowAction CloseMainWindowAction { get; set; } = CloseMainWindowAction.MinimizeToTray;
+
+    public bool SegmentEnabled { get; set; } = false;
+
+    public SegmentLimitMode SegmentLimitMode { get; set; } = SegmentLimitMode.Duration;
+
+    public int SegmentMinutes { get; set; } = 120;
+
+    public int SegmentSizeMb { get; set; } = 2048;
+
+    /// <summary>0 means no limit.</summary>
+    public int MaxRecordingMinutes { get; set; } = 0;
 }

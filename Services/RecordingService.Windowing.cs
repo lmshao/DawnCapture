@@ -9,7 +9,7 @@ public sealed partial class RecordingService
 {
     private void AttachRecordingControlWindow(Action<RecordingControlWindow> position)
     {
-        var control = new RecordingControlWindow(() => Elapsed);
+        var control = new RecordingControlWindow(() => Elapsed, () => CurrentSegmentNumber);
         _controlWindow = control;
 
         control.StopRequested += async () =>

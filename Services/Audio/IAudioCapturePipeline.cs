@@ -19,6 +19,13 @@ public interface IAudioCapturePipeline : IDisposable
 
     void BeginFlush();
 
+    /// <summary>
+    /// Makes the next delivered sample the new zero of the timeline, so a segment file
+    /// starts at the beginning instead of carrying the offset of the one before it. The
+    /// queued audio is kept, which is what makes the two files continuous.
+    /// </summary>
+    void RebaseTimestamps();
+
     MediaStreamSample? TryCreateSample();
 
     /// <summary>Smoothed audio peak level in the range 0..1.</summary>

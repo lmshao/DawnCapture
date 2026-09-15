@@ -44,6 +44,11 @@ public partial class SettingsViewModel : ObservableObject
         _captureCursor = _settingsService.Current.CaptureCursor;
         _countdownEnabled = _settingsService.Current.CountdownEnabled;
         _notificationEnabled = _settingsService.Current.NotificationEnabled;
+        _segmentEnabled = _settingsService.Current.SegmentEnabled;
+        _segmentLimitModeIndex = Math.Clamp((int)_settingsService.Current.SegmentLimitMode, 0, 1);
+        _segmentDurationIndex = NearestPresetIndex(SegmentDurationPresetMinutes, _settingsService.Current.SegmentMinutes);
+        _segmentSizeIndex = NearestPresetIndex(SegmentSizePresetMb, _settingsService.Current.SegmentSizeMb);
+        _maxDurationIndex = NearestPresetIndex(MaxDurationPresetMinutes, _settingsService.Current.MaxRecordingMinutes);
         _closeMainWindowActionIndex = (int)_settingsService.Current.CloseMainWindowAction;
         _selectedLanguage = Languages.FirstOrDefault(
             option => option.Code == _settingsService.Current.Language) ?? Languages[0];
@@ -76,6 +81,11 @@ public partial class SettingsViewModel : ObservableObject
             CaptureCursor = settings.CaptureCursor;
             CountdownEnabled = settings.CountdownEnabled;
             NotificationEnabled = settings.NotificationEnabled;
+            SegmentEnabled = settings.SegmentEnabled;
+            SegmentLimitModeIndex = Math.Clamp((int)settings.SegmentLimitMode, 0, 1);
+            SegmentDurationIndex = NearestPresetIndex(SegmentDurationPresetMinutes, settings.SegmentMinutes);
+            SegmentSizeIndex = NearestPresetIndex(SegmentSizePresetMb, settings.SegmentSizeMb);
+            MaxDurationIndex = NearestPresetIndex(MaxDurationPresetMinutes, settings.MaxRecordingMinutes);
             CloseMainWindowActionIndex = (int)settings.CloseMainWindowAction;
             SelectedLanguage = Languages.FirstOrDefault(option => option.Code == settings.Language) ?? Languages[0];
             RefreshHotkeyDisplays();
@@ -129,6 +139,68 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _notificationEnabled = true;
+
+    [ObservableProperty]
+    private bool _segmentEnabled = false;
+
+    [ObservableProperty]
+    private int _segmentLimitModeIndex;
+
+    [ObservableProperty]
+    private int _segmentDurationIndex = 3;
+
+    [ObservableProperty]
+    private int _segmentSizeIndex = 2;
+
+    [ObservableProperty]
+    private int _maxDurationIndex;
+
+    /// <summary>Minutes per segment; the first entry is the quick-test value.</summary>
+    private static readonly int[] SegmentDurationPresetMinutes = [1, 30, 60, 120, 240, 480];
+
+    /// <summary>Megabytes per segment; 64 MB is the quick-test value, 4096 is the FAT32 ceiling.</summary>
+    private static readonly int[] SegmentSizePresetMb = [64, 512, 2048, 4096];
+
+    /// <summary>Minutes; 0 means no limit.</summary>
+    private static readonly int[] MaxDurationPresetMinutes = [0, 1, 30, 60, 120, 240, 480];
+
+    public bool ShowSegmentOptions => SegmentEnabled;
+
+    public bool ShowSegmentDuration =>
+        SegmentEnabled && SegmentLimitModeIndex == (int)Models.SegmentLimitMode.Duration;
+
+    public bool ShowSegmentSize =>
+        SegmentEnabled && SegmentLimitModeIndex == (int)Models.SegmentLimitMode.Size;
+
+    public int SegmentDurationMinutes => PresetAt(SegmentDurationPresetMinutes, SegmentDurationIndex);
+
+    public int MaxDurationMinutes => PresetAt(MaxDurationPresetMinutes, MaxDurationIndex);
+
+    public bool ShowSegmentConflict =>
+        SegmentEnabled
+        && SegmentLimitModeIndex == (int)Models.SegmentLimitMode.Duration
+        && MaxDurationMinutes > 0
+        && SegmentDurationMinutes > MaxDurationMinutes;
+
+    private static int PresetAt(int[] presets, int index) =>
+        presets[Math.Clamp(index, 0, presets.Length - 1)];
+
+    private static int NearestPresetIndex(int[] presets, int value)
+    {
+        int best = 0;
+        int bestDelta = int.MaxValue;
+        for (int i = 0; i < presets.Length; i++)
+        {
+            int delta = Math.Abs(presets[i] - value);
+            if (delta < bestDelta)
+            {
+                bestDelta = delta;
+                best = i;
+            }
+        }
+
+        return best;
+    }
 
     [ObservableProperty]
     private bool _isRecording;
@@ -258,6 +330,60 @@ public partial class SettingsViewModel : ObservableObject
         {
             PersistSettings();
         }
+    }
+
+    partial void OnSegmentEnabledChanged(bool value)
+    {
+        RaiseSegmentLayout();
+        if (!_suppressPersist)
+        {
+            PersistSettings();
+        }
+    }
+
+    partial void OnSegmentLimitModeIndexChanged(int value)
+    {
+        RaiseSegmentLayout();
+        if (!_suppressPersist)
+        {
+            PersistSettings();
+        }
+    }
+
+    partial void OnSegmentDurationIndexChanged(int value)
+    {
+        OnPropertyChanged(nameof(SegmentDurationMinutes));
+        OnPropertyChanged(nameof(ShowSegmentConflict));
+        if (!_suppressPersist)
+        {
+            PersistSettings();
+        }
+    }
+
+    partial void OnSegmentSizeIndexChanged(int value)
+    {
+        if (!_suppressPersist)
+        {
+            PersistSettings();
+        }
+    }
+
+    partial void OnMaxDurationIndexChanged(int value)
+    {
+        OnPropertyChanged(nameof(MaxDurationMinutes));
+        OnPropertyChanged(nameof(ShowSegmentConflict));
+        if (!_suppressPersist)
+        {
+            PersistSettings();
+        }
+    }
+
+    private void RaiseSegmentLayout()
+    {
+        OnPropertyChanged(nameof(ShowSegmentOptions));
+        OnPropertyChanged(nameof(ShowSegmentDuration));
+        OnPropertyChanged(nameof(ShowSegmentSize));
+        OnPropertyChanged(nameof(ShowSegmentConflict));
     }
 
     partial void OnCloseMainWindowActionIndexChanged(int value)
@@ -578,6 +704,11 @@ public partial class SettingsViewModel : ObservableObject
         _settingsService.Current.CaptureCursor = CaptureCursor;
         _settingsService.Current.CountdownEnabled = CountdownEnabled;
         _settingsService.Current.NotificationEnabled = NotificationEnabled;
+        _settingsService.Current.SegmentEnabled = SegmentEnabled;
+        _settingsService.Current.SegmentLimitMode = (Models.SegmentLimitMode)Math.Clamp(SegmentLimitModeIndex, 0, 1);
+        _settingsService.Current.SegmentMinutes = PresetAt(SegmentDurationPresetMinutes, SegmentDurationIndex);
+        _settingsService.Current.SegmentSizeMb = PresetAt(SegmentSizePresetMb, SegmentSizeIndex);
+        _settingsService.Current.MaxRecordingMinutes = PresetAt(MaxDurationPresetMinutes, MaxDurationIndex);
         _settingsService.Current.CloseMainWindowAction = (CloseMainWindowAction)CloseMainWindowActionIndex;
         if (!_settingsService.Save())
         {

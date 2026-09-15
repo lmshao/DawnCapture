@@ -61,7 +61,6 @@ public sealed partial class RecordingService : IRecordingService
     private IRandomAccessStream? _outputStream;
     private Task? _transcodeTask;
     private CancellationTokenSource? _transcodeCancellation;
-    private MediaEncodingProfile? _audioEncodingProfile;
 
     private long _frameDuration = 333_333;
     private long _framesWritten;
@@ -83,6 +82,7 @@ public sealed partial class RecordingService : IRecordingService
     private RecordingSourceKind _currentSourceKind = RecordingSourceKind.Screen;
     private SizeInt32 _windowEncodeSize;
     private SizeInt32 _poolContentSize;
+    private SizeInt32 _encodeSize;
     private bool _windowLetterboxActive;
     private bool _windowResizeWarned;
     private ID3D11Texture2D? _windowCompositeTexture;
@@ -321,17 +321,24 @@ public sealed partial class RecordingService : IRecordingService
 
         _audioOptions = audioOptions;
         _currentSourceKind = RecordingSourceKind.Audio;
+        CaptureRecordingLimits();
 
         try
         {
             Log.Debug(
                 $"Audio-only recording: Mic={audioOptions.EnableMicrophone}, System={audioOptions.EnableSystemAudio}, Bitrate={audioOptions.BitrateKbps}kbps");
 
-            if (!await PrepareAudioOnlyMediaObjectsAsync(audioOptions))
+            var pipeline = await BuildAudioPipelineAsync(audioOptions, segmentNumber: 1);
+            if (pipeline is null)
             {
+                RaiseFailed(LocalizationService.GetString("Failure_TranscodePrepare"));
                 State = RecordingState.Idle;
                 return false;
             }
+
+            // Hand it to the service before the audio pipeline starts, so a failure on
+            // the way still releases the file.
+            _activePipeline = pipeline;
 
             _audioCancellation = new CancellationTokenSource();
             _audioPipeline = new AudioCapturePipeline();
@@ -353,7 +360,7 @@ public sealed partial class RecordingService : IRecordingService
                 return false;
             }
 
-            StartAudioOnlyTranscode();
+            ActivatePipeline(pipeline, TimeSpan.Zero);
             State = RecordingState.Recording;
             AttachRecordingControlWindow(control => control.ShowRecordingFloating(GetMainWindowDpiScale()));
             return true;
@@ -375,12 +382,19 @@ public sealed partial class RecordingService : IRecordingService
             return;
         }
 
+        bool gateHeld = false;
+
         try
         {
             if (State is not (RecordingState.Recording or RecordingState.Paused))
             {
                 return;
             }
+
+            // A segment switch moves the media objects and the output path, so the
+            // snapshot below has to wait for one that is still in flight.
+            await _pipelineGate.WaitAsync();
+            gateHeld = true;
 
             bool transcodeTimedOut = false;
 
@@ -412,11 +426,17 @@ public sealed partial class RecordingService : IRecordingService
                 }
             }
 
+            // Files retired by earlier segment switches are finalized by their own
+            // workers; the recording is only complete once none of them is still writing.
+            await WaitForRetirementsAsync();
+
             string? completedOutputPath = _currentOutputPath;
-            TimeSpan recordedDuration = _stopwatch.Elapsed;
+            TimeSpan recordedDuration = SegmentElapsed;
             RecordingSourceKind sourceKind = _currentSourceKind;
             long framesWritten = _framesWritten;
             long audioSamplesWritten = _audioSamplesWritten;
+            long segmentFrames = _framesWritten - _segmentStartFrames;
+            long segmentSamples = _audioSamplesWritten - _segmentStartAudioSamples;
 
             _isStopping = false;
             await CleanupCaptureAsync();
@@ -424,7 +444,7 @@ public sealed partial class RecordingService : IRecordingService
             RestoreMainWindow();
 
             bool isAudioOnly = sourceKind == RecordingSourceKind.Audio;
-            bool hasOutput = isAudioOnly ? audioSamplesWritten > 0 : framesWritten > 0;
+            bool hasOutput = isAudioOnly ? segmentSamples > 0 : segmentFrames > 0;
             if (transcodeTimedOut)
             {
                 Log.Error(
@@ -435,8 +455,17 @@ public sealed partial class RecordingService : IRecordingService
             else if (!hasOutput)
             {
                 TryDeleteOutputFile(completedOutputPath);
-                RaiseFailed(LocalizationService.GetString(
-                    isAudioOnly ? "Failure_NoAudioSamples" : "Failure_NoFrames"));
+                if (_segmentIndex > 1)
+                {
+                    // The segment was opened but never received a sample. The earlier
+                    // segments are already registered, so this is not a failure.
+                    Log.Info($"Trailing empty segment {_segmentIndex} discarded.");
+                }
+                else
+                {
+                    RaiseFailed(LocalizationService.GetString(
+                        isAudioOnly ? "Failure_NoAudioSamples" : "Failure_NoFrames"));
+                }
             }
             else
             {
@@ -454,6 +483,11 @@ public sealed partial class RecordingService : IRecordingService
         }
         finally
         {
+            if (gateHeld)
+            {
+                _pipelineGate.Release();
+            }
+
             Interlocked.Exchange(ref _stopGuard, 0);
         }
     }
@@ -461,7 +495,8 @@ public sealed partial class RecordingService : IRecordingService
     private async Task TryRegisterRecordingAsync(
         string? outputPath,
         TimeSpan duration,
-        RecordingSourceKind sourceKind)
+        RecordingSourceKind sourceKind,
+        bool notify = true)
     {
         if (string.IsNullOrWhiteSpace(outputPath) || !File.Exists(outputPath))
         {
@@ -498,7 +533,7 @@ public sealed partial class RecordingService : IRecordingService
                         : _audioOptions.HasAnySource ? _audioOptions.BitrateKbps : null
                 });
 
-            if (_settings.Current.NotificationEnabled)
+            if (notify && _settings.Current.NotificationEnabled)
             {
                 RecordingNotificationHelper.TryShowSaved(outputPath);
             }
@@ -571,9 +606,7 @@ public sealed partial class RecordingService : IRecordingService
             }
         }
 
-        _transcodeTask = null;
-        _transcodeCancellation?.Dispose();
-        _transcodeCancellation = null;
+        ReleaseMediaObjects();
 
         StopGraphicsCaptureSession();
 
@@ -605,20 +638,6 @@ public sealed partial class RecordingService : IRecordingService
             _controlWindow = null;
         }
 
-        if (_outputStream is not null)
-        {
-            try
-            {
-                _outputStream.Dispose();
-            }
-            catch
-            {
-                // Ignore cleanup exceptions.
-            }
-
-            _outputStream = null;
-        }
-
         _audioCancellation?.Cancel();
         _audioCancellation?.Dispose();
         _audioCancellation = null;
@@ -638,16 +657,7 @@ public sealed partial class RecordingService : IRecordingService
             _audioPipeline = null;
         }
 
-        if (_mediaStreamSource is not null)
-        {
-            _mediaStreamSource.Starting -= OnMediaStreamSourceStarting;
-            _mediaStreamSource.SampleRequested -= OnMediaStreamSourceSampleRequested;
-            _mediaStreamSource = null;
-        }
 
-        _transcoder = null;
-        _audioEncodingProfile = null;
-        _currentOutputPath = null;
 
         _cropRect = null;
         ReleaseWindowCompositeResources();

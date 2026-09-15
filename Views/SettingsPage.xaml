@@ -75,6 +75,169 @@
                     </Grid>
                     <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
 
+                    <Grid Style="{StaticResource DawnSettingsRowStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="260" />
+                            <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" x:Uid="Settings_Segment" Text="Auto-segment" />
+                            <TextBlock
+                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                FontSize="11"
+                                Text="Long recordings are split into several files; paused time is not counted."
+                                x:Uid="Settings_Segment_Desc" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            Style="{StaticResource DawnSettingsToggleStyle}"
+                            IsOn="{x:Bind ViewModel.SegmentEnabled, Mode=TwoWay}" />
+                    </Grid>
+                    <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+
+                    <Grid Visibility="{x:Bind ViewModel.ShowSegmentOptions, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border
+                            Grid.Column="0"
+                            Width="1"
+                            Margin="24,6,0,6"
+                            Background="{StaticResource DawnStrokeBrush}" />
+                        <StackPanel Grid.Column="1" Spacing="0">
+                            <Grid
+                                Style="{StaticResource DawnSettingsRowStyle}"
+                                Visibility="{x:Bind ViewModel.ShowSegmentOptions, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="260" />
+                                    <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" x:Uid="Settings_SegmentMode" Text="Segment by" />
+                                    <TextBlock
+                                        Foreground="{StaticResource DawnTextFaintBrush}"
+                                        FontSize="11"
+                                        Text="Split by duration or by file size."
+                                        x:Uid="Settings_SegmentMode_Desc" />
+                                </StackPanel>
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Style="{StaticResource DawnSettingsComboBoxStyle}"
+                                    SelectedIndex="{x:Bind ViewModel.SegmentLimitModeIndex, Mode=TwoWay}">
+                                    <ComboBoxItem x:Uid="Settings_SegmentMode_Duration" Content="By duration" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentMode_Size" Content="By file size" />
+                                </ComboBox>
+                            </Grid>
+                            <Border
+                                Margin="8,0,0,0"
+                                BorderBrush="{StaticResource DawnStrokeBrush}"
+                                BorderThickness="0,0,0,1"
+                                Visibility="{x:Bind ViewModel.ShowSegmentOptions, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                            <Grid
+                                Style="{StaticResource DawnSettingsRowStyle}"
+                                Visibility="{x:Bind ViewModel.ShowSegmentDuration, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="260" />
+                                    <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" x:Uid="Settings_SegmentDuration" Text="Max per segment" />
+                                    <TextBlock
+                                        Foreground="{StaticResource DawnTextFaintBrush}"
+                                        FontSize="11"
+                                        Text="A new file starts once this much has been recorded."
+                                        x:Uid="Settings_SegmentDuration_Desc" />
+                                </StackPanel>
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Style="{StaticResource DawnSettingsComboBoxStyle}"
+                                    SelectedIndex="{x:Bind ViewModel.SegmentDurationIndex, Mode=TwoWay}">
+                                    <ComboBoxItem x:Uid="Settings_SegmentDuration_1m" Content="1 minute" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentDuration_30m" Content="30 minutes" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentDuration_1h" Content="1 hour" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentDuration_2h" Content="2 hours" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentDuration_4h" Content="4 hours" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentDuration_8h" Content="8 hours" />
+                                </ComboBox>
+                            </Grid>
+                            <Border
+                                Margin="8,0,0,0"
+                                BorderBrush="{StaticResource DawnStrokeBrush}"
+                                BorderThickness="0,0,0,1"
+                                Visibility="{x:Bind ViewModel.ShowSegmentDuration, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                            <Grid
+                                Style="{StaticResource DawnSettingsRowStyle}"
+                                Visibility="{x:Bind ViewModel.ShowSegmentSize, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="260" />
+                                    <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" x:Uid="Settings_SegmentSize" Text="Max size per segment" />
+                                    <TextBlock
+                                        Foreground="{StaticResource DawnTextFaintBrush}"
+                                        FontSize="11"
+                                        Text="A new file starts once this much has been written."
+                                        x:Uid="Settings_SegmentSize_Desc" />
+                                </StackPanel>
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Style="{StaticResource DawnSettingsComboBoxStyle}"
+                                    SelectedIndex="{x:Bind ViewModel.SegmentSizeIndex, Mode=TwoWay}">
+                                    <ComboBoxItem x:Uid="Settings_SegmentSize_64mb" Content="64 MB" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentSize_512mb" Content="512 MB" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentSize_2gb" Content="2 GB" />
+                                    <ComboBoxItem x:Uid="Settings_SegmentSize_4gb" Content="4 GB" />
+                                </ComboBox>
+                            </Grid>
+                            <Border
+                                Margin="8,0,0,0"
+                                BorderBrush="{StaticResource DawnStrokeBrush}"
+                                BorderThickness="0,0,0,1"
+                                Visibility="{x:Bind ViewModel.ShowSegmentSize, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Style="{StaticResource DawnSettingsRowStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="260" />
+                            <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" x:Uid="Settings_MaxDuration" Text="Max recording length" />
+                            <TextBlock
+                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                FontSize="11"
+                                Text="Recording stops and saves automatically; paused time is not counted."
+                                x:Uid="Settings_MaxDuration_Desc" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Style="{StaticResource DawnSettingsComboBoxStyle}"
+                            SelectedIndex="{x:Bind ViewModel.MaxDurationIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="Settings_MaxDuration_Unlimited" Content="No limit" />
+                            <ComboBoxItem x:Uid="Settings_MaxDuration_1m" Content="1 minute" />
+                            <ComboBoxItem x:Uid="Settings_MaxDuration_30m" Content="30 minutes" />
+                            <ComboBoxItem x:Uid="Settings_MaxDuration_1h" Content="1 hour" />
+                            <ComboBoxItem x:Uid="Settings_MaxDuration_2h" Content="2 hours" />
+                            <ComboBoxItem x:Uid="Settings_MaxDuration_4h" Content="4 hours" />
+                            <ComboBoxItem x:Uid="Settings_MaxDuration_8h" Content="8 hours" />
+                        </ComboBox>
+                    </Grid>
+                    <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+
+                    <TextBlock
+                        Margin="33,10,0,0"
+                        FontSize="11"
+                        Foreground="{StaticResource DawnDangerBrush}"
+                        TextWrapping="Wrap"
+                        x:Uid="Settings_SegmentConflict"
+                        Text="The segment limit is longer than the max recording length, so this recording will not be split."
+                        Visibility="{x:Bind ViewModel.ShowSegmentConflict, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+
                     <TextBlock Style="{StaticResource DawnSettingsSubsectionTitleStyle}" x:Uid="Settings_Subsection_Video" Text="Video" />
 
                     <Grid Style="{StaticResource DawnSettingsRowStyle}">

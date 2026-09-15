@@ -355,4 +355,36 @@
   <data name="Settings_Reset_RecordingActive" xml:space="preserve"><value>请先停止当前录制，再恢复默认设置。</value></data>
   <data name="Settings_Reset_LanguageRestart_Title" xml:space="preserve"><value>语言已重置</value></data>
   <data name="Settings_Reset_LanguageRestart_Message" xml:space="preserve"><value>语言已恢复为跟随系统设置。是否立即重启 DawnCapture 以应用？</value></data>
+  <data name="Settings_Segment.Text" xml:space="preserve"><value>自动分段</value></data>
+  <data name="Settings_Segment_Desc.Text" xml:space="preserve"><value>长时间录制会按设定值自动切成多个文件；暂停时间不计入</value></data>
+  <data name="Settings_SegmentMode.Text" xml:space="preserve"><value>分段方式</value></data>
+  <data name="Settings_SegmentMode_Desc.Text" xml:space="preserve"><value>按时长或按文件大小切分</value></data>
+  <data name="Settings_SegmentMode_Duration.Content" xml:space="preserve"><value>按时长</value></data>
+  <data name="Settings_SegmentMode_Size.Content" xml:space="preserve"><value>按大小</value></data>
+  <data name="Settings_SegmentDuration.Text" xml:space="preserve"><value>每段最长</value></data>
+  <data name="Settings_SegmentDuration_Desc.Text" xml:space="preserve"><value>达到该时长即开始新的一段</value></data>
+  <data name="Settings_SegmentDuration_1m.Content" xml:space="preserve"><value>1 分钟</value></data>
+  <data name="Settings_SegmentDuration_30m.Content" xml:space="preserve"><value>30 分钟</value></data>
+  <data name="Settings_SegmentDuration_1h.Content" xml:space="preserve"><value>1 小时</value></data>
+  <data name="Settings_SegmentDuration_2h.Content" xml:space="preserve"><value>2 小时</value></data>
+  <data name="Settings_SegmentDuration_4h.Content" xml:space="preserve"><value>4 小时</value></data>
+  <data name="Settings_SegmentDuration_8h.Content" xml:space="preserve"><value>8 小时</value></data>
+  <data name="Settings_SegmentSize.Text" xml:space="preserve"><value>每段最大</value></data>
+  <data name="Settings_SegmentSize_Desc.Text" xml:space="preserve"><value>达到该大小即开始新的一段</value></data>
+  <data name="Settings_SegmentSize_64mb.Content" xml:space="preserve"><value>64 MB</value></data>
+  <data name="Settings_SegmentSize_512mb.Content" xml:space="preserve"><value>512 MB</value></data>
+  <data name="Settings_SegmentSize_2gb.Content" xml:space="preserve"><value>2 GB</value></data>
+  <data name="Settings_SegmentSize_4gb.Content" xml:space="preserve"><value>4 GB</value></data>
+  <data name="Settings_MaxDuration.Text" xml:space="preserve"><value>最大录制时长</value></data>
+  <data name="Settings_MaxDuration_Desc.Text" xml:space="preserve"><value>达到上限后自动停止并保存；暂停时间不计入</value></data>
+  <data name="Settings_MaxDuration_Unlimited.Content" xml:space="preserve"><value>无限制</value></data>
+  <data name="Settings_MaxDuration_1m.Content" xml:space="preserve"><value>1 分钟</value></data>
+  <data name="Settings_MaxDuration_30m.Content" xml:space="preserve"><value>30 分钟</value></data>
+  <data name="Settings_MaxDuration_1h.Content" xml:space="preserve"><value>1 小时</value></data>
+  <data name="Settings_MaxDuration_2h.Content" xml:space="preserve"><value>2 小时</value></data>
+  <data name="Settings_MaxDuration_4h.Content" xml:space="preserve"><value>4 小时</value></data>
+  <data name="Settings_MaxDuration_8h.Content" xml:space="preserve"><value>8 小时</value></data>
+  <data name="Settings_SegmentConflict.Text" xml:space="preserve"><value>分段阈值长于最大录制时长，本次录制不会分段</value></data>
+  <data name="Notice_MaxDurationReached" xml:space="preserve"><value>已达到最大录制时长，录制已自动停止并保存</value></data>
+  <data name="Notice_SegmentUnavailable" xml:space="preserve"><value>无法开始新的分段，本次录制将继续写入当前文件</value></data>
 </root>

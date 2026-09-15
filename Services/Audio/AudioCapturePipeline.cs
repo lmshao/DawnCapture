@@ -24,6 +24,8 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
     private readonly long _chunkDurationTicks = TimeSpan.TicksPerSecond * AudioFormat.SamplesPerChunk / AudioFormat.SampleRate;
     private Stopwatch? _clock;
     private volatile bool _flushMode;
+    private TimeSpan _timestampOrigin;
+    private volatile bool _rebasePending;
 
     private volatile float _peakLevel;
 
@@ -106,6 +108,8 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
 
     public void BeginFlush() => _flushMode = true;
 
+    public void RebaseTimestamps() => _rebasePending = true;
+
     public MediaStreamSample? TryCreateSample()
     {
         if (!HasAudio || (_paused && !_flushMode))
@@ -126,7 +130,13 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
 
                 if (_outputQueue.TryDequeue(out var queued))
                 {
-                    return CreateSample(queued.Buffer, queued.Timestamp);
+                    if (_rebasePending)
+                    {
+                        _timestampOrigin = queued.Timestamp;
+                        _rebasePending = false;
+                    }
+
+                    return CreateSample(queued.Buffer, queued.Timestamp - _timestampOrigin);
                 }
             }
             else if (!_running || _flushMode)

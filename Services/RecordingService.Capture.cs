@@ -20,7 +20,7 @@ public sealed partial class RecordingService
             EnsureDevice();
 
             _frameDuration = 10_000_000L / Math.Max(1, _settings.Current.FrameRate);
-            _framesWritten = 0;
+            CaptureRecordingLimits();
             _isPaused = false;
             _cropRect = crop;
             Log.Debug($"Capture started: DisplayName={item.DisplayName}, Size={item.Size.Width}x{item.Size.Height}, Crop={crop?.Width}x{crop?.Height}");
@@ -49,6 +49,7 @@ public sealed partial class RecordingService
             var captureSize = crop is { } c
                 ? new SizeInt32 { Width = c.Width, Height = c.Height }
                 : item.Size;
+            _encodeSize = captureSize;
 
             if (_currentSourceKind == RecordingSourceKind.Window)
             {
@@ -69,11 +70,19 @@ public sealed partial class RecordingService
                 _windowLetterboxActive = false;
             }
 
-            if (!await CreateMediaObjectsAsync(captureSize, _audioOptions))
+            var pipeline = await BuildVideoPipelineAsync(
+                captureSize,
+                _audioOptions,
+                segmentNumber: 1,
+                reuseEffectiveCodec: false);
+            if (pipeline is null)
             {
                 await CleanupCaptureAsync();
+                RaiseFailed(LocalizationService.GetString("Failure_TranscodePrepare"));
                 return false;
             }
+
+            ActivatePipeline(pipeline, TimeSpan.Zero);
 
             if (_audioOptions.HasAnySource)
             {
@@ -352,7 +361,9 @@ public sealed partial class RecordingService
         _pendingFrame = null;
         _lastEmittedFrameSequence = _pendingFrameSequence;
 
-        timestamp = elapsed;
+        // The pacing above runs on the raw clock; only the reported timestamp is rebased,
+        // so each segment file starts at zero.
+        timestamp = elapsed - TimeSpan.FromTicks(Volatile.Read(ref _segmentBaseTicks));
         duration = _hasLastVideoPts ? timestamp - _lastVideoPts : targetInterval;
         if (duration <= TimeSpan.Zero)
         {

@@ -143,6 +143,16 @@
                     Foreground="{ThemeResource DockTextBrush}"
                     Text="00:00"
                     TextAlignment="Center" />
+
+                <!-- Part number, shown only while a segmented recording is running -->
+                <TextBlock
+                    x:Name="SegmentText"
+                    VerticalAlignment="Center"
+                    FontSize="11"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource DockTextMutedBrush}"
+                    Text="#1"
+                    Visibility="Collapsed" />
             </StackPanel>
         </Border>
     </Grid>

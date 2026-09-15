@@ -18,207 +18,241 @@ namespace DawnCapture.Services;
 
 public sealed partial class RecordingService
 {
-    private async Task<bool> CreateMediaObjectsAsync(SizeInt32 size, RecordingAudioOptions audioOptions)
+    /// <summary>
+    /// One encoder bound to one output file. Building a pipeline touches no service
+    /// state, which is what lets a segment switch prepare its replacement while the
+    /// current file is still being written.
+    /// </summary>
+    private sealed class MediaPipeline
     {
-        Log.Debug($"Creating media objects: OutputSize={size.Width}x{size.Height}, FrameRate={_settings.Current.FrameRate}, Bitrate={_settings.Current.BitrateKbps}Kbps, AudioMic={audioOptions.EnableMicrophone}, AudioSystem={audioOptions.EnableSystemAudio}, AudioBitrate={audioOptions.BitrateKbps}Kbps");
-        try
-        {
-            _effectiveVideoCodecIndex = _settings.Current.VideoCodecIndex;
-            _effectiveVideoBitrateKbps = RecordingSettingsHelper.ResolveEffectiveVideoBitrateKbps(
-                _settings.Current,
-                size.Width,
-                size.Height);
-            Log.Debug($"Effective video bitrate={_effectiveVideoBitrateKbps}Kbps (mode={_settings.Current.BitrateMode})");
-            var videoProperties = VideoEncodingProperties.CreateUncompressed(
-                MediaEncodingSubtypes.Bgra8,
-                (uint)size.Width,
-                (uint)size.Height);
+        public required MediaStreamSource Source { get; init; }
 
-            var descriptor = new VideoStreamDescriptor(videoProperties);
-            AudioStreamDescriptor? audioDescriptor = null;
-            if (audioOptions.HasAnySource)
-            {
-                var pcmProperties = AudioEncodingProperties.CreatePcm(
-                    (uint)audioOptions.SampleRate,
-                    (uint)audioOptions.Channels,
-                    (uint)AudioFormat.BitsPerSample);
-                audioDescriptor = new AudioStreamDescriptor(pcmProperties);
-            }
+        public required MediaTranscoder Transcoder { get; init; }
 
-            _mediaStreamSource = audioDescriptor is null
-                ? new MediaStreamSource(descriptor)
-                : new MediaStreamSource(descriptor, audioDescriptor);
+        public required IRandomAccessStream Stream { get; init; }
 
-            _startingStreamCount = 0;
-            _mediaStreamSource.BufferTime = TimeSpan.Zero;
-            _mediaStreamSource.Starting += OnMediaStreamSourceStarting;
-            _mediaStreamSource.SampleRequested += OnMediaStreamSourceSampleRequested;
+        public required string OutputPath { get; init; }
 
-            var profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD1080p);
-            profile.Video.Width = (uint)size.Width;
-            profile.Video.Height = (uint)size.Height;
-            profile.Video.Bitrate = (uint)(_effectiveVideoBitrateKbps * 1000);
-            profile.Video.FrameRate.Numerator = (uint)_settings.Current.FrameRate;
-            profile.Video.FrameRate.Denominator = 1;
-            profile.Video.PixelAspectRatio.Numerator = 1;
-            profile.Video.PixelAspectRatio.Denominator = 1;
+        public required PrepareTranscodeResult Prepared { get; init; }
 
-            if (audioOptions.HasAnySource)
-            {
-                profile.Audio = AudioEncodingProperties.CreateAac(
-                    (uint)audioOptions.SampleRate,
-                    (uint)audioOptions.Channels,
-                    (uint)(audioOptions.BitrateKbps * 1000));
-            }
+        public required int CodecIndex { get; init; }
 
-            var folder = OutputFolderHelper.Resolve(_settings.Current.OutputFolder);
-            if (!await CreateOutputFileAsync(folder, ".mp4"))
-            {
-                return false;
-            }
+        public required int BitrateKbps { get; init; }
 
-            _transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
+        public CancellationTokenSource? Cancellation { get; set; }
 
-            bool requestedHevc = _settings.Current.VideoCodecIndex == 1;
-            if (requestedHevc)
-            {
-                profile.Video.Subtype = MediaEncodingSubtypes.Hevc;
-            }
-
-            var prepared = await TryPrepareVideoTranscodeAsync(profile);
-            if (prepared is null && requestedHevc)
-            {
-                Log.Info("HEVC transcode preparation failed; retrying with H.264.");
-                profile.Video.Subtype = MediaEncodingSubtypes.H264;
-                _effectiveVideoCodecIndex = 0;
-                if (!await RecreateOutputFileAsync(folder, ".mp4"))
-                {
-                    return false;
-                }
-
-                prepared = await TryPrepareVideoTranscodeAsync(profile);
-                if (prepared is not null)
-                {
-                    RaiseNotice(LocalizationService.GetString("Notice_HevcFallback"));
-                }
-            }
-
-            if (prepared is null)
-            {
-                TryDeleteOutputFile(_currentOutputPath);
-                RaiseFailed(LocalizationService.GetString("Failure_TranscodePrepare"));
-                return false;
-            }
-
-            // One token per recording, so a stop or a failed start can cancel the
-            // encoder instead of abandoning it mid-write (see CleanupCaptureAsync).
-            _transcodeCancellation?.Dispose();
-            _transcodeCancellation = new CancellationTokenSource();
-            var transcodeToken = _transcodeCancellation.Token;
-
-            var transcodeResult = prepared;
-            _transcodeTask = Task.Run(
-                async () => await transcodeResult.TranscodeAsync().AsTask(transcodeToken),
-                transcodeToken);
-
-            _ = _transcodeTask.ContinueWith(
-                t =>
-                {
-                    if (t.IsFaulted && t.Exception is not null)
-                    {
-                        RaiseFailed(t.Exception.GetBaseException().Message);
-                    }
-                },
-                TaskScheduler.Default);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            TryDeleteOutputFile(_currentOutputPath);
-            RaiseFailed(ex.Message);
-            return false;
-        }
+        public Task? Task { get; set; }
     }
 
-    private async Task<bool> PrepareAudioOnlyMediaObjectsAsync(RecordingAudioOptions audioOptions)
+    private async Task<MediaPipeline?> BuildVideoPipelineAsync(
+        SizeInt32 size,
+        RecordingAudioOptions audioOptions,
+        int segmentNumber,
+        bool reuseEffectiveCodec)
     {
-        Log.Debug(
-            $"Creating audio-only media objects: AudioMic={audioOptions.EnableMicrophone}, AudioSystem={audioOptions.EnableSystemAudio}, AudioBitrate={audioOptions.BitrateKbps}Kbps");
-        try
-        {
-            _framesWritten = 0;
-            _audioSamplesWritten = 0;
-            _isPaused = false;
-            _closedEvent.Reset();
+        Log.Debug($"Creating media objects: OutputSize={size.Width}x{size.Height}, FrameRate={_settings.Current.FrameRate}, Bitrate={_settings.Current.BitrateKbps}Kbps, AudioMic={audioOptions.EnableMicrophone}, AudioSystem={audioOptions.EnableSystemAudio}, AudioBitrate={audioOptions.BitrateKbps}Kbps");
 
+        int previousEffectiveCodecIndex = _effectiveVideoCodecIndex;
+        int codecIndex = _settings.Current.VideoCodecIndex;
+        int bitrateKbps = RecordingSettingsHelper.ResolveEffectiveVideoBitrateKbps(
+            _settings.Current,
+            size.Width,
+            size.Height);
+        Log.Debug($"Effective video bitrate={bitrateKbps}Kbps (mode={_settings.Current.BitrateMode})");
+
+        var videoProperties = VideoEncodingProperties.CreateUncompressed(
+            MediaEncodingSubtypes.Bgra8,
+            (uint)size.Width,
+            (uint)size.Height);
+        var descriptor = new VideoStreamDescriptor(videoProperties);
+
+        AudioStreamDescriptor? audioDescriptor = null;
+        if (audioOptions.HasAnySource)
+        {
             var pcmProperties = AudioEncodingProperties.CreatePcm(
                 (uint)audioOptions.SampleRate,
                 (uint)audioOptions.Channels,
                 (uint)AudioFormat.BitsPerSample);
-            var audioDescriptor = new AudioStreamDescriptor(pcmProperties);
+            audioDescriptor = new AudioStreamDescriptor(pcmProperties);
+        }
 
-            _mediaStreamSource = new MediaStreamSource(audioDescriptor);
-            _startingStreamCount = 0;
-            _mediaStreamSource.BufferTime = TimeSpan.Zero;
-            _mediaStreamSource.Starting += OnMediaStreamSourceStarting;
-            _mediaStreamSource.SampleRequested += OnMediaStreamSourceSampleRequested;
+        var source = audioDescriptor is null
+            ? new MediaStreamSource(descriptor)
+            : new MediaStreamSource(descriptor, audioDescriptor);
+        _startingStreamCount = 0;
+        source.BufferTime = TimeSpan.Zero;
+        source.Starting += OnMediaStreamSourceStarting;
+        source.SampleRequested += OnMediaStreamSourceSampleRequested;
 
-            var profile = MediaEncodingProfile.CreateM4a(AudioEncodingQuality.High);
+        var profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD1080p);
+        profile.Video.Width = (uint)size.Width;
+        profile.Video.Height = (uint)size.Height;
+        profile.Video.Bitrate = (uint)(bitrateKbps * 1000);
+        profile.Video.FrameRate.Numerator = (uint)_settings.Current.FrameRate;
+        profile.Video.FrameRate.Denominator = 1;
+        profile.Video.PixelAspectRatio.Numerator = 1;
+        profile.Video.PixelAspectRatio.Denominator = 1;
+
+        if (audioOptions.HasAnySource)
+        {
             profile.Audio = AudioEncodingProperties.CreateAac(
                 (uint)audioOptions.SampleRate,
                 (uint)audioOptions.Channels,
                 (uint)(audioOptions.BitrateKbps * 1000));
-            _audioEncodingProfile = profile;
-
-            var folder = OutputFolderHelper.Resolve(_settings.Current.OutputFolder);
-            Directory.CreateDirectory(folder);
-            var outputPath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}.m4a");
-            _currentOutputPath = outputPath;
-
-            File.Create(outputPath).Dispose();
-            var outputFile = await StorageFile.GetFileFromPathAsync(outputPath);
-            _outputStream = await outputFile.OpenAsync(FileAccessMode.ReadWrite);
-
-            return true;
         }
-        catch (Exception ex)
+
+        // A segment switch reuses the codec the first segment settled on, so a HEVC
+        // fallback is neither retried nor reported again for every segment.
+        bool requestedHevc =
+            (reuseEffectiveCodec ? previousEffectiveCodecIndex : _settings.Current.VideoCodecIndex) == 1;
+        if (requestedHevc)
         {
-            TryDeleteOutputFile(_currentOutputPath);
-            RaiseFailed(ex.Message);
-            return false;
+            profile.Video.Subtype = MediaEncodingSubtypes.Hevc;
         }
+
+        var folder = OutputFolderHelper.Resolve(_settings.Current.OutputFolder);
+        var opened = await OpenOutputAsync(folder, ".mp4", segmentNumber);
+        if (opened is null)
+        {
+            DetachSource(source);
+            return null;
+        }
+
+        var transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
+        var stream = opened.Value.Stream;
+        var outputPath = opened.Value.Path;
+        var prepared = await TryPrepareTranscodeAsync(transcoder, source, stream, profile);
+        if (prepared is null && requestedHevc)
+        {
+            Log.Info("HEVC transcode preparation failed; retrying with H.264.");
+            profile.Video.Subtype = MediaEncodingSubtypes.H264;
+            codecIndex = 0;
+            stream.Dispose();
+            TryDeleteOutputFile(outputPath);
+
+            var reopened = await OpenOutputAsync(folder, ".mp4", segmentNumber);
+            if (reopened is null)
+            {
+                DetachSource(source);
+                return null;
+            }
+
+            stream = reopened.Value.Stream;
+            outputPath = reopened.Value.Path;
+            prepared = await TryPrepareTranscodeAsync(transcoder, source, stream, profile);
+            if (prepared is not null)
+            {
+                RaiseNotice(LocalizationService.GetString("Notice_HevcFallback"));
+            }
+        }
+
+        if (prepared is null)
+        {
+            DetachSource(source);
+            stream.Dispose();
+            TryDeleteOutputFile(outputPath);
+            return null;
+        }
+
+        return new MediaPipeline
+        {
+            Source = source,
+            Transcoder = transcoder,
+            Stream = stream,
+            OutputPath = outputPath,
+            Prepared = prepared,
+            CodecIndex = codecIndex,
+            BitrateKbps = bitrateKbps
+        };
     }
 
-    private void StartAudioOnlyTranscode()
+    private async Task<MediaPipeline?> BuildAudioPipelineAsync(
+        RecordingAudioOptions audioOptions,
+        int segmentNumber)
     {
-        if (_mediaStreamSource is null || _outputStream is null || _audioEncodingProfile is null)
+        Log.Debug(
+            $"Creating audio-only media objects: AudioMic={audioOptions.EnableMicrophone}, AudioSystem={audioOptions.EnableSystemAudio}, AudioBitrate={audioOptions.BitrateKbps}Kbps");
+
+        var pcmProperties = AudioEncodingProperties.CreatePcm(
+            (uint)audioOptions.SampleRate,
+            (uint)audioOptions.Channels,
+            (uint)AudioFormat.BitsPerSample);
+        var audioDescriptor = new AudioStreamDescriptor(pcmProperties);
+
+        var source = new MediaStreamSource(audioDescriptor);
+        _startingStreamCount = 0;
+        source.BufferTime = TimeSpan.Zero;
+        source.Starting += OnMediaStreamSourceStarting;
+        source.SampleRequested += OnMediaStreamSourceSampleRequested;
+
+        var profile = MediaEncodingProfile.CreateM4a(AudioEncodingQuality.High);
+        profile.Audio = AudioEncodingProperties.CreateAac(
+            (uint)audioOptions.SampleRate,
+            (uint)audioOptions.Channels,
+            (uint)(audioOptions.BitrateKbps * 1000));
+
+        var folder = OutputFolderHelper.Resolve(_settings.Current.OutputFolder);
+        var opened = await OpenOutputAsync(folder, ".m4a", segmentNumber);
+        if (opened is null)
         {
-            Log.Error("StartAudioOnlyTranscode called before audio media objects were prepared.");
-            RaiseFailed(LocalizationService.GetString("Failure_NoAudioSamples"));
-            return;
+            DetachSource(source);
+            return null;
         }
 
-        _transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
+        var transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
+        var stream = opened.Value.Stream;
+        var prepared = await TryPrepareTranscodeAsync(transcoder, source, stream, profile);
+        if (prepared is null)
+        {
+            DetachSource(source);
+            stream.Dispose();
+            TryDeleteOutputFile(opened.Value.Path);
+            return null;
+        }
 
-        _transcodeCancellation?.Dispose();
-        _transcodeCancellation = new CancellationTokenSource();
-        var transcodeToken = _transcodeCancellation.Token;
+        return new MediaPipeline
+        {
+            Source = source,
+            Transcoder = transcoder,
+            Stream = stream,
+            OutputPath = opened.Value.Path,
+            Prepared = prepared,
+            CodecIndex = _effectiveVideoCodecIndex,
+            BitrateKbps = 0
+        };
+    }
 
-        _transcodeTask = Task.Run(
-            async () =>
-            {
-                var prepared = await _transcoder
-                    .PrepareMediaStreamSourceTranscodeAsync(
-                        _mediaStreamSource,
-                        _outputStream,
-                        _audioEncodingProfile)
-                    .AsTask(transcodeToken);
-                await prepared.TranscodeAsync().AsTask(transcodeToken);
-            },
-            transcodeToken);
+    /// <summary>
+    /// Makes a prepared pipeline the one the sample pump feeds. The source is assigned
+    /// before the transcode starts, so the pump already recognises it as the active one
+    /// when the first sample request arrives - it must never answer that request with a
+    /// null sample.
+    /// </summary>
+    private void ActivatePipeline(MediaPipeline pipeline, TimeSpan segmentBase)
+    {
+        _activePipeline = pipeline;
+        Volatile.Write(ref _mediaStreamSource, pipeline.Source);
+        _transcoder = pipeline.Transcoder;
+        _outputStream = pipeline.Stream;
+        _currentOutputPath = pipeline.OutputPath;
+        _effectiveVideoCodecIndex = pipeline.CodecIndex;
+        _effectiveVideoBitrateKbps = pipeline.BitrateKbps;
 
-        _ = _transcodeTask.ContinueWith(
+        Volatile.Write(ref _segmentBaseTicks, segmentBase.Ticks);
+
+        pipeline.Cancellation?.Dispose();
+        pipeline.Cancellation = new CancellationTokenSource();
+        var token = pipeline.Cancellation.Token;
+        var prepared = pipeline.Prepared;
+
+        pipeline.Task = Task.Run(
+            async () => await prepared.TranscodeAsync().AsTask(token),
+            token);
+
+        _transcodeCancellation = pipeline.Cancellation;
+        _transcodeTask = pipeline.Task;
+
+        _ = pipeline.Task.ContinueWith(
             t =>
             {
                 if (t.IsFaulted && t.Exception is not null)
@@ -241,6 +275,23 @@ public sealed partial class RecordingService
         {
             args.Request.Sample = null;
             return;
+        }
+
+        if (!ReferenceEquals(sender, Volatile.Read(ref _mediaStreamSource)))
+        {
+            // A source that has been retired only needs to drain to its end.
+            args.Request.Sample = null;
+            return;
+        }
+
+        if (!_isPaused && !_isStopping)
+        {
+            EvaluateRecordingLimits();
+            if (!_isRecording || _isStopping)
+            {
+                args.Request.Sample = null;
+                return;
+            }
         }
 
         if (args.Request.StreamDescriptor is AudioStreamDescriptor)
@@ -316,53 +367,60 @@ public sealed partial class RecordingService
         }
     }
 
-    private async Task<bool> CreateOutputFileAsync(string folder, string extension)
-    {
-        Directory.CreateDirectory(folder);
-        var outputPath = Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}{extension}");
-        _currentOutputPath = outputPath;
-
-        // StorageFile.GetFileFromPathAsync requires the file to exist.
-        File.Create(outputPath).Dispose();
-        var outputFile = await StorageFile.GetFileFromPathAsync(outputPath);
-        _outputStream = await outputFile.OpenAsync(FileAccessMode.ReadWrite);
-        return true;
-    }
-
-    private async Task<bool> RecreateOutputFileAsync(string folder, string extension)
-    {
-        if (_outputStream is not null)
-        {
-            try
-            {
-                _outputStream.Dispose();
-            }
-            catch
-            {
-                // Ignore cleanup exceptions.
-            }
-
-            _outputStream = null;
-        }
-
-        TryDeleteOutputFile(_currentOutputPath);
-        return await CreateOutputFileAsync(folder, extension);
-    }
-
-    private async Task<PrepareTranscodeResult?> TryPrepareVideoTranscodeAsync(MediaEncodingProfile profile)
+    private async Task<(string Path, IRandomAccessStream Stream)?> OpenOutputAsync(
+        string folder,
+        string extension,
+        int segmentNumber)
     {
         try
         {
-            return await _transcoder!.PrepareMediaStreamSourceTranscodeAsync(
-                _mediaStreamSource!,
-                _outputStream!,
-                profile);
+            Directory.CreateDirectory(folder);
+            var outputPath = BuildOutputPath(folder, extension, segmentNumber);
+
+            // StorageFile.GetFileFromPathAsync requires the file to exist.
+            File.Create(outputPath).Dispose();
+            var outputFile = await StorageFile.GetFileFromPathAsync(outputPath);
+            var stream = await outputFile.OpenAsync(FileAccessMode.ReadWrite);
+            return (outputPath, stream);
         }
         catch (Exception ex)
         {
-            Log.Info($"Video transcode prepare failed: {ex.Message}");
+            Log.Error($"Failed to open output file in '{folder}'", ex);
             return null;
         }
+    }
+
+    private static async Task<PrepareTranscodeResult?> TryPrepareTranscodeAsync(
+        MediaTranscoder transcoder,
+        MediaStreamSource source,
+        IRandomAccessStream stream,
+        MediaEncodingProfile profile)
+    {
+        try
+        {
+            return await transcoder.PrepareMediaStreamSourceTranscodeAsync(source, stream, profile);
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Transcode prepare failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    private void DetachSource(MediaStreamSource source)
+    {
+        source.Starting -= OnMediaStreamSourceStarting;
+        source.SampleRequested -= OnMediaStreamSourceSampleRequested;
+    }
+
+    /// <summary>
+    /// Builds the output path. A segmented recording carries its part number so the
+    /// files of one recording sort together and can be told apart.
+    /// </summary>
+    private string BuildOutputPath(string folder, string extension, int segmentNumber)
+    {
+        string part = _segmentEnabledForRecording ? $"_p{segmentNumber}" : string.Empty;
+        return Path.Combine(folder, $"DawnCapture_{DateTime.Now:yyyyMMdd_HHmmss}{part}{extension}");
     }
 
     private static void TryDeleteOutputFile(string? path)

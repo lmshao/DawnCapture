@@ -20,16 +20,19 @@ public sealed partial class RecordingControlWindow : Window
     private const double DockHeightDip = 40;
 
     private readonly Func<TimeSpan> _elapsedProvider;
+    private readonly Func<int> _segmentProvider;
     private readonly DispatcherTimer _timer;
+    private int _lastSegment = -1;
     private Storyboard? _pulseStoryboard;
     private bool _isDragging;
     private NativePoint _dragStartCursor;
     private PointInt32 _dragStartWindow;
     private double _dpiScale = 1.0;
 
-    public RecordingControlWindow(Func<TimeSpan> elapsedProvider)
+    public RecordingControlWindow(Func<TimeSpan> elapsedProvider, Func<int> segmentProvider)
     {
         _elapsedProvider = elapsedProvider;
+        _segmentProvider = segmentProvider;
         InitializeComponent();
         WindowIconHelper.Apply(this);
 
@@ -237,6 +240,19 @@ public sealed partial class RecordingControlWindow : Window
     private void UpdateTime()
     {
         TimeText.Text = FormatElapsed(_elapsedProvider());
+
+        int segment = _segmentProvider();
+        if (segment == _lastSegment)
+        {
+            return;
+        }
+
+        _lastSegment = segment;
+        SegmentText.Text = $"#{segment}";
+        SegmentText.Visibility = segment > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        // The dock is auto-sized, so the label has to be measured into the window.
+        RefreshSizeKeepPosition();
     }
 
     private static string FormatElapsed(TimeSpan elapsed)
