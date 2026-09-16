@@ -391,4 +391,8 @@
   <data name="Notice_SegmentFinalizeFailed" xml:space="preserve"><value>有分段未能正常收尾，文件已保留在输出文件夹</value></data>
   <data name="App_LastRecordingUnfinishedTitle" xml:space="preserve"><value>上次录制未正常结束</value></data>
   <data name="App_LastRecordingUnfinished" xml:space="preserve"><value>DawnCapture 在录制过程中被关闭（注销、关机或强制结束），这个文件可能无法播放：{0}</value></data>
+  <data name="Notice_DiskSpaceLow" xml:space="preserve"><value>磁盘剩余空间不足，录制已停止并保存</value></data>
+  <data name="Notice_CaptureSourceClosed" xml:space="preserve"><value>录制目标已关闭，录制已停止并保存</value></data>
+  <data name="App_SettingsResetTitle" xml:space="preserve"><value>设置已重置</value></data>
+  <data name="App_SettingsReset" xml:space="preserve"><value>设置文件无法读取，已改用默认设置。原文件已保留在：{0}</value></data>
 </root>

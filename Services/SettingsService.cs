@@ -20,6 +20,15 @@ public sealed class SettingsService : ISettingsService
 
     public AppSettings Current { get; private set; } = new();
 
+    /// <summary>
+    /// True when the settings file could not be read and was replaced by defaults. The shell
+    /// reports it once so the user is not left wondering where the configuration went.
+    /// </summary>
+    public bool SettingsWereReset { get; private set; }
+
+    /// <summary>Where the unreadable settings file was moved, when that happened.</summary>
+    public string? PreservedSettingsPath { get; private set; }
+
     public event EventHandler? SettingsChanged;
 
     public void Load()
@@ -35,10 +44,29 @@ public sealed class SettingsService : ISettingsService
             var json = File.ReadAllText(_filePath);
             Current = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
         }
-        catch
+        catch (Exception ex)
         {
-            // Fall back to defaults when the settings file is corrupt.
+            // Never replace the user's settings silently: keep the unreadable file, log the
+            // reason, and let the shell say what happened on this launch.
+            Log.Error($"Failed to read settings from '{_filePath}'; falling back to defaults.", ex);
+            PreservedSettingsPath = TryPreserveUnreadableFile();
+            SettingsWereReset = true;
             Current = new AppSettings();
+        }
+    }
+
+    private string? TryPreserveUnreadableFile()
+    {
+        try
+        {
+            string preserved = $"{_filePath}.unreadable-{DateTime.Now:yyyyMMdd_HHmmss}";
+            File.Move(_filePath, preserved, overwrite: true);
+            return preserved;
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Could not preserve the unreadable settings file: {ex.Message}");
+            return null;
         }
     }
 

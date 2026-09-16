@@ -391,4 +391,8 @@
   <data name="Notice_SegmentFinalizeFailed" xml:space="preserve"><value>A segment did not finish cleanly; the file was kept in the output folder</value></data>
   <data name="App_LastRecordingUnfinishedTitle" xml:space="preserve"><value>Recording did not finish</value></data>
   <data name="App_LastRecordingUnfinished" xml:space="preserve"><value>DawnCapture was closed while it was still recording (log off, shutdown or forced end), so this file may not play: {0}</value></data>
+  <data name="Notice_DiskSpaceLow" xml:space="preserve"><value>Disk space ran low, so the recording was stopped and saved</value></data>
+  <data name="Notice_CaptureSourceClosed" xml:space="preserve"><value>The capture source was closed, so the recording was stopped and saved</value></data>
+  <data name="App_SettingsResetTitle" xml:space="preserve"><value>Settings were reset</value></data>
+  <data name="App_SettingsReset" xml:space="preserve"><value>The settings file could not be read, so defaults are in use. The original file was kept at: {0}</value></data>
 </root>

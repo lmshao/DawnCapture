@@ -28,6 +28,11 @@ public sealed partial class RecordingService
     private long _segmentStartFrames;
     private long _segmentStartAudioSamples;
     private int _maxDurationStopRequested;
+    private int _diskStopRequested;
+    private TimeSpan _lastDiskCheckAt = TimeSpan.MinValue;
+
+    /// <summary>How often the free space is sampled while recording.</summary>
+    private static readonly TimeSpan DiskCheckInterval = TimeSpan.FromSeconds(10);
     private bool _segmentEnabledForRecording;
     private SegmentLimitMode _segmentLimitModeForRecording;
     private int _segmentMinutesForRecording;
@@ -70,6 +75,25 @@ public sealed partial class RecordingService
         }
 
         Interlocked.Exchange(ref _maxDurationStopRequested, 0);
+        Interlocked.Exchange(ref _diskStopRequested, 0);
+        _lastDiskCheckAt = TimeSpan.MinValue;
+    }
+
+    /// <summary>
+    /// Free space, sampled at most every <see cref="DiskCheckInterval"/>. Running a disk out
+    /// of space mid-recording fails the file that is being written, so the recording stops
+    /// while it can still finish it.
+    /// </summary>
+    private bool IsDiskSpaceLow()
+    {
+        var now = _stopwatch.Elapsed;
+        if (_lastDiskCheckAt != TimeSpan.MinValue && now - _lastDiskCheckAt < DiskCheckInterval)
+        {
+            return false;
+        }
+
+        _lastDiskCheckAt = now;
+        return !StorageSpaceHelper.TryEnsureSpaceForRecording(_settings.Current.OutputFolder, out _);
     }
 
     /// <summary>Recorded time since the current segment started; paused time is excluded.</summary>
@@ -118,6 +142,18 @@ public sealed partial class RecordingService
                 Log.Info(
                     $"Maximum recording length reached ({_maxRecordingMinutesForRecording} min); stopping and saving.");
                 RaiseNotice(LocalizationService.GetString("Notice_MaxDurationReached"));
+                _ = Task.Run(StopAsync);
+            }
+
+            return;
+        }
+
+        if (IsDiskSpaceLow())
+        {
+            if (Interlocked.CompareExchange(ref _diskStopRequested, 1, 0) == 0)
+            {
+                Log.Info("Free space is low; stopping the recording.");
+                RaiseNotice(LocalizationService.GetString("Notice_DiskSpaceLow"));
                 _ = Task.Run(StopAsync);
             }
 

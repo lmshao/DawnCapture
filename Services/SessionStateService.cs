@@ -21,8 +21,7 @@ namespace DawnCapture.Services;
 /// </summary>
 public sealed class SessionStateService : IDisposable
 {
-    private const string WindowClassName = "DawnCapture.SessionStateWindow";
-    private const int ErrorClassAlreadyExists = 1410;
+    private const int GwlWndProc = -4;
 
     private const uint WmQueryEndSession = 0x0011;
     private const uint WmEndSession = 0x0016;
@@ -47,6 +46,7 @@ public sealed class SessionStateService : IDisposable
     private readonly IRecordingService _recording;
     private readonly WindowProc _windowProc;
     private IntPtr _hwnd;
+    private IntPtr _originalWindowProc;
     private bool _pausedForSuspend;
     private bool _sessionEndHandled;
 
@@ -57,60 +57,30 @@ public sealed class SessionStateService : IDisposable
     }
 
     /// <summary>
-    /// Creates the hidden window that receives the session notifications. Must run on the UI
-    /// thread, because that thread's message loop is what dispatches them.
+    /// Starts observing the session on the given top level window. Must run on the UI thread:
+    /// that thread's message loop is what dispatches the notifications.
     /// </summary>
-    public void Attach()
+    public void Attach(IntPtr hwnd)
     {
-        if (_hwnd != IntPtr.Zero)
+        if (_hwnd != IntPtr.Zero || hwnd == IntPtr.Zero)
         {
             return;
         }
 
         try
         {
-            var windowClass = new WindowClassEx
+            _originalWindowProc = SetWindowLongPtr(
+                hwnd,
+                GwlWndProc,
+                Marshal.GetFunctionPointerForDelegate(_windowProc));
+            if (_originalWindowProc == IntPtr.Zero)
             {
-                cbSize = (uint)Marshal.SizeOf<WindowClassEx>(),
-                lpfnWndProc = _windowProc,
-                hInstance = GetModuleHandle(null),
-                lpszClassName = WindowClassName
-            };
-
-            if (RegisterClassEx(ref windowClass) == 0)
-            {
-                int error = Marshal.GetLastWin32Error();
-                if (error != ErrorClassAlreadyExists)
-                {
-                    Log.Error($"Session state monitoring unavailable: RegisterClassEx failed ({error}).");
-                    return;
-                }
-            }
-
-            // A message-only window cannot receive broadcasts, and both the session end and
-            // the power notifications are broadcast to top level windows. This window is
-            // never shown, so it stays invisible.
-            _hwnd = CreateWindowEx(
-                0,
-                WindowClassName,
-                WindowClassName,
-                0,
-                0,
-                0,
-                0,
-                0,
-                IntPtr.Zero,
-                IntPtr.Zero,
-                windowClass.hInstance,
-                IntPtr.Zero);
-
-            if (_hwnd == IntPtr.Zero)
-            {
-                Log.Error($"Session state monitoring unavailable: CreateWindowEx failed ({Marshal.GetLastWin32Error()}).");
+                Log.Error($"Session state monitoring unavailable: subclassing failed ({Marshal.GetLastWin32Error()}).");
                 return;
             }
 
-            if (WTSRegisterSessionNotification(_hwnd, NotifyForThisSession))
+            _hwnd = hwnd;
+            if (WTSRegisterSessionNotification(hwnd, NotifyForThisSession))
             {
                 Log.Info("Session state monitoring started.");
             }
@@ -134,7 +104,8 @@ public sealed class SessionStateService : IDisposable
         }
 
         WTSUnRegisterSessionNotification(_hwnd);
-        DestroyWindow(_hwnd);
+        SetWindowLongPtr(_hwnd, GwlWndProc, _originalWindowProc);
+        _originalWindowProc = IntPtr.Zero;
         _hwnd = IntPtr.Zero;
     }
 
@@ -143,7 +114,8 @@ public sealed class SessionStateService : IDisposable
         switch (msg)
         {
             case WmQueryEndSession:
-                // Answering with the default keeps the shutdown unblocked.
+                // Observed only: the window's own procedure answers it below, so the
+                // shutdown stays unblocked.
                 Log.Info("Session ending (log off or shutdown).");
                 FinalizeRecordingForSessionEnd();
                 break;
@@ -171,7 +143,9 @@ public sealed class SessionStateService : IDisposable
                 break;
         }
 
-        return DefWindowProc(hWnd, msg, wParam, lParam);
+        // The window's own procedure stays in charge of the result: that keeps the shutdown
+        // unblocked and leaves WinUI responsible for everything else.
+        return CallWindowProc(_originalWindowProc, hWnd, msg, wParam, lParam);
     }
 
     private void FinalizeRecordingForSessionEnd()
@@ -248,48 +222,19 @@ public sealed class SessionStateService : IDisposable
 
     private delegate IntPtr WindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct WindowClassEx
-    {
-        public uint cbSize;
-        public uint style;
-        public WindowProc lpfnWndProc;
-        public int cbClsExtra;
-        public int cbWndExtra;
-        public IntPtr hInstance;
-        public IntPtr hIcon;
-        public IntPtr hCursor;
-        public IntPtr hbrBackground;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? lpszMenuName;
-        [MarshalAs(UnmanagedType.LPWStr)] public string lpszClassName;
-    }
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+    private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int index, IntPtr value);
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern ushort RegisterClassEx(ref WindowClassEx windowClass);
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongW", SetLastError = true)]
+    private static extern IntPtr SetWindowLong32(IntPtr hWnd, int index, IntPtr value);
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern IntPtr CreateWindowEx(
-        uint exStyle,
-        string className,
-        string windowName,
-        uint style,
-        int x,
-        int y,
-        int width,
-        int height,
-        IntPtr parent,
-        IntPtr menu,
-        IntPtr instance,
-        IntPtr param);
+    private static IntPtr SetWindowLongPtr(IntPtr hWnd, int index, IntPtr value) =>
+        IntPtr.Size == 8
+            ? SetWindowLongPtr64(hWnd, index, value)
+            : SetWindowLong32(hWnd, index, value);
 
-    [DllImport("user32.dll")]
-    private static extern IntPtr DefWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool DestroyWindow(IntPtr hWnd);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    private static extern IntPtr GetModuleHandle(string? moduleName);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr CallWindowProc(IntPtr previous, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
     [DllImport("wtsapi32.dll", SetLastError = true)]
     private static extern bool WTSRegisterSessionNotification(IntPtr hWnd, int flags);

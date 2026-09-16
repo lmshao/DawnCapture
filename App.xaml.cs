@@ -23,10 +23,12 @@ public partial class App : Application
     private const string AppUserModelId = "DawnCapture.App";
 
     private AppInstance? _singleInstance;
+    private readonly SettingsService _settingsService;
 
     public App()
     {
         var settingsService = new SettingsService();
+        _settingsService = settingsService;
 
         Log.Init();
         Log.Info("Application startup initialization started.");
@@ -126,11 +128,13 @@ public partial class App : Application
 
             // Must be attached on this thread: the messages it relies on are dispatched by
             // the UI thread's message loop.
-            Ioc.Default.GetRequiredService<SessionStateService>().Attach();
+            Ioc.Default.GetRequiredService<SessionStateService>().Attach(
+                WinRT.Interop.WindowNative.GetWindowHandle(mainWindow));
 
             mainWindow.Activate();
             _ = SyncLibraryInBackgroundAsync(catalogService, settingsService);
             NotifyPreviousSessionIssueIfAny();
+            NotifySettingsResetIfAny();
             Log.Info("Main window activated.");
         }
         catch (Exception ex)
@@ -231,6 +235,26 @@ public partial class App : Application
             await DialogHelper.ShowErrorAsync(
                 message,
                 LocalizationService.GetString("App_LastSessionCrashedTitle"));
+        });
+    }
+
+    private void NotifySettingsResetIfAny()
+    {
+        if (!_settingsService.SettingsWereReset)
+        {
+            return;
+        }
+
+        Log.Info("The settings file could not be read and was replaced by defaults.");
+
+        MainWindow?.DispatcherQueue.TryEnqueue(async () =>
+        {
+            string message = string.Format(
+                LocalizationService.GetString("App_SettingsReset"),
+                _settingsService.PreservedSettingsPath ?? _settingsService.Current.OutputFolder);
+            await DialogHelper.ShowErrorAsync(
+                message,
+                LocalizationService.GetString("App_SettingsResetTitle"));
         });
     }
 

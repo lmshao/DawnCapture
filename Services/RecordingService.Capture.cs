@@ -119,6 +119,11 @@ public sealed partial class RecordingService
         catch (Exception ex)
         {
             await CleanupCaptureAsync();
+
+            // A capture failure is the symptom of a lost device, so let the next attempt
+            // build a fresh one instead of failing the same way forever.
+            ResetDevice();
+
             State = RecordingState.Idle;
             RaiseFailed(ex.Message);
             return false;
@@ -133,6 +138,35 @@ public sealed partial class RecordingService
         }
 
         Direct3D11Interop.CreateDevice(out _d3dDevice, out _d3dContext, out _winrtDevice);
+    }
+
+    /// <summary>
+    /// Throws the Direct3D device away so the next recording builds a new one. A device that
+    /// has been lost (driver update, GPU switch, remote session) makes every later capture
+    /// fail, and because the device is created once and then reused there is no other way
+    /// back short of restarting the application.
+    /// </summary>
+    private void ResetDevice()
+    {
+        StopGraphicsCaptureSession();
+        ReleaseWindowCompositeResources();
+        ReleaseReplicaResources();
+
+        try
+        {
+            _d3dContext?.Dispose();
+            _d3dDevice?.Dispose();
+            _winrtDevice?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Releasing the Direct3D device failed: {ex.Message}");
+        }
+
+        _d3dContext = null;
+        _d3dDevice = null;
+        _winrtDevice = null;
+        Log.Info("Direct3D device released; the next recording creates a new one.");
     }
 
     private void OnFrameArrived(Direct3D11CaptureFramePool sender, object args)
@@ -213,6 +247,9 @@ public sealed partial class RecordingService
         Log.Info($"Capture item closed by the system (recording={_isRecording}, stopping={_isStopping}).");
         if (_isRecording && !_isStopping)
         {
+            // The source disappearing is not something the user did, so say so instead of
+            // letting the recording end with no explanation.
+            RaiseNotice(LocalizationService.GetString("Notice_CaptureSourceClosed"));
             _ = StopAsync();
         }
     }
