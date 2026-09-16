@@ -8,6 +8,7 @@ using DawnCapture.Services.Audio;
 using Windows.Graphics;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
+using Windows.Media.Core;
 
 namespace DawnCapture.Services;
 
@@ -148,6 +149,14 @@ public sealed partial class RecordingService
             return;
         }
 
+        var arrivedAt = _stopwatch.Elapsed;
+        if (_lastFrameArrivedAt != TimeSpan.Zero && arrivedAt - _lastFrameArrivedAt >= FrameGapLogThreshold)
+        {
+            Log.Info($"Frame delivery resumed after a {(arrivedAt - _lastFrameArrivedAt).TotalSeconds:0.0}s gap.");
+        }
+
+        _lastFrameArrivedAt = arrivedAt;
+
         if (_windowLetterboxActive)
         {
             var contentSize = frame.ContentSize;
@@ -201,6 +210,7 @@ public sealed partial class RecordingService
 
     private void OnItemClosed(GraphicsCaptureItem sender, object args)
     {
+        Log.Info($"Capture item closed by the system (recording={_isRecording}, stopping={_isStopping}).");
         if (_isRecording && !_isStopping)
         {
             _ = StopAsync();
@@ -257,11 +267,14 @@ public sealed partial class RecordingService
     }
 
     private bool WaitForVideoSample(
+        MediaStreamSource source,
         out Direct3D11CaptureFrame? frame,
+        out bool useReplica,
         out TimeSpan timestamp,
         out TimeSpan duration)
     {
         frame = null;
+        useReplica = false;
         timestamp = default;
         duration = default;
         var targetInterval = TimeSpan.FromTicks(_frameDuration);
@@ -274,6 +287,15 @@ public sealed partial class RecordingService
             }
 
             if (!_isRecording && !_isStopping)
+            {
+                return false;
+            }
+
+            // Never park on a source that has been replaced. Its caller would never get an
+            // answer, so the file it is writing could not drain and finish - and, because
+            // requests for one source are serialized, every request queued behind this one
+            // (including the audio stream) would be stuck with it.
+            if (!ReferenceEquals(source, Volatile.Read(ref _mediaStreamSource)))
             {
                 return false;
             }
@@ -310,6 +332,25 @@ public sealed partial class RecordingService
                 else if (_pendingFrame is null ||
                          _pendingFrameSequence <= _lastEmittedFrameSequence)
                 {
+                    if (IsFrameDeliveryStalled(elapsed))
+                    {
+                        // The screen stopped producing frames (locked session, minimized or
+                        // disconnected source). Answer immediately with the retained last
+                        // frame so this source's audio stream keeps being served; when there
+                        // is nothing to repeat yet, let the caller ask again shortly.
+                        if (TryEmitReplicaSampleLocked(elapsed, targetInterval, out timestamp, out duration))
+                        {
+                            useReplica = true;
+                            return true;
+                        }
+
+                        // Nothing to repeat yet: no frame has been encoded since the copy
+                        // was created, or the copy itself failed. Ask again shortly
+                        // instead of spinning.
+                        Thread.Sleep(5);
+                        return false;
+                    }
+
                     _nextVideoOutputAt += targetInterval;
                     if (elapsed > _nextVideoOutputAt)
                     {
@@ -333,6 +374,50 @@ public sealed partial class RecordingService
                 return false;
             }
         }
+    }
+
+    /// <summary>
+    /// True once no frame has arrived for a while - the session is locked, the captured
+    /// window is minimized, or the display is disconnected. Frames are not required for the
+    /// recording to stay correct, but the pump must keep answering requests. Both clocks
+    /// start at zero, so a recording whose first frame is still outstanding measures from
+    /// the moment the recording started.
+    /// </summary>
+    private bool IsFrameDeliveryStalled(TimeSpan elapsed)
+    {
+        return elapsed - _lastFrameArrivedAt >= FrameStarvationThreshold;
+    }
+
+    /// <summary>
+    /// Emits the retained last frame as a normal, frame-length sample, so a locked session
+    /// records exactly what it looks like: a still picture at the target frame rate, on the
+    /// same timeline as every other part of the file.
+    /// </summary>
+    private bool TryEmitReplicaSampleLocked(
+        TimeSpan elapsed,
+        TimeSpan targetInterval,
+        out TimeSpan timestamp,
+        out TimeSpan duration)
+    {
+        timestamp = default;
+        duration = targetInterval;
+
+        if (!_replicaValid || _replicaSurface is null)
+        {
+            return false;
+        }
+
+        timestamp = elapsed - TimeSpan.FromTicks(Volatile.Read(ref _segmentBaseTicks));
+        duration = _hasLastVideoPts ? timestamp - _lastVideoPts : targetInterval;
+        if (duration <= TimeSpan.Zero)
+        {
+            duration = targetInterval;
+        }
+
+        _lastVideoPts = timestamp;
+        _hasLastVideoPts = true;
+        _nextVideoOutputAt = elapsed + targetInterval;
+        return true;
     }
 
     private bool TryEmitVideoSampleLocked(
@@ -379,10 +464,12 @@ public sealed partial class RecordingService
     private void ResetVideoPacingLocked()
     {
         DrainVideoFramesLocked();
+        _lastFrameArrivedAt = TimeSpan.Zero;
         _pendingFrameSequence = 0;
         _lastEmittedFrameSequence = 0;
         _lastVideoPts = TimeSpan.Zero;
         _hasLastVideoPts = false;
+        _lastAudioPts = TimeSpan.MinValue;
         _nextVideoOutputAt = TimeSpan.Zero;
     }
 

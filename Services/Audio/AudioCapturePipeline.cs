@@ -28,6 +28,16 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
     private volatile bool _rebasePending;
 
     private volatile float _peakLevel;
+    private long _quietChunks;
+    private bool _silenceNoticed;
+    private long _lastMicFrames;
+    private long _lastLoopbackFrames;
+
+    /// <summary>20 ms chunks without an audible peak before a log line is worth writing (~4 s).</summary>
+    private const int QuietChunksBeforeNotice = 200;
+
+    /// <summary>Below this smoothed peak the mix counts as silent.</summary>
+    private const float AudiblePeakThreshold = 0.005f;
 
     public bool HasAudio { get; private set; }
 
@@ -212,6 +222,7 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
                     _peakLevel = Math.Max(_peakLevel * 0.7f, ComputePeak(stereoScratch));
                     _outputQueue.Enqueue((mixBuffer, nextChunkAt));
                     mixBuffer = new byte[AudioFormat.BytesPerChunk];
+                    WatchSilence();
 
                     nextChunkAt += TimeSpan.FromTicks(_chunkDurationTicks);
                     producedChunks++;
@@ -232,6 +243,41 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
                 _running = false;
             }
         }
+    }
+
+    /// <summary>
+    /// Logs when the mix stops being audible and when it becomes audible again, together
+    /// with how many frames each device delivered meanwhile. That is what makes "was the
+    /// sound captured while the session was locked" answerable from the log alone: silence
+    /// with frames still arriving means nothing was playing, silence with no frames at all
+    /// means the device itself stopped delivering. A gap between tracks is a normal reason
+    /// for the former, so the message states the evidence rather than judging it.
+    /// </summary>
+    private void WatchSilence()
+    {
+        if (_peakLevel > AudiblePeakThreshold)
+        {
+            _quietChunks = 0;
+            if (_silenceNoticed)
+            {
+                _silenceNoticed = false;
+                Log.Info("Audio is audible again.");
+            }
+
+            return;
+        }
+
+        if (++_quietChunks < QuietChunksBeforeNotice || _silenceNoticed)
+        {
+            return;
+        }
+
+        _silenceNoticed = true;
+        long micFrames = _microphone?.FramesDelivered ?? 0;
+        long loopbackFrames = _loopback?.FramesDelivered ?? 0;
+        Log.Info($"Mix silent {QuietChunksBeforeNotice / 50.0:0.0}s (mic frames: {micFrames - _lastMicFrames}, loopback frames: {loopbackFrames - _lastLoopbackFrames}).");
+        _lastMicFrames = micFrames;
+        _lastLoopbackFrames = loopbackFrames;
     }
 
     private static float ComputePeak(short[] samples)

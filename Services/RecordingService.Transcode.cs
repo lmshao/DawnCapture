@@ -231,14 +231,18 @@ public sealed partial class RecordingService
     private void ActivatePipeline(MediaPipeline pipeline, TimeSpan segmentBase)
     {
         _activePipeline = pipeline;
-        Volatile.Write(ref _mediaStreamSource, pipeline.Source);
         _transcoder = pipeline.Transcoder;
         _outputStream = pipeline.Stream;
         _currentOutputPath = pipeline.OutputPath;
         _effectiveVideoCodecIndex = pipeline.CodecIndex;
         _effectiveVideoBitrateKbps = pipeline.BitrateKbps;
-
         Volatile.Write(ref _segmentBaseTicks, segmentBase.Ticks);
+
+        // Published only once every field the pump reads is in place: a video frame answered
+        // in the window below would otherwise be stamped with the previous segment's base.
+        // The source still has to be published before the transcode starts, because the first
+        // request of a live source must never be answered with a null sample.
+        Volatile.Write(ref _mediaStreamSource, pipeline.Source);
 
         pipeline.Cancellation?.Dispose();
         pipeline.Cancellation = new CancellationTokenSource();
@@ -296,12 +300,27 @@ public sealed partial class RecordingService
 
         if (args.Request.StreamDescriptor is AudioStreamDescriptor)
         {
-            args.Request.Sample = _audioPipeline?.TryCreateSample();
-            if (args.Request.Sample is not null)
+            var audioSample = _audioPipeline?.TryCreateSample();
+            if (audioSample is null)
             {
-                _audioSamplesWritten++;
+                args.Request.Sample = null;
+                return;
             }
 
+            // Any timestamp that goes backwards makes the muxer drop the whole audio track,
+            // so a sample that arrives out of order (a segment hand-over racing the rebase)
+            // is dropped here instead: one 20 ms chunk is lost rather than the entire file's
+            // sound. The next request picks up with the following chunk.
+            if (audioSample.Timestamp <= _lastAudioPts)
+            {
+                Log.Error($"Dropped out of order audio sample ({audioSample.Timestamp.TotalSeconds:0.000}s after {_lastAudioPts.TotalSeconds:0.000}s).");
+                args.Request.Sample = null;
+                return;
+            }
+
+            _lastAudioPts = audioSample.Timestamp;
+            args.Request.Sample = audioSample;
+            _audioSamplesWritten++;
             return;
         }
 
@@ -313,9 +332,26 @@ public sealed partial class RecordingService
 
         try
         {
-            if (!WaitForVideoSample(out var frame, out var timestamp, out var duration) || frame is null)
+            if (!WaitForVideoSample(sender, out var frame, out var useReplica, out var timestamp, out var duration))
             {
                 args.Request.Sample = null;
+                return;
+            }
+
+            if (frame is null)
+            {
+                // Repeating the last known frame while the screen delivers nothing new.
+                // That surface is already at encode size, so no crop or composite applies.
+                if (!useReplica || _replicaSurface is null)
+                {
+                    args.Request.Sample = null;
+                    return;
+                }
+
+                var repeated = MediaStreamSample.CreateFromDirect3D11Surface(_replicaSurface, timestamp);
+                repeated.Duration = duration;
+                args.Request.Sample = repeated;
+                _framesWritten++;
                 return;
             }
 
@@ -347,6 +383,8 @@ public sealed partial class RecordingService
 
                     surface = croppedSurface;
                 }
+
+                RefreshReplicaIfDue(surface);
 
                 var sample = MediaStreamSample.CreateFromDirect3D11Surface(surface, timestamp);
                 sample.Duration = duration;

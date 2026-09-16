@@ -36,6 +36,13 @@ public interface IRecordingService
 
     Task StopAsync();
 
+    /// <summary>
+    /// Finishes the files being written without waiting on the UI thread, for use inside a
+    /// session end notification (log off, shutdown) where that thread is blocked by the
+    /// caller. Returns whether everything was finalized within <paramref name="budget"/>.
+    /// </summary>
+    bool EmergencyFinalize(TimeSpan budget);
+
     void Pause();
 
     void Resume();

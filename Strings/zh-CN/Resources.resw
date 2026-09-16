@@ -388,4 +388,7 @@
   <data name="Settings_SegmentConflict.Text" xml:space="preserve"><value>分段阈值长于最大录制时长，本次录制不会分段</value></data>
   <data name="Notice_MaxDurationReached" xml:space="preserve"><value>已达到最大录制时长，录制已自动停止并保存</value></data>
   <data name="Notice_SegmentUnavailable" xml:space="preserve"><value>无法开始新的分段，本次录制将继续写入当前文件</value></data>
+  <data name="Notice_SegmentFinalizeFailed" xml:space="preserve"><value>有分段未能正常收尾，文件已保留在输出文件夹</value></data>
+  <data name="App_LastRecordingUnfinishedTitle" xml:space="preserve"><value>上次录制未正常结束</value></data>
+  <data name="App_LastRecordingUnfinished" xml:space="preserve"><value>DawnCapture 在录制过程中被关闭（注销、关机或强制结束），这个文件可能无法播放：{0}</value></data>
 </root>

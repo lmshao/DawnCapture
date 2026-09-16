@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
@@ -12,11 +14,21 @@ internal sealed class WasapiCaptureDevice : IDisposable
 
     private WasapiCapture? _capture;
     private int _inputSampleRate = AudioFormat.SampleRate;
+    private volatile bool _active;
+    private int _restarting;
+    private long _framesDelivered;
 
     public WasapiCaptureDevice(bool loopback)
     {
         _loopback = loopback;
     }
+
+    /// <summary>
+    /// Frames handed over since this device started. The mixer uses it to tell "nothing is
+    /// playing" (frames keep arriving, the mix is silent) apart from "the device stopped"
+    /// (no frames at all), which a lock, an unlock or an endpoint switch can cause.
+    /// </summary>
+    public long FramesDelivered => Interlocked.Read(ref _framesDelivered);
 
     public int InputSampleRate => _inputSampleRate;
 
@@ -39,6 +51,12 @@ internal sealed class WasapiCaptureDevice : IDisposable
             {
                 StartAtDeviceMixFormat();
             }
+
+            // WASAPI ends the capture when the device is invalidated or the session is
+            // reconfigured - a lock and an unlock are both typical triggers. Without a
+            // handler that happens silently and the rest of the recording has no sound.
+            _capture.RecordingStopped += OnRecordingStopped;
+            _active = true;
         }
         catch (Exception ex)
         {
@@ -52,16 +70,80 @@ internal sealed class WasapiCaptureDevice : IDisposable
 
     public void Stop()
     {
-        if (_capture is null)
+        _active = false;
+        DisposeCapture();
+    }
+
+    private void DisposeCapture()
+    {
+        var capture = _capture;
+        _capture = null;
+        if (capture is null)
         {
             return;
         }
 
-        _capture.DataAvailable -= OnDataAvailable;
-        _capture.StopRecording();
-        _capture.Dispose();
-        _capture = null;
+        capture.DataAvailable -= OnDataAvailable;
+        capture.RecordingStopped -= OnRecordingStopped;
+
+        try
+        {
+            capture.StopRecording();
+        }
+        catch
+        {
+            // The device may already be gone.
+        }
+
+        capture.Dispose();
         DrainQueue();
+    }
+
+    private void OnRecordingStopped(object? sender, StoppedEventArgs e)
+    {
+        if (!_active)
+        {
+            return;
+        }
+
+        Log.Info($"{(_loopback ? "Loopback" : "Microphone")} capture ended unexpectedly: {e.Exception?.Message}");
+
+        if (Interlocked.CompareExchange(ref _restarting, 1, 0) != 0)
+        {
+            return;
+        }
+
+        _ = Task.Run(RestartAfterUnexpectedStop);
+    }
+
+    /// <summary>
+    /// Reopens the device so the rest of the recording keeps its sound. Runs off the
+    /// capture thread, which is ending at this point.
+    /// </summary>
+    private void RestartAfterUnexpectedStop()
+    {
+        try
+        {
+            DisposeCapture();
+            if (!_active)
+            {
+                return;
+            }
+
+            Start();
+            if (_active)
+            {
+                Log.Info($"{(_loopback ? "Loopback" : "Microphone")} capture restarted.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"{(_loopback ? "Loopback" : "Microphone")} capture restart failed", ex);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _restarting, 0);
+        }
     }
 
     public bool TryTakeMonoFrame(out float[] monoFrame)
@@ -93,6 +175,7 @@ internal sealed class WasapiCaptureDevice : IDisposable
 
         var mono = PcmAudioConverter.DecodeToFloatMono(buffer, waveFormat, frameCount);
         _monoFrames.Enqueue(mono);
+        Interlocked.Increment(ref _framesDelivered);
     }
 
     private void DrainQueue()

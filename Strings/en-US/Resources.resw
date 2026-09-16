@@ -388,4 +388,7 @@
   <data name="Settings_SegmentConflict.Text" xml:space="preserve"><value>The segment limit is longer than the max recording length, so this recording will not be split</value></data>
   <data name="Notice_MaxDurationReached" xml:space="preserve"><value>Maximum recording length reached; the recording was stopped and saved</value></data>
   <data name="Notice_SegmentUnavailable" xml:space="preserve"><value>Unable to start a new segment; this recording continues in the current file</value></data>
+  <data name="Notice_SegmentFinalizeFailed" xml:space="preserve"><value>A segment did not finish cleanly; the file was kept in the output folder</value></data>
+  <data name="App_LastRecordingUnfinishedTitle" xml:space="preserve"><value>Recording did not finish</value></data>
+  <data name="App_LastRecordingUnfinished" xml:space="preserve"><value>DawnCapture was closed while it was still recording (log off, shutdown or forced end), so this file may not play: {0}</value></data>
 </root>

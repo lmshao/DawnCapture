@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -54,7 +55,23 @@ public sealed partial class RecordingService : IRecordingService
     private long _lastEmittedFrameSequence;
     private TimeSpan _lastVideoPts;
     private bool _hasLastVideoPts;
+
+    /// <summary>
+    /// Last audio timestamp handed to the encoder. Used to refuse an out of order sample,
+    /// which a muxer would answer by discarding the rest of the track. MinValue means "no
+    /// sample yet", which is also the state right after a segment hand-over.
+    /// </summary>
+    private TimeSpan _lastAudioPts = TimeSpan.MinValue;
     private TimeSpan _nextVideoOutputAt;
+    private TimeSpan _lastFrameArrivedAt;
+    private static readonly TimeSpan FrameGapLogThreshold = TimeSpan.FromSeconds(1);
+
+    /// <summary>
+    /// How long the screen may deliver no frames before the pump switches to repeating the
+    /// last known picture. Well above any sensible frame interval, so normal recording never
+    /// takes this path.
+    /// </summary>
+    private static readonly TimeSpan FrameStarvationThreshold = TimeSpan.FromMilliseconds(500);
 
     private MediaStreamSource? _mediaStreamSource;
     private MediaTranscoder? _transcoder;
@@ -108,10 +125,22 @@ public sealed partial class RecordingService : IRecordingService
                 return;
             }
 
+            RecordingState previous = _state;
             UpdateSleepPrevention(value);
 
             _state = value;
-            Log.Debug($"Recording state changed: {_state} -> {value}");
+            Log.Debug($"Recording state changed: {previous} -> {value}");
+
+            // Record that a file is being written, so a forced kill, a log off or a power
+            // loss can be explained on the next launch instead of leaving a file that simply
+            // will not open. Resuming from pause is not a new recording.
+            if (value == RecordingState.Recording &&
+                previous is not (RecordingState.Recording or RecordingState.Paused) &&
+                _currentOutputPath is { Length: > 0 } outputPath)
+            {
+                CrashMarkerHelper.WriteRecording(outputPath);
+            }
+
             RaiseStateChanged(value);
         }
     }
@@ -400,6 +429,16 @@ public sealed partial class RecordingService : IRecordingService
 
             State = RecordingState.Stopping;
             _stopwatch.Stop();
+
+            if (_lastFrameArrivedAt != TimeSpan.Zero)
+            {
+                var frameAge = _stopwatch.Elapsed - _lastFrameArrivedAt;
+                if (frameAge >= FrameGapLogThreshold)
+                {
+                    Log.Info($"Frames had already stopped {frameAge.TotalSeconds:0.0}s before the recording was stopped.");
+                }
+            }
+
             _isStopping = true;
 
             // Stop feeding the encoder before waiting for finalize (P0-5): WGC must
@@ -544,6 +583,77 @@ public sealed partial class RecordingService : IRecordingService
         }
     }
 
+    /// <summary>
+    /// Finishes the files that are being written without touching anything that needs the UI
+    /// thread or the database, so it can run inside a session end notification. Segments that
+    /// are still being finalized are included: they are separate files that would otherwise
+    /// be left without their index. Returns whether everything finished within the budget.
+    /// </summary>
+    public bool EmergencyFinalize(TimeSpan budget)
+    {
+        if (State is not (RecordingState.Recording or RecordingState.Paused))
+        {
+            return true;
+        }
+
+        // A stop that is already running owns the teardown; this call then only waits for it.
+        bool ownsStop = Interlocked.Exchange(ref _stopGuard, 1) == 0;
+        bool finalized = false;
+
+        try
+        {
+            Log.Info($"Emergency finalize started (budget {budget.TotalSeconds:0.0}s).");
+
+            if (ownsStop)
+            {
+                // Same sequence as StopAsync, minus every step that needs the UI thread.
+                _stopwatch.Stop();
+                _isStopping = true;
+                _isRecording = false;
+                StopGraphicsCaptureSession();
+                _audioPipeline?.BeginFlush();
+                _closedEvent.Set();
+            }
+
+            var pending = new List<Task>();
+            if (_transcodeTask is not null)
+            {
+                pending.Add(_transcodeTask);
+            }
+
+            pending.AddRange(SnapshotRetirements());
+            finalized = pending.Count == 0 || Task.WhenAll(pending).Wait(budget);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Emergency finalize failed", ex);
+        }
+        finally
+        {
+            if (ownsStop)
+            {
+                Interlocked.Exchange(ref _stopGuard, 0);
+            }
+        }
+
+        if (!finalized)
+        {
+            // The marker stays behind on purpose: the next launch tells the user this file
+            // may not play, which is better than a file that silently will not open.
+            Log.Error("Emergency finalize timed out; the file may not be playable.");
+            return false;
+        }
+
+        CrashMarkerHelper.ClearRecording();
+        if (ownsStop)
+        {
+            State = RecordingState.Idle;
+        }
+
+        Log.Info("Emergency finalize completed.");
+        return true;
+    }
+
     public void Pause()
     {
         if (State != RecordingState.Recording)
@@ -661,6 +771,12 @@ public sealed partial class RecordingService : IRecordingService
 
         _cropRect = null;
         ReleaseWindowCompositeResources();
+        ReleaseReplicaResources();
+
+        // The recording ended with the process alive, so it is no longer "unfinished".
+        // Reaching this method at all means a crash marker would be the more useful one.
+        CrashMarkerHelper.ClearRecording();
+
         _windowLetterboxActive = false;
         _windowResizeWarned = false;
         _stopwatch.Reset();

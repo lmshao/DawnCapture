@@ -72,6 +72,7 @@ public partial class App : Application
         services.AddSingleton<IMonitorService, MonitorService>();
         services.AddSingleton<IGlobalHotkeyService, GlobalHotkeyService>();
         services.AddSingleton<ITrayIconService, TrayIconService>();
+        services.AddSingleton<SessionStateService>();
 
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<CaptureViewModel>();
@@ -122,9 +123,14 @@ public partial class App : Application
             var mainWindow = Ioc.Default.GetRequiredService<MainWindow>();
             MainWindow = mainWindow;
             Ioc.Default.GetRequiredService<ITrayIconService>().Attach(mainWindow);
+
+            // Must be attached on this thread: the messages it relies on are dispatched by
+            // the UI thread's message loop.
+            Ioc.Default.GetRequiredService<SessionStateService>().Attach();
+
             mainWindow.Activate();
             _ = SyncLibraryInBackgroundAsync(catalogService, settingsService);
-            NotifyLastCrashIfAny();
+            NotifyPreviousSessionIssueIfAny();
             Log.Info("Main window activated.");
         }
         catch (Exception ex)
@@ -180,15 +186,40 @@ public partial class App : Application
         });
     }
 
-    private static void NotifyLastCrashIfAny()
+    /// <summary>
+    /// Reports what the previous session left behind. A recording that never finished is the
+    /// more actionable of the two: unlike a crash, its file is still on disk and may simply
+    /// refuse to open.
+    /// </summary>
+    private static void NotifyPreviousSessionIssueIfAny()
     {
-        string? crashedAt = CrashMarkerHelper.TryConsume();
-        if (crashedAt is null)
+        SessionMarker? marker = CrashMarkerHelper.TryConsume();
+        if (marker is null)
         {
             return;
         }
 
-        Log.Info($"Previous session crashed at {crashedAt}; notifying user.");
+        if (string.Equals(marker.Kind, CrashMarkerHelper.RecordingKind, StringComparison.Ordinal))
+        {
+            Log.Info($"Previous recording did not finish ({marker.Detail}).");
+            MainWindow?.DispatcherQueue.TryEnqueue(async () =>
+            {
+                string message = string.Format(
+                    LocalizationService.GetString("App_LastRecordingUnfinished"),
+                    marker.OutputPath ?? string.Empty);
+                bool reveal = await DialogHelper.ShowConfirmAsync(
+                    message,
+                    LocalizationService.GetString("App_LastRecordingUnfinishedTitle"),
+                    LocalizationService.GetString("Recordings_OpenFolder"));
+                if (reveal)
+                {
+                    RevealInExplorer(marker.OutputPath);
+                }
+            });
+            return;
+        }
+
+        Log.Info($"Previous session crashed at {marker.Detail}.");
 
         // Wait for the window to finish loading before showing the dialog,
         // so the XamlRoot is ready.
@@ -201,6 +232,36 @@ public partial class App : Application
                 message,
                 LocalizationService.GetString("App_LastSessionCrashedTitle"));
         });
+    }
+
+    private static void RevealInExplorer(string? path)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return;
+            }
+
+            string? folder = Path.GetDirectoryName(path);
+            string target = File.Exists(path)
+                ? $"/select,\"{path}\""
+                : Directory.Exists(folder) ? $"\"{folder}\"" : string.Empty;
+            if (target.Length == 0)
+            {
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo("explorer.exe", target)
+            {
+                UseShellExecute = true
+            });
+            Log.Info($"Revealed the unfinished recording: {path}");
+        }
+        catch (Exception ex)
+        {
+            Log.Info($"Could not reveal the unfinished recording: {ex.Message}");
+        }
     }
 
     private static void TrySetAppUserModelId()

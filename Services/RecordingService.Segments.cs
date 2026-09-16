@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using DawnCapture.Helpers;
 using DawnCapture.Models;
 
 namespace DawnCapture.Services;
@@ -176,7 +177,7 @@ public sealed partial class RecordingService
                 // current file. Waiting for a retry would hammer the encoder, so a
                 // failure disables auto-segment for the rest of the recording.
                 _segmentSwitchFailed = true;
-                Log.Error("Unable to prepare the next segment; auto-segment is off for this recording.");
+                Log.Error("Next segment unavailable; auto-segment disabled.");
                 RaiseNotice(LocalizationService.GetString("Notice_SegmentUnavailable"));
                 return;
             }
@@ -201,14 +202,28 @@ public sealed partial class RecordingService
             _segmentStartAudioSamples = retiredSamples;
             Volatile.Write(ref _segmentIndex, nextSegment);
             ActivatePipeline(candidate, _stopwatch.Elapsed);
+
+            // The hand-over above must be followed by the audio rebase immediately: the pump
+            // can serve the new source's first audio request at any moment, and a sample that
+            // still carries the previous origin arrives with a timestamp ahead of every
+            // sample behind it. A muxer answers that by keeping the first one and dropping
+            // the rest, which is a silent file. No I/O, no logging in between.
             _audioPipeline?.RebaseTimestamps();
+            _lastAudioPts = TimeSpan.MinValue;
             lock (_frameLock)
             {
                 _hasLastVideoPts = false;
                 _lastVideoPts = TimeSpan.Zero;
             }
 
-            Log.Info($"Segment {nextSegment} started; the previous file is finishing in the background.");
+            // A forced kill should name the file that is actually being written now. This is
+            // file I/O, so it deliberately stays clear of the hand-over above.
+            if (_currentOutputPath is { Length: > 0 } segmentPath)
+            {
+                CrashMarkerHelper.WriteRecording(segmentPath);
+            }
+
+            Log.Info($"Segment {nextSegment} started; previous file finishing.");
 
             if (retiring is not null)
             {
@@ -254,10 +269,12 @@ public sealed partial class RecordingService
                 }
                 catch (TimeoutException)
                 {
-                    Log.Error(
-                        $"Segment {segmentNumber} finalize timed out after {frames} frames / {audioSamples} audio samples.");
+                    // Keep the file: a container that was never finished still holds the
+                    // recorded video and audio, and deleting it would destroy the only
+                    // copy of that footage.
+                    Log.Error($"Segment {segmentNumber} finalize timed out ({frames} frames, {audioSamples} samples); file kept.");
                     pipeline.Cancellation?.Cancel();
-                    TryDeleteOutputFile(pipeline.OutputPath);
+                    RaiseNotice(LocalizationService.GetString("Notice_SegmentFinalizeFailed"));
                     return;
                 }
                 catch
@@ -327,11 +344,25 @@ public sealed partial class RecordingService
         }
         catch (TimeoutException)
         {
-            Log.Error("A retired segment did not finish in time; the recording stops without waiting any longer.");
+            Log.Error("A retired segment did not finish in time; not waiting any longer.");
         }
         catch
         {
             // Reported by the individual retirement.
+        }
+    }
+
+    /// <summary>
+    /// Segments that are still finalizing. For callers that cannot await - the emergency
+    /// finalize runs on the UI thread inside a session end notification, where awaiting an
+    /// async method would deadlock on the very thread it needs.
+    /// </summary>
+    private Task[] SnapshotRetirements()
+    {
+        lock (_segmentSync)
+        {
+            _retirementTasks.RemoveAll(static pending => pending.IsCompleted);
+            return [.. _retirementTasks];
         }
     }
 
