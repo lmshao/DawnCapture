@@ -409,6 +409,54 @@
                     </Grid>
                     <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
 
+                    <Grid Style="{StaticResource DawnSettingsRowStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="260" />
+                            <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" x:Uid="Settings_Microphone" Text="Microphone" />
+                            <TextBlock
+                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                FontSize="11"
+                                Text="Uses the system default device when unset"
+                                x:Uid="Settings_Microphone_Desc" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Style="{StaticResource DawnSettingsComboBoxStyle}"
+                            DisplayMemberPath="DisplayName"
+                            IsEnabled="{x:Bind ViewModel.HasMicrophoneDevices, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.MicrophoneDevices}"
+                            SelectionChanged="MicrophoneDevices_SelectionChanged"
+                            SelectedItem="{x:Bind ViewModel.SelectedMicrophoneDevice, Mode=OneWay}" />
+                    </Grid>
+                    <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+
+                    <Grid Style="{StaticResource DawnSettingsRowStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="260" />
+                            <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" x:Uid="Settings_SystemAudio" Text="System audio" />
+                            <TextBlock
+                                Foreground="{StaticResource DawnTextFaintBrush}"
+                                FontSize="11"
+                                Text="Uses the system default playback device when unset"
+                                x:Uid="Settings_SystemAudio_Desc" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Style="{StaticResource DawnSettingsComboBoxStyle}"
+                            DisplayMemberPath="DisplayName"
+                            IsEnabled="{x:Bind ViewModel.HasSystemAudioDevices, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.SystemAudioDevices}"
+                            SelectionChanged="SystemAudioDevices_SelectionChanged"
+                            SelectedItem="{x:Bind ViewModel.SelectedSystemAudioDevice, Mode=OneWay}" />
+                    </Grid>
+                    <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+
                     <TextBlock Style="{StaticResource DawnSettingsSubsectionTitleStyle}" x:Uid="Settings_Subsection_Behavior" Text="Recording behavior" />
 
                     <Grid Style="{StaticResource DawnSettingsRowStyle}">

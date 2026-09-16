@@ -22,6 +22,23 @@ public sealed class AppSettings
 
     public int AudioQualityIndex { get; set; } = 1;
 
+    /// <summary>
+    /// The user's intent, not the live state: a source that is switched on while its device is
+    /// missing stays on, so it becomes effective again once the device is back. Defaults match
+    /// the capture page's previous hardcoded values.
+    /// </summary>
+    public bool MicrophoneEnabled { get; set; }
+
+    public bool SystemAudioEnabled { get; set; } = true;
+
+    /// <summary>
+    /// WASAPI endpoint id (MMDevice.ID) to capture from; null follows the system default. The
+    /// id is stored rather than the friendly name because names change and can collide.
+    /// </summary>
+    public string? MicrophoneDeviceId { get; set; }
+
+    public string? SystemAudioDeviceId { get; set; }
+
     public int VideoCodecIndex { get; set; }
 
     public bool CountdownEnabled { get; set; } = true;

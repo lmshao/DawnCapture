@@ -62,13 +62,13 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
 
         if (options.EnableMicrophone)
         {
-            _microphone = new WasapiCaptureDevice(loopback: false);
+            _microphone = new WasapiCaptureDevice(loopback: false, options.MicrophoneDeviceId);
             _microphone.Start();
         }
 
         if (options.EnableSystemAudio)
         {
-            _loopback = new WasapiCaptureDevice(loopback: true);
+            _loopback = new WasapiCaptureDevice(loopback: true, options.SystemAudioDeviceId);
             _loopback.Start();
         }
 
@@ -95,6 +95,13 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
         if (options.EnableSystemAudio && (_loopback is null || !_loopback.IsActive))
         {
             raiseNotice(LocalizationService.GetString("Notice_SystemAudioUnavailable"));
+        }
+
+        // A chosen device was not there, so the default one is recording instead. The user has
+        // to know: the sound is still being captured, but from a different endpoint.
+        if (_microphone?.FellBackToDefaultDevice == true || _loopback?.FellBackToDefaultDevice == true)
+        {
+            raiseNotice(LocalizationService.GetString("Notice_AudioDeviceMissing"));
         }
     }
 

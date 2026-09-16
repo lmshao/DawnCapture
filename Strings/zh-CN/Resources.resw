@@ -273,6 +273,13 @@
   <data name="Settings_VideoCodec_Desc.Text" xml:space="preserve"><value>选择兼容性或小文件</value></data>
   <data name="Settings_AudioQuality.Text" xml:space="preserve"><value>音频质量</value></data>
   <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>视频内嵌音频与纯音频录制均使用 AAC。</value></data>
+  <data name="Settings_Microphone.Text" xml:space="preserve"><value>麦克风</value></data>
+  <data name="Settings_Microphone_Desc.Text" xml:space="preserve"><value>未选择时使用系统默认设备。</value></data>
+  <data name="Settings_SystemAudio.Text" xml:space="preserve"><value>系统声音</value></data>
+  <data name="Settings_SystemAudio_Desc.Text" xml:space="preserve"><value>未选择时使用系统默认播放设备。</value></data>
+  <data name="Settings_AudioDevice_Default" xml:space="preserve"><value>系统默认</value></data>
+  <data name="Settings_AudioDevice_None" xml:space="preserve"><value>无可用设备</value></data>
+  <data name="Notice_AudioDeviceMissing" xml:space="preserve"><value>上次选择的音频设备不可用，已改用系统默认设备。</value></data>
   <data name="Settings_CaptureCursor.Text" xml:space="preserve"><value>录制光标</value></data>
   <data name="Settings_CaptureCursor_Desc.Text" xml:space="preserve"><value>在录像中显示鼠标指针</value></data>
   <data name="Settings_Group_General.Text" xml:space="preserve"><value>常规</value></data>

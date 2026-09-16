@@ -130,6 +130,8 @@ public partial class CaptureViewModel
             OnPropertyChanged(nameof(SelectedPresetTierLabel));
             AudioQualityIndex = settings.AudioQualityIndex;
             OnPropertyChanged(nameof(SelectedAudioQualityTierLabel));
+            MicrophoneEnabled = settings.MicrophoneEnabled;
+            SystemAudioEnabled = settings.SystemAudioEnabled;
             ApplyFlyoutSelection(PresetFlyout, CapturePresetIndex);
             ApplyFlyoutSelection(AudioQualityFlyout, AudioQualityIndex);
             UpdateCodecSummaries(settings.VideoCodecIndex);

@@ -6,6 +6,11 @@ public sealed class RecordingAudioOptions
 
     public bool EnableSystemAudio { get; init; }
 
+    /// <summary>Endpoint id to capture from; null or empty follows the system default device.</summary>
+    public string? MicrophoneDeviceId { get; init; }
+
+    public string? SystemAudioDeviceId { get; init; }
+
     public int BitrateKbps { get; init; } = 192;
 
     public int SampleRate { get; init; } = 48000;

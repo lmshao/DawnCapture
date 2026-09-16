@@ -7,6 +7,7 @@ using DawnCapture.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.UI.Xaml;
@@ -59,6 +60,7 @@ public partial class SettingsViewModel : ObservableObject
         IsRecording = _recordingService.State is RecordingState.Recording or RecordingState.Paused;
         RefreshHotkeyDisplays();
         RefreshHotkeyRegistrationWarning();
+        RefreshAudioDevices();
     }
 
     private bool _suppressPersist;
@@ -88,6 +90,7 @@ public partial class SettingsViewModel : ObservableObject
             MaxDurationIndex = NearestPresetIndex(MaxDurationPresetMinutes, settings.MaxRecordingMinutes);
             CloseMainWindowActionIndex = (int)settings.CloseMainWindowAction;
             SelectedLanguage = Languages.FirstOrDefault(option => option.Code == settings.Language) ?? Languages[0];
+            RefreshAudioDevices();
             RefreshHotkeyDisplays();
             RefreshHotkeyRegistrationWarning();
         }
@@ -700,6 +703,21 @@ public partial class SettingsViewModel : ObservableObject
         }
 
         _settingsService.Current.AudioQualityIndex = AudioQualityIndex;
+
+        // Only a loaded list may write these: a null entry means the list was never filled (a
+        // failed enumeration), and writing it would drop the saved device on an unrelated change.
+        // Choosing the "system default" entry is not that case - the entry itself is not null,
+        // its Id is.
+        if (SelectedMicrophoneDevice is not null)
+        {
+            _settingsService.Current.MicrophoneDeviceId = SelectedMicrophoneDevice.Id;
+        }
+
+        if (SelectedSystemAudioDevice is not null)
+        {
+            _settingsService.Current.SystemAudioDeviceId = SelectedSystemAudioDevice.Id;
+        }
+
         _settingsService.Current.VideoCodecIndex = CodecIndex;
         _settingsService.Current.CaptureCursor = CaptureCursor;
         _settingsService.Current.CountdownEnabled = CountdownEnabled;
@@ -745,6 +763,240 @@ public partial class SettingsViewModel : ObservableObject
             WorkingDirectory = AppContext.BaseDirectory
         });
         Application.Current.Exit();
+    }
+
+    /// <summary>
+    /// One pickable endpoint. <see cref="Id"/> is null for the "system default" entry, which is
+    /// what a fresh install stores - no choice to make, and it follows the default device.
+    /// A class rather than a record on purpose: entries are identified by reference, because a
+    /// value-equal replacement would not raise a change notification and the combo box would be
+    /// left showing nothing after the list is rebuilt.
+    /// </summary>
+    public sealed class AudioDeviceOption(string? id, string displayName)
+    {
+        public string? Id { get; } = id;
+
+        public string DisplayName { get; } = displayName;
+
+        public override string ToString() => DisplayName;
+    }
+
+    public ObservableCollection<AudioDeviceOption> MicrophoneDevices { get; } = new();
+
+    public ObservableCollection<AudioDeviceOption> SystemAudioDevices { get; } = new();
+
+    /// <summary>
+    /// What the list shows. Only this view model writes it: the combo boxes in the page are
+    /// bound one way and report the user's picks through <see cref="ApplyMicrophoneDevice"/>,
+    /// so rebuilding a list can never be mistaken for a choice.
+    /// </summary>
+    [ObservableProperty]
+    private AudioDeviceOption? _selectedMicrophoneDevice;
+
+    [ObservableProperty]
+    private AudioDeviceOption? _selectedSystemAudioDevice;
+
+    /// <summary>
+    /// False when the machine has no such endpoint at all. The list then holds a single entry
+    /// saying so, and the combo box is disabled because there is nothing to choose.
+    /// </summary>
+    public bool HasMicrophoneDevices { get; private set; }
+
+    public bool HasSystemAudioDevices { get; private set; }
+
+    public void ApplyMicrophoneDevice(AudioDeviceOption? option) => ApplyDevice(option, systemAudio: false);
+
+    public void ApplySystemAudioDevice(AudioDeviceOption? option) => ApplyDevice(option, systemAudio: true);
+
+    private void ApplyDevice(AudioDeviceOption? option, bool systemAudio)
+    {
+        if (option is null)
+        {
+            // The entry is never "nothing": the list always holds the default entry, so a null
+            // selection can only be a rebuilt list, not a choice.
+            return;
+        }
+
+        if (systemAudio)
+        {
+            SelectedSystemAudioDevice = option;
+        }
+        else
+        {
+            SelectedMicrophoneDevice = option;
+        }
+
+        string? storedId = systemAudio
+            ? _settingsService.Current.SystemAudioDeviceId
+            : _settingsService.Current.MicrophoneDeviceId;
+        if (!string.Equals(storedId, option.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            PersistSettings();
+        }
+    }
+
+    /// <summary>
+    /// Brings both device lists in line with the endpoints that exist now. Called when the page
+    /// is constructed and every time it is shown, because devices can be plugged in or removed
+    /// while the app runs. A saved device that is no longer connected is dropped and the setting
+    /// itself goes back to "system default", so what the list shows and what is stored never
+    /// disagree.
+    /// </summary>
+    public void RefreshAudioDevices()
+    {
+        var settings = _settingsService.Current;
+        var captureDevices = AudioDeviceHelper.GetActiveCaptureDevices();
+        var renderDevices = AudioDeviceHelper.GetActiveRenderDevices();
+
+        // A null list means the query failed, not that the machine has no such endpoint: the row
+        // is then left exactly as it is, so a transient failure cannot drop the saved device.
+        if (captureDevices is not null)
+        {
+            var (microphone, missing) = SyncDeviceOptions(
+                MicrophoneDevices,
+                captureDevices,
+                settings.MicrophoneDeviceId);
+            SetSelectedDevice(systemAudio: false, microphone);
+            SetDeviceAvailability(systemAudio: false, captureDevices.Count > 0);
+
+            if (missing)
+            {
+                // The value is cleared before saving, so it is right even if this save is
+                // suppressed (an external change is in flight) and lands with the next one.
+                settings.MicrophoneDeviceId = null;
+                PersistSettings();
+            }
+        }
+
+        if (renderDevices is not null)
+        {
+            var (systemAudio, missing) = SyncDeviceOptions(
+                SystemAudioDevices,
+                renderDevices,
+                settings.SystemAudioDeviceId);
+            SetSelectedDevice(systemAudio: true, systemAudio);
+            SetDeviceAvailability(systemAudio: true, renderDevices.Count > 0);
+
+            if (missing)
+            {
+                settings.SystemAudioDeviceId = null;
+                PersistSettings();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Applies a selection through null on purpose: a combo box drops its selection while its list
+    /// is rebuilt, and re-assigning an entry it treats as the same value raises no notification at
+    /// all - either way the selection would stay blank. Both assignments are synchronous, so
+    /// nothing is painted in between.
+    /// </summary>
+    private void SetSelectedDevice(bool systemAudio, AudioDeviceOption option)
+    {
+        if (systemAudio)
+        {
+            SelectedSystemAudioDevice = null;
+            SelectedSystemAudioDevice = option;
+        }
+        else
+        {
+            SelectedMicrophoneDevice = null;
+            SelectedMicrophoneDevice = option;
+        }
+    }
+
+    private void SetDeviceAvailability(bool systemAudio, bool available)
+    {
+        if (systemAudio)
+        {
+            if (HasSystemAudioDevices == available)
+            {
+                return;
+            }
+
+            HasSystemAudioDevices = available;
+            OnPropertyChanged(nameof(HasSystemAudioDevices));
+        }
+        else
+        {
+            if (HasMicrophoneDevices == available)
+            {
+                return;
+            }
+
+            HasMicrophoneDevices = available;
+            OnPropertyChanged(nameof(HasMicrophoneDevices));
+        }
+    }
+
+    /// <summary>
+    /// Updates a list in place when it is already correct, and rebuilds it otherwise. Rebuilding
+    /// clears the combo box selection, so an unchanged list is left completely alone - and when
+    /// it is rebuilt, the returned entry is one of the new instances, which is what the combo box
+    /// can select.
+    /// </summary>
+    private static (AudioDeviceOption Option, bool WasMissing) SyncDeviceOptions(
+        ObservableCollection<AudioDeviceOption> target,
+        IReadOnlyList<AudioDeviceHelper.AudioDeviceInfo> devices,
+        string? storedId)
+    {
+        // With no endpoint at all, "system default" would be a lie: the row then says there is
+        // nothing to choose, and the page disables it.
+        string firstLabel = LocalizationService.GetString(
+            devices.Count > 0 ? "Settings_AudioDevice_Default" : "Settings_AudioDevice_None");
+
+        if (target.Count == 0 ||
+            !string.Equals(target[0].DisplayName, firstLabel, StringComparison.Ordinal) ||
+            !MatchesCurrentDevices(target, devices))
+        {
+            target.Clear();
+            target.Add(new AudioDeviceOption(null, firstLabel));
+
+            foreach (var device in devices)
+            {
+                target.Add(new AudioDeviceOption(device.Id, device.Name));
+            }
+        }
+
+        foreach (var option in target)
+        {
+            if (string.Equals(option.Id, storedId, StringComparison.OrdinalIgnoreCase))
+            {
+                return (option, false);
+            }
+        }
+
+        if (string.IsNullOrEmpty(storedId))
+        {
+            // Defensive: the first entry is the default one and always matches a null id.
+            return (target[0], false);
+        }
+
+        Log.Info($"Saved audio device '{storedId}' is not connected; the setting goes back to the system default.");
+        return (target[0], true);
+    }
+
+    /// <summary>True when the list already holds exactly the first entry plus these devices.</summary>
+    private static bool MatchesCurrentDevices(
+        ObservableCollection<AudioDeviceOption> target,
+        IReadOnlyList<AudioDeviceHelper.AudioDeviceInfo> devices)
+    {
+        if (target.Count != devices.Count + 1)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < devices.Count; i++)
+        {
+            var option = target[i + 1];
+            if (!string.Equals(option.Id, devices[i].Id, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(option.DisplayName, devices[i].Name, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public sealed record LanguageOption(string Code, string DisplayName);

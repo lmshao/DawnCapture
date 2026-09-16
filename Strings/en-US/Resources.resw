@@ -275,6 +275,13 @@
   <data name="Settings_VideoCodec_Desc.Text" xml:space="preserve"><value>Choose compatibility or smaller files</value></data>
   <data name="Settings_AudioQuality.Text" xml:space="preserve"><value>Audio quality</value></data>
   <data name="Settings_AudioQuality_Desc.Text" xml:space="preserve"><value>AAC for audio in video recordings and audio-only captures.</value></data>
+  <data name="Settings_Microphone.Text" xml:space="preserve"><value>Microphone</value></data>
+  <data name="Settings_Microphone_Desc.Text" xml:space="preserve"><value>Uses the system default device when unset.</value></data>
+  <data name="Settings_SystemAudio.Text" xml:space="preserve"><value>System audio</value></data>
+  <data name="Settings_SystemAudio_Desc.Text" xml:space="preserve"><value>Uses the system default playback device when unset.</value></data>
+  <data name="Settings_AudioDevice_Default" xml:space="preserve"><value>System default</value></data>
+  <data name="Settings_AudioDevice_None" xml:space="preserve"><value>No device available</value></data>
+  <data name="Notice_AudioDeviceMissing" xml:space="preserve"><value>The audio device you selected is unavailable; the system default device is being used.</value></data>
   <data name="Settings_CaptureCursor.Text" xml:space="preserve"><value>Capture cursor</value></data>
   <data name="Settings_CaptureCursor_Desc.Text" xml:space="preserve"><value>Show the pointer in recorded video</value></data>
   <data name="Settings_Group_General.Text" xml:space="preserve"><value>General</value></data>

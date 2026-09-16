@@ -93,18 +93,29 @@ public partial class CaptureViewModel : ObservableObject
 
     private void InitializeAudioDevices()
     {
-        if (!HasMicrophoneDevice)
+        // Switching a source off because its device is missing is a correction of the current
+        // session only; the stored intent must survive so the source comes back with the device.
+        bool previousSuppress = _suppressSettingsSave;
+        _suppressSettingsSave = true;
+        try
         {
-            MicrophoneEnabled = false;
-            MicrophoneRowTooltip = LocalizationService.GetString("Capture_MicrophoneUnavailable");
-            Log.Info("No microphone device detected; microphone option disabled.");
-        }
+            if (!HasMicrophoneDevice)
+            {
+                MicrophoneEnabled = false;
+                MicrophoneRowTooltip = LocalizationService.GetString("Capture_MicrophoneUnavailable");
+                Log.Info("No microphone device detected; microphone option disabled.");
+            }
 
-        if (!HasSystemAudioDevice)
+            if (!HasSystemAudioDevice)
+            {
+                SystemAudioEnabled = false;
+                SystemAudioRowTooltip = LocalizationService.GetString("Capture_SystemAudioUnavailable");
+                Log.Info("No playback device detected; system audio option disabled.");
+            }
+        }
+        finally
         {
-            SystemAudioEnabled = false;
-            SystemAudioRowTooltip = LocalizationService.GetString("Capture_SystemAudioUnavailable");
-            Log.Info("No playback device detected; system audio option disabled.");
+            _suppressSettingsSave = previousSuppress;
         }
 
         UpdateAudioStatusBadges();
@@ -378,10 +389,15 @@ public partial class CaptureViewModel : ObservableObject
 
     partial void OnMicrophoneEnabledChanged(bool value)
     {
-        if (value && !HasMicrophoneDevice)
+        bool corrected = value && !HasMicrophoneDevice;
+        if (corrected)
         {
+            _suppressSettingsSave = true;
             MicrophoneEnabled = false;
+            _suppressSettingsSave = false;
         }
+
+        PersistAudioToggleIntent(corrected);
 
         _mainViewModel.ClearCaptureNotice();
         UpdateAudioStatusBadges();
@@ -393,10 +409,15 @@ public partial class CaptureViewModel : ObservableObject
 
     partial void OnSystemAudioEnabledChanged(bool value)
     {
-        if (value && !HasSystemAudioDevice)
+        bool corrected = value && !HasSystemAudioDevice;
+        if (corrected)
         {
+            _suppressSettingsSave = true;
             SystemAudioEnabled = false;
+            _suppressSettingsSave = false;
         }
+
+        PersistAudioToggleIntent(corrected);
 
         _mainViewModel.ClearCaptureNotice();
         UpdateAudioStatusBadges();
@@ -404,6 +425,30 @@ public partial class CaptureViewModel : ObservableObject
         {
             UpdatePreviewCopy();
         }
+    }
+
+    /// <summary>
+    /// Stores what the user wants rather than what is possible right now: a source switched on
+    /// while its device is missing stays on, so it works again once the device is back. A
+    /// forced correction (or a settings reload) must never overwrite that stored intent.
+    /// </summary>
+    private void PersistAudioToggleIntent(bool corrected)
+    {
+        if (_suppressSettingsSave || corrected)
+        {
+            return;
+        }
+
+        var settings = _settingsService.Current;
+        if (settings.MicrophoneEnabled == MicrophoneEnabled &&
+            settings.SystemAudioEnabled == SystemAudioEnabled)
+        {
+            return;
+        }
+
+        settings.MicrophoneEnabled = MicrophoneEnabled;
+        settings.SystemAudioEnabled = SystemAudioEnabled;
+        _settingsService.Save();
     }
 
     private void UpdateAudioStatusBadges()
@@ -642,6 +687,8 @@ public partial class CaptureViewModel : ObservableObject
         {
             EnableMicrophone = MicrophoneEnabled && HasMicrophoneDevice,
             EnableSystemAudio = SystemAudioEnabled && HasSystemAudioDevice,
+            MicrophoneDeviceId = _settingsService.Current.MicrophoneDeviceId,
+            SystemAudioDeviceId = _settingsService.Current.SystemAudioDeviceId,
             BitrateKbps = RecordingAudioOptions.BitrateFromQualityIndex(
                 _settingsService.Current.AudioQualityIndex)
         };
