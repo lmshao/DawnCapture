@@ -90,8 +90,7 @@ public sealed partial class RecordingService
 
             if (_audioOptions.HasAnySource)
             {
-                _audioCancellation = new CancellationTokenSource();
-                _audioPipeline = new AudioCapturePipeline();
+                ActivateAudioPipeline();
             }
 
             _stopwatch.Restart();

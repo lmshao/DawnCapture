@@ -346,6 +346,8 @@
   <data name="Storage_Check_Unavailable" xml:space="preserve"><value>Unable to check free disk space on the output drive.</value></data>
   <data name="Notice_HevcFallback" xml:space="preserve"><value>H.265 is not available on this PC. Recording with H.264 instead.</value></data>
   <data name="Notice_SystemAudioUnavailable" xml:space="preserve"><value>System audio could not be captured. Check your audio device or Windows sound settings.</value></data>
+  <data name="Notice_AudioClipping" xml:space="preserve"><value>Audio is overloading and may sound distorted. Lower the system volume, or the app / microphone level in the volume mixer.</value></data>
+  <data name="Capture_AudioClipping.Text" xml:space="preserve"><value>Clipping</value></data>
   <data name="Settings_SaveFailed" xml:space="preserve"><value>Your settings could not be saved. Check disk space and folder permissions.</value></data>
   <data name="Recordings_PlayFailed" xml:space="preserve"><value>Unable to open this recording. The file may have been moved or deleted.</value></data>
   <data name="Recordings_Empty_CTA.Content" xml:space="preserve"><value>Start recording</value></data>

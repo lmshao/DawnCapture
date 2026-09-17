@@ -164,6 +164,8 @@ public sealed partial class RecordingService : IRecordingService
 
     public double AudioMeterLevel => _audioPipeline?.PeakLevel ?? 0;
 
+    public bool IsAudioClipping => _audioPipeline?.IsClipping ?? false;
+
     public event EventHandler<RecordingState>? StateChanged;
 
     public event EventHandler<string>? RecordingFailed;
@@ -372,15 +374,14 @@ public sealed partial class RecordingService : IRecordingService
             // the way still releases the file.
             _activePipeline = pipeline;
 
-            _audioCancellation = new CancellationTokenSource();
-            _audioPipeline = new AudioCapturePipeline();
+            AudioCapturePipeline audioPipeline = ActivateAudioPipeline();
 
             _stopwatch.Restart();
             _isRecording = true;
 
             try
             {
-                await _audioPipeline.StartAsync(_audioOptions, _stopwatch, _audioCancellation.Token);
+                await audioPipeline.StartAsync(_audioOptions, _stopwatch, _audioCancellation!.Token);
                 RaiseAudioStartupWarnings();
             }
             catch (Exception ex)
@@ -783,6 +784,34 @@ public sealed partial class RecordingService : IRecordingService
         _windowLetterboxActive = false;
         _windowResizeWarned = false;
         _stopwatch.Reset();
+    }
+
+    private bool _audioClippingNoticed;
+
+    /// <summary>
+    /// Creates the pipeline and wires the one-time clipping notice, so an overloaded mix tells the
+    /// user while it is still happening instead of only showing up in the log. The notice itself
+    /// arrives on the mixer thread and RaiseNotice marshals it to the UI.
+    /// </summary>
+    private AudioCapturePipeline ActivateAudioPipeline()
+    {
+        _audioCancellation = new CancellationTokenSource();
+        var pipeline = new AudioCapturePipeline();
+        pipeline.ClippingStarted += OnAudioClippingStarted;
+        _audioClippingNoticed = false;
+        _audioPipeline = pipeline;
+        return pipeline;
+    }
+
+    private void OnAudioClippingStarted()
+    {
+        if (_audioClippingNoticed)
+        {
+            return;
+        }
+
+        _audioClippingNoticed = true;
+        RaiseNotice(LocalizationService.GetString("Notice_AudioClipping"));
     }
 
     private void RaiseAudioStartupWarnings()

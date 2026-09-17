@@ -33,4 +33,16 @@ public interface IAudioCapturePipeline : IDisposable
 
     /// <summary>Smoothed audio peak level in the range 0..1.</summary>
     double PeakLevel { get; }
+
+    /// <summary>True while the mix is over full scale, so the audio is being hard clipped.</summary>
+    bool IsClipping { get; }
+
+    /// <summary>Samples over full scale so far in this recording.</summary>
+    long ClippedSamples { get; }
+
+    /// <summary>
+    /// Raised once when the mix starts clipping, from the mixer thread. Used for the one-time
+    /// notice: the user needs to know which levels to turn down while it is still happening.
+    /// </summary>
+    event Action? ClippingStarted;
 }

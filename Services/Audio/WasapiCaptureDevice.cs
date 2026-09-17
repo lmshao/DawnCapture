@@ -14,7 +14,7 @@ internal sealed class WasapiCaptureDevice : IDisposable
 {
     private readonly bool _loopback;
     private readonly string? _deviceId;
-    private readonly ConcurrentQueue<float[]> _monoFrames = new();
+    private readonly ConcurrentQueue<float[]> _stereoFrames = new();
 
     private WasapiCapture? _capture;
     private int _inputSampleRate = AudioFormat.SampleRate;
@@ -204,9 +204,10 @@ internal sealed class WasapiCaptureDevice : IDisposable
         }
     }
 
-    public bool TryTakeMonoFrame(out float[] monoFrame)
+    /// <summary>Hands over one interleaved stereo packet (L, R, L, R...).</summary>
+    public bool TryTakeStereoFrame(out float[] stereoFrame)
     {
-        return _monoFrames.TryDequeue(out monoFrame!);
+        return _stereoFrames.TryDequeue(out stereoFrame!);
     }
 
     public void Dispose()
@@ -231,14 +232,15 @@ internal sealed class WasapiCaptureDevice : IDisposable
         var buffer = new byte[e.BytesRecorded];
         Buffer.BlockCopy(e.Buffer, 0, buffer, 0, e.BytesRecorded);
 
-        var mono = PcmAudioConverter.DecodeToFloatMono(buffer, waveFormat, frameCount);
-        _monoFrames.Enqueue(mono);
+        var stereo = new float[frameCount * AudioFormat.Channels];
+        PcmAudioConverter.DecodeToFloatStereo(buffer, waveFormat, frameCount, stereo);
+        _stereoFrames.Enqueue(stereo);
         Interlocked.Increment(ref _framesDelivered);
     }
 
     private void DrainQueue()
     {
-        while (_monoFrames.TryDequeue(out _))
+        while (_stereoFrames.TryDequeue(out _))
         {
         }
     }

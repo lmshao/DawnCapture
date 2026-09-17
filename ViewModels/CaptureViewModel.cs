@@ -390,6 +390,10 @@ public partial class CaptureViewModel : ObservableObject
     [ObservableProperty]
     private bool _showSystemAudioStatusBadge;
 
+    /// <summary>True while the finished mix is over full scale, so the audio is being clipped.</summary>
+    [ObservableProperty]
+    private bool _isAudioClipping;
+
     partial void OnMicrophoneEnabledChanged(bool value)
     {
         bool corrected = value && !HasMicrophoneDevice;
@@ -560,6 +564,7 @@ public partial class CaptureViewModel : ObservableObject
         }
 
         ResetWaveformBars();
+        IsAudioClipping = false;
     }
 
     private void ResetWaveformBars()
@@ -579,6 +584,7 @@ public partial class CaptureViewModel : ObservableObject
         }
 
         double peak = IsPaused ? 0 : _recordingService.AudioMeterLevel;
+        IsAudioClipping = !IsPaused && _recordingService.IsAudioClipping;
         _waveformPhase += 0.22;
 
         for (int i = 0; i < AudioWaveformBars.Count; i++)

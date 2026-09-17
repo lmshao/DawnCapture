@@ -18,6 +18,9 @@ public interface IRecordingService
     /// <summary>Smoothed audio peak level in the range 0..1 for UI metering.</summary>
     double AudioMeterLevel { get; }
 
+    /// <summary>True while the audio mix is over full scale, so it is being hard clipped.</summary>
+    bool IsAudioClipping { get; }
+
     event EventHandler<RecordingState>? StateChanged;
 
     event EventHandler<string>? RecordingFailed;

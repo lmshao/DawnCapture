@@ -344,6 +344,8 @@
   <data name="Storage_Check_Unavailable" xml:space="preserve"><value>无法检查输出驱动器的可用磁盘空间。</value></data>
   <data name="Notice_HevcFallback" xml:space="preserve"><value>此电脑不支持 H.265，已改用 H.264 录制。</value></data>
   <data name="Notice_SystemAudioUnavailable" xml:space="preserve"><value>无法捕获系统音频。请检查音频设备或 Windows 声音设置。</value></data>
+  <data name="Notice_AudioClipping" xml:space="preserve"><value>检测到音频过载，录到的声音可能有失真。可调低系统声音，或在音量合成器里调低对应应用 / 麦克风级别。</value></data>
+  <data name="Capture_AudioClipping.Text" xml:space="preserve"><value>削波</value></data>
   <data name="Settings_SaveFailed" xml:space="preserve"><value>设置未能保存。请检查磁盘空间和文件夹权限。</value></data>
   <data name="Recordings_PlayFailed" xml:space="preserve"><value>无法打开此录像。文件可能已被移动或删除。</value></data>
   <data name="Recordings_Empty_CTA.Content" xml:space="preserve"><value>开始录制</value></data>

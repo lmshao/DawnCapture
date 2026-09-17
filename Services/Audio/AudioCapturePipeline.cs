@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
@@ -17,6 +18,36 @@ namespace DawnCapture.Services.Audio;
 
 public sealed class AudioCapturePipeline : IAudioCapturePipeline
 {
+    /// <summary>
+    /// One live capture source plus the buffers the mixer needs for it. The resampler is built
+    /// from the rate the device actually opened at, so it must be created after Start().
+    /// </summary>
+    private sealed class SourceRuntime
+    {
+        public SourceRuntime(WasapiCaptureDevice device, string label)
+        {
+            Device = device;
+            Label = label;
+            Resampler = new StereoResampleBuffer(device.InputSampleRate);
+        }
+
+        public WasapiCaptureDevice Device { get; }
+
+        public string Label { get; }
+
+        public StereoResampleBuffer Resampler { get; }
+
+        /// <summary>Scratch for one 48 kHz chunk, reused on every mix tick.</summary>
+        public float[] Scratch { get; } = new float[AudioFormat.SamplesPerChunk * AudioFormat.Channels];
+
+        /// <summary>Peak of the last chunk this source contributed (per-source metering, stage 2).</summary>
+        public float Peak { get; set; }
+
+        /// <summary>Frames already reported by the silence log.</summary>
+        public long ReportedFrames { get; set; }
+    }
+
+    private readonly List<SourceRuntime> _sources = new();
     private WasapiCaptureDevice? _microphone;
     private WasapiCaptureDevice? _loopback;
     private Thread? _mixerThread;
@@ -33,8 +64,12 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
     private volatile float _peakLevel;
     private long _quietChunks;
     private bool _silenceNoticed;
-    private long _lastMicFrames;
-    private long _lastLoopbackFrames;
+
+    private int _clippedRun;
+    private int _cleanRun;
+    private long _clippedChunks;
+    private long _clippedSamples;
+    private volatile bool _isClipping;
 
     /// <summary>20 ms chunks without an audible peak before a log line is worth writing (~4 s).</summary>
     private const int QuietChunksBeforeNotice = 200;
@@ -42,9 +77,30 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
     /// <summary>Below this smoothed peak the mix counts as silent.</summary>
     private const float AudiblePeakThreshold = 0.005f;
 
+    /// <summary>
+    /// Applied to every source while two sources are recording. Both are scaled by the same factor,
+    /// so the voice/music balance is untouched and only the overall level drops by 3 dB - the point
+    /// is headroom: with the microphone peaking at 0.43 (-7 dBFS, a typical speaking level) the sum
+    /// still fits inside full scale. The user can compensate with the two Windows level sliders,
+    /// both of which act before quantization. A single source is never attenuated.
+    /// </summary>
+    private const float DualSourceGain = 0.7f;
+
+    /// <summary>Clipped chunks needed before the overload is reported (3 x 20 ms).</summary>
+    private const int ClippingChunksToSet = 3;
+
+    /// <summary>Clean chunks that clear the report again (50 x 20 ms = 1 s).</summary>
+    private const int ClippingChunksToClear = 50;
+
     public bool HasAudio { get; private set; }
 
     public double PeakLevel => _peakLevel;
+
+    public bool IsClipping => _isClipping;
+
+    public long ClippedSamples => Interlocked.Read(ref _clippedSamples);
+
+    public event Action? ClippingStarted;
 
     public async Task StartAsync(RecordingAudioOptions options, Stopwatch clock, CancellationToken cancellationToken)
     {
@@ -63,16 +119,21 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
         _clock = clock;
         DrainOutputQueue();
 
+        _sources.Clear();
+        ResetClippingState();
+
         if (options.EnableMicrophone)
         {
             _microphone = new WasapiCaptureDevice(loopback: false, options.MicrophoneDeviceId);
             _microphone.Start();
+            _sources.Add(new SourceRuntime(_microphone, "mic"));
         }
 
         if (options.EnableSystemAudio)
         {
             _loopback = new WasapiCaptureDevice(loopback: true, options.SystemAudioDeviceId);
             _loopback.Start();
+            _sources.Add(new SourceRuntime(_loopback, "system"));
         }
 
         _running = true;
@@ -85,7 +146,8 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
         _mixerThread.Start();
 
         Log.Info(
-            $"Audio pipeline started: mic={options.EnableMicrophone}, system={options.EnableSystemAudio}, bitrate={options.BitrateKbps}kbps.");
+            $"Audio pipeline started: mic={options.EnableMicrophone}, system={options.EnableSystemAudio}, " +
+            $"bitrate={options.BitrateKbps}kbps, sources={_sources.Count}, gain={SourceGain:0.0}.");
     }
 
     public void ReportStartupWarnings(RecordingAudioOptions options, Action<string> raiseNotice)
@@ -114,10 +176,13 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
         _mixerThread?.Join(TimeSpan.FromSeconds(2));
         _mixerThread = null;
 
-        _microphone?.Dispose();
-        _microphone = null;
+        foreach (var source in _sources)
+        {
+            source.Device.Dispose();
+        }
 
-        _loopback?.Dispose();
+        _sources.Clear();
+        _microphone = null;
         _loopback = null;
 
         DrainOutputQueue();
@@ -179,16 +244,8 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
 
     private void MixerLoop()
     {
-        var micResampler = _microphone is not null
-            ? new MonoResampleBuffer(_microphone.InputSampleRate)
-            : null;
-        var loopResampler = _loopback is not null
-            ? new MonoResampleBuffer(_loopback.InputSampleRate)
-            : null;
-
-        var monoScratch = new float[AudioFormat.SamplesPerChunk];
-        var sourceStereo = new short[AudioFormat.SamplesPerChunk * AudioFormat.Channels];
-        var stereoScratch = new short[AudioFormat.SamplesPerChunk * AudioFormat.Channels];
+        var accumulator = new float[AudioFormat.SamplesPerChunk * AudioFormat.Channels];
+        var blockSamples = new short[AudioFormat.SamplesPerChunk * AudioFormat.Channels];
         var mixBuffer = new byte[AudioFormat.BytesPerChunk];
         var nextChunkAt = TimeSpan.Zero;
 
@@ -196,13 +253,18 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
         {
             try
             {
-                AppendDeviceFrames(_microphone, micResampler);
-                AppendDeviceFrames(_loopback, loopResampler);
+                foreach (var source in _sources)
+                {
+                    AppendDeviceFrames(source);
+                }
 
                 if (_paused)
                 {
-                    micResampler?.Clear();
-                    loopResampler?.Clear();
+                    foreach (var source in _sources)
+                    {
+                        source.Resampler.Clear();
+                    }
+
                     Thread.Sleep(20);
                     nextChunkAt = _clock?.Elapsed ?? TimeSpan.Zero;
                     continue;
@@ -210,26 +272,48 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
 
                 var elapsed = _clock?.Elapsed ?? TimeSpan.Zero;
                 var producedChunks = 0;
+                var gain = SourceGain;
+
                 while (_running && elapsed >= nextChunkAt && producedChunks < 100)
                 {
-                    PcmAudioConverter.ClearStereo(stereoScratch);
+                    accumulator.AsSpan().Clear();
 
-                    if (micResampler?.TryReadMono48k(monoScratch) == true)
+                    foreach (var source in _sources)
                     {
-                        PcmAudioConverter.ClearStereo(sourceStereo);
-                        PcmAudioConverter.WriteMonoToStereo48k(monoScratch, sourceStereo);
-                        PcmAudioConverter.MixStereo(stereoScratch, sourceStereo);
+                        if (!source.Resampler.TryReadStereo48k(source.Scratch))
+                        {
+                            // Nothing from this source in this chunk: it stays silent, the grid
+                            // does not move, which is what keeps a late source on the timeline.
+                            source.Peak = 0;
+                            continue;
+                        }
+
+                        var scratch = source.Scratch.AsSpan();
+                        if (gain != 1f)
+                        {
+                            for (var i = 0; i < scratch.Length; i++)
+                            {
+                                scratch[i] *= gain;
+                            }
+                        }
+
+                        source.Peak = PcmAudioConverter.MaxAbs(scratch);
+
+                        var mixed = accumulator.AsSpan();
+                        for (var i = 0; i < mixed.Length; i++)
+                        {
+                            mixed[i] += scratch[i];
+                        }
                     }
 
-                    if (loopResampler?.TryReadMono48k(monoScratch) == true)
-                    {
-                        PcmAudioConverter.ClearStereo(sourceStereo);
-                        PcmAudioConverter.WriteMonoToStereo48k(monoScratch, sourceStereo);
-                        PcmAudioConverter.MixStereo(stereoScratch, sourceStereo);
-                    }
+                    // One pass over the finished float mix: level, overload, and the single place
+                    // where the signal is limited to what the encoder can store.
+                    var peak = PcmAudioConverter.MaxAbs(accumulator);
+                    var overFullScale = PcmAudioConverter.ClampAndConvertToInt16(accumulator, blockSamples);
+                    UpdateClipping(peak, overFullScale);
+                    _peakLevel = Math.Max(_peakLevel * 0.7f, Math.Min(1f, peak));
 
-                    Buffer.BlockCopy(stereoScratch, 0, mixBuffer, 0, mixBuffer.Length);
-                    _peakLevel = Math.Max(_peakLevel * 0.7f, ComputePeak(stereoScratch));
+                    Buffer.BlockCopy(blockSamples, 0, mixBuffer, 0, mixBuffer.Length);
                     _outputQueue.Enqueue((mixBuffer, nextChunkAt));
                     mixBuffer = new byte[AudioFormat.BytesPerChunk];
                     WatchSilence();
@@ -283,39 +367,86 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
         }
 
         _silenceNoticed = true;
-        long micFrames = _microphone?.FramesDelivered ?? 0;
-        long loopbackFrames = _loopback?.FramesDelivered ?? 0;
-        Log.Info($"Mix silent {QuietChunksBeforeNotice / 50.0:0.0}s (mic frames: {micFrames - _lastMicFrames}, loopback frames: {loopbackFrames - _lastLoopbackFrames}).");
-        _lastMicFrames = micFrames;
-        _lastLoopbackFrames = loopbackFrames;
-    }
-
-    private static float ComputePeak(short[] samples)
-    {
-        float peak = 0;
-        for (int i = 0; i < samples.Length; i++)
+        var frames = string.Empty;
+        foreach (var source in _sources)
         {
-            float normalized = Math.Abs(samples[i] / 32768f);
-            if (normalized > peak)
+            long delivered = source.Device.FramesDelivered;
+            if (frames.Length > 0)
             {
-                peak = normalized;
+                frames += ", ";
             }
+
+            frames += $"{source.Label} frames: {delivered - source.ReportedFrames}";
+            source.ReportedFrames = delivered;
         }
 
-        return peak;
+        Log.Info($"Mix silent {QuietChunksBeforeNotice / 50.0:0.0}s ({frames}).");
     }
 
-    private static void AppendDeviceFrames(WasapiCaptureDevice? device, MonoResampleBuffer? resampler)
+    /// <summary>
+    /// Every source carries the same factor while two of them are recording, which keeps their
+    /// balance intact; a single source is passed through untouched.
+    /// </summary>
+    private float SourceGain => _sources.Count > 1 ? DualSourceGain : 1f;
+
+    private static void AppendDeviceFrames(SourceRuntime source)
     {
-        if (device is null || resampler is null)
+        while (source.Device.TryTakeStereoFrame(out var frames))
+        {
+            source.Resampler.Append(frames);
+        }
+    }
+
+    private void ResetClippingState()
+    {
+        _clippedRun = 0;
+        _cleanRun = 0;
+        _clippedChunks = 0;
+        _isClipping = false;
+        Interlocked.Exchange(ref _clippedSamples, 0);
+    }
+
+    /// <summary>
+    /// Tracks overload from the finished float mix, before it is limited. Detected here rather than
+    /// on the 16-bit block on purpose: by the time that block exists the excess is already gone, and
+    /// the whole point of the indicator is to tell the user which level to turn down.
+    /// </summary>
+    private void UpdateClipping(float peak, int overFullScaleSamples)
+    {
+        if (peak > 1f)
+        {
+            _clippedChunks++;
+            if (overFullScaleSamples > 0)
+            {
+                Interlocked.Add(ref _clippedSamples, overFullScaleSamples);
+            }
+
+            _cleanRun = 0;
+            if (!_isClipping && ++_clippedRun >= ClippingChunksToSet)
+            {
+                _isClipping = true;
+                Log.Info(
+                    $"Audio clipping detected: block peak {peak:0.000}, {ClippedSamples} samples over full scale so far.");
+                ClippingStarted?.Invoke();
+            }
+
+            return;
+        }
+
+        _clippedRun = 0;
+        if (!_isClipping)
         {
             return;
         }
 
-        while (device.TryTakeMonoFrame(out var mono))
+        if (++_cleanRun < ClippingChunksToClear)
         {
-            resampler.Append(mono);
+            return;
         }
+
+        _isClipping = false;
+        _cleanRun = 0;
+        Log.Info($"Audio clipping ended: {_clippedChunks} clipped chunks, {ClippedSamples} samples over full scale.");
     }
 
     private static MediaStreamSample CreateSample(byte[] pcmData, TimeSpan timestamp)
