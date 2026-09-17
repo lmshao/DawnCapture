@@ -20,7 +20,8 @@ public sealed class AppSettings
 
     public int QualityIndex { get; set; } = 1;
 
-    public int AudioQualityIndex { get; set; } = 1;
+    /// <summary>0 = 128 kbps, 1 = 192, 2 = 256 (see <see cref="RecordingAudioOptions.BitrateFromQualityIndex"/>).</summary>
+    public int AudioQualityIndex { get; set; }
 
     /// <summary>
     /// The user's intent, not the live state: a source that is switched on while its device is
@@ -41,7 +42,16 @@ public sealed class AppSettings
 
     public int VideoCodecIndex { get; set; }
 
-    public bool CountdownEnabled { get; set; } = true;
+    /// <summary>Seconds to wait before recording starts; 0 means no countdown at all.</summary>
+    public int CountdownSeconds
+    {
+        get => _countdownSeconds;
+        set => _countdownSeconds = Math.Clamp(value, 0, MaxCountdownSeconds);
+    }
+
+    private int _countdownSeconds;
+
+    public const int MaxCountdownSeconds = 60;
 
     public bool NotificationEnabled { get; set; } = true;
 

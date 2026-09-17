@@ -11,7 +11,7 @@ public sealed class RecordingAudioOptions
 
     public string? SystemAudioDeviceId { get; init; }
 
-    public int BitrateKbps { get; init; } = 192;
+    public int BitrateKbps { get; init; } = 128;
 
     public int SampleRate { get; init; } = 48000;
 

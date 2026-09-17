@@ -489,7 +489,7 @@
                             <TextBlock
                                 Foreground="{StaticResource DawnTextFaintBrush}"
                                 FontSize="11"
-                                Text="Show a three-second countdown before recording"
+                                Text="Wait before recording starts"
                                 x:Uid="Settings_Countdown_Desc" />
                         </StackPanel>
                         <ToggleSwitch
@@ -498,6 +498,62 @@
                             IsOn="{x:Bind ViewModel.CountdownEnabled, Mode=TwoWay}" />
                     </Grid>
                     <Border BorderBrush="{StaticResource DawnStrokeBrush}" BorderThickness="0,0,0,1" />
+
+                    <Grid Visibility="{x:Bind ViewModel.ShowCountdownSeconds, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border
+                            Grid.Column="0"
+                            Width="1"
+                            Margin="24,6,0,6"
+                            Background="{StaticResource DawnStrokeBrush}" />
+                        <StackPanel Grid.Column="1" Spacing="0">
+                            <Grid Style="{StaticResource DawnSettingsRowStyle}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="260" />
+                                    <ColumnDefinition Width="{StaticResource DawnSettingsControlColumnWidth}" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" x:Uid="Settings_Countdown_Seconds" Text="Wait time" />
+                                    <TextBlock
+                                        Foreground="{StaticResource DawnTextFaintBrush}"
+                                        FontSize="11"
+                                        Text="Wait time before recording starts (1-60 seconds)"
+                                        x:Uid="Settings_Countdown_Seconds_Desc" />
+                                </StackPanel>
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="{StaticResource DawnSettingsControlWidth}"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    ColumnSpacing="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <NumberBox
+                                        Minimum="1"
+                                        Maximum="60"
+                                        SmallChange="1"
+                                        LargeChange="5"
+                                        SpinButtonPlacementMode="Inline"
+                                        Value="{x:Bind ViewModel.CountdownSeconds, Mode=TwoWay}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Foreground="{StaticResource DawnTextMutedBrush}"
+                                        Text="s"
+                                        x:Uid="Settings_Countdown_Unit" />
+                                </Grid>
+                            </Grid>
+                            <Border
+                                Margin="8,0,0,0"
+                                BorderBrush="{StaticResource DawnStrokeBrush}"
+                                BorderThickness="0,0,0,1" />
+                        </StackPanel>
+                    </Grid>
 
                     <Grid Style="{StaticResource DawnSettingsRowStyle}">
                         <Grid.ColumnDefinitions>

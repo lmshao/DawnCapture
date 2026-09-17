@@ -43,7 +43,12 @@ public partial class SettingsViewModel : ObservableObject
         _codecIndex = _settingsService.Current.VideoCodecIndex;
         _audioQualityIndex = _settingsService.Current.AudioQualityIndex;
         _captureCursor = _settingsService.Current.CaptureCursor;
-        _countdownEnabled = _settingsService.Current.CountdownEnabled;
+        _countdownSeconds = _settingsService.Current.CountdownSeconds;
+        if (_countdownSeconds > 0)
+        {
+            // Switching it off and on again should give back what the user had.
+            _lastCountdownSeconds = _countdownSeconds;
+        }
         _notificationEnabled = _settingsService.Current.NotificationEnabled;
         _segmentEnabled = _settingsService.Current.SegmentEnabled;
         _segmentLimitModeIndex = Math.Clamp((int)_settingsService.Current.SegmentLimitMode, 0, 1);
@@ -81,7 +86,7 @@ public partial class SettingsViewModel : ObservableObject
             CodecIndex = settings.VideoCodecIndex;
             AudioQualityIndex = settings.AudioQualityIndex;
             CaptureCursor = settings.CaptureCursor;
-            CountdownEnabled = settings.CountdownEnabled;
+            CountdownSeconds = settings.CountdownSeconds;
             NotificationEnabled = settings.NotificationEnabled;
             SegmentEnabled = settings.SegmentEnabled;
             SegmentLimitModeIndex = Math.Clamp((int)settings.SegmentLimitMode, 0, 1);
@@ -132,13 +137,71 @@ public partial class SettingsViewModel : ObservableObject
     private int _codecIndex;
 
     [ObservableProperty]
-    private int _audioQualityIndex = 1;
+    private int _audioQualityIndex;
 
     [ObservableProperty]
     private bool _captureCursor;
 
+    /// <summary>Seconds before recording starts; 0 means no countdown. Bound to a number box.</summary>
     [ObservableProperty]
-    private bool _countdownEnabled = true;
+    private double _countdownSeconds;
+
+    /// <summary>What the switch turns on with when nothing was remembered.</summary>
+    private const double DefaultCountdownSeconds = 3;
+
+    /// <summary>Shortest countdown the number box accepts; 0 is reserved for "switched off".</summary>
+    private const double MinCountdownSeconds = 1;
+
+    /// <summary>
+    /// Set while the switch itself writes the "off" value, which is the only time 0 may be stored:
+    /// a 0 typed into the number box means the user went below the minimum, not that the countdown
+    /// should switch off.
+    /// </summary>
+    private bool _switchTurningCountdownOff;
+
+    /// <summary>
+    /// Last seconds the user had before switching the countdown off. Deliberately in memory only:
+    /// the settings file keeps exactly one value (0 = off), so "on" and a stored 0 can never
+    /// disagree, and a restart simply starts switched off again.
+    /// </summary>
+    private double _lastCountdownSeconds = DefaultCountdownSeconds;
+
+    /// <summary>
+    /// The enable switch, which is a view of <see cref="CountdownSeconds"/> rather than a stored
+    /// flag: one value answers both "whether" and "how long", so the two can never disagree.
+    /// </summary>
+    public bool CountdownEnabled
+    {
+        get => CountdownSeconds > 0;
+        set
+        {
+            if (value == CountdownEnabled)
+            {
+                return;
+            }
+
+            if (value)
+            {
+                CountdownSeconds = _lastCountdownSeconds > 0
+                    ? _lastCountdownSeconds
+                    : DefaultCountdownSeconds;
+                return;
+            }
+
+            _lastCountdownSeconds = CountdownSeconds;
+            _switchTurningCountdownOff = true;
+            try
+            {
+                CountdownSeconds = 0;
+            }
+            finally
+            {
+                _switchTurningCountdownOff = false;
+            }
+        }
+    }
+
+    public bool ShowCountdownSeconds => CountdownEnabled;
 
     [ObservableProperty]
     private bool _notificationEnabled = true;
@@ -319,8 +382,31 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
-    partial void OnCountdownEnabledChanged(bool value)
+    partial void OnCountdownSecondsChanged(double value)
     {
+        if (double.IsNaN(value))
+        {
+            // The box reports NaN while its text is empty; the smallest allowed value is the
+            // closest thing to what the user meant.
+            CountdownSeconds = MinCountdownSeconds;
+            return;
+        }
+
+        // Outside 1-60 the value is pulled back into range - the hint under the number box says
+        // so. Only the switch writes a 0, and that is what turns the countdown off.
+        double normalized = _switchTurningCountdownOff
+            ? 0
+            : Math.Clamp(Math.Round(value), MinCountdownSeconds, AppSettings.MaxCountdownSeconds);
+        if (normalized != value)
+        {
+            CountdownSeconds = normalized;
+            return;
+        }
+
+        // The switch and the seconds row are derived from this value.
+        OnPropertyChanged(nameof(CountdownEnabled));
+        OnPropertyChanged(nameof(ShowCountdownSeconds));
+
         if (!_suppressPersist)
         {
             PersistSettings();
@@ -720,7 +806,7 @@ public partial class SettingsViewModel : ObservableObject
 
         _settingsService.Current.VideoCodecIndex = CodecIndex;
         _settingsService.Current.CaptureCursor = CaptureCursor;
-        _settingsService.Current.CountdownEnabled = CountdownEnabled;
+        _settingsService.Current.CountdownSeconds = (int)Math.Round(CountdownSeconds);
         _settingsService.Current.NotificationEnabled = NotificationEnabled;
         _settingsService.Current.SegmentEnabled = SegmentEnabled;
         _settingsService.Current.SegmentLimitMode = (Models.SegmentLimitMode)Math.Clamp(SegmentLimitModeIndex, 0, 1);

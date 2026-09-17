@@ -10,8 +10,6 @@ namespace DawnCapture.Helpers;
 
 public static class CountdownOverlayHelper
 {
-    public const int DefaultSeconds = 3;
-
     public static RectInt32 ResolveTargetBounds(
         CaptureModeKind mode,
         MonitorDisplay? display,
@@ -55,8 +53,14 @@ public static class CountdownOverlayHelper
                ?? ScreenBoundsHelper.GetVirtualScreenBounds();
     }
 
-    public static async Task<bool> RunAsync(RectInt32 targetBounds, int seconds = DefaultSeconds)
+    /// <summary>Counts down the given number of seconds, or not at all when it is zero.</summary>
+    public static async Task<bool> RunAsync(RectInt32 targetBounds, int seconds)
     {
+        if (seconds <= 0)
+        {
+            return true;
+        }
+
         using var overlay = new CountdownOverlayNative(targetBounds);
         return await overlay.RunCountdownAsync(seconds);
     }

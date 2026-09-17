@@ -286,7 +286,10 @@
   <data name="Settings_CaptureCursor_Desc.Text" xml:space="preserve"><value>Show the pointer in recorded video</value></data>
   <data name="Settings_Group_General.Text" xml:space="preserve"><value>General</value></data>
   <data name="Settings_Countdown.Text" xml:space="preserve"><value>Recording countdown</value></data>
-  <data name="Settings_Countdown_Desc.Text" xml:space="preserve"><value>Show a three-second countdown before recording</value></data>
+  <data name="Settings_Countdown_Desc.Text" xml:space="preserve"><value>Wait before recording starts</value></data>
+  <data name="Settings_Countdown_Seconds.Text" xml:space="preserve"><value>Wait time</value></data>
+  <data name="Settings_Countdown_Seconds_Desc.Text" xml:space="preserve"><value>Wait time before recording starts (1-60 seconds).</value></data>
+  <data name="Settings_Countdown_Unit.Text" xml:space="preserve"><value>s</value></data>
   <data name="Settings_Notification.Text" xml:space="preserve"><value>Completion notification</value></data>
   <data name="Settings_Notification_Desc.Text" xml:space="preserve"><value>Show a Windows notification after saving</value></data>
   <data name="Settings_Language_Desc.Text" xml:space="preserve"><value>Restart the app after changing this setting</value></data>

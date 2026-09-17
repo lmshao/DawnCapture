@@ -627,7 +627,8 @@ public partial class CaptureViewModel : ObservableObject
 
             var audioOptions = BuildAudioOptions();
 
-            if (_settingsService.Current.CountdownEnabled)
+            int countdownSeconds = _settingsService.Current.CountdownSeconds;
+            if (countdownSeconds > 0)
             {
                 RectInt32 countdownBounds = CountdownOverlayHelper.ResolveTargetBounds(
                     SelectedMode,
@@ -635,9 +636,7 @@ public partial class CaptureViewModel : ObservableObject
                     SelectedWindow,
                     SelectedRegion,
                     _monitorService);
-                bool proceed = await CountdownOverlayHelper.RunAsync(
-                    countdownBounds,
-                    CountdownOverlayHelper.DefaultSeconds);
+                bool proceed = await CountdownOverlayHelper.RunAsync(countdownBounds, countdownSeconds);
                 if (!proceed)
                 {
                     ShowCaptureNotice(

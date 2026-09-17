@@ -284,7 +284,10 @@
   <data name="Settings_CaptureCursor_Desc.Text" xml:space="preserve"><value>在录像中显示鼠标指针</value></data>
   <data name="Settings_Group_General.Text" xml:space="preserve"><value>常规</value></data>
   <data name="Settings_Countdown.Text" xml:space="preserve"><value>录制倒计时</value></data>
-  <data name="Settings_Countdown_Desc.Text" xml:space="preserve"><value>录制开始前显示 3 秒倒计时</value></data>
+  <data name="Settings_Countdown_Desc.Text" xml:space="preserve"><value>录制开始前先等待一段时间</value></data>
+  <data name="Settings_Countdown_Seconds.Text" xml:space="preserve"><value>等待时间</value></data>
+  <data name="Settings_Countdown_Seconds_Desc.Text" xml:space="preserve"><value>录制开始前等待的时间（1~60秒）。</value></data>
+  <data name="Settings_Countdown_Unit.Text" xml:space="preserve"><value>秒</value></data>
   <data name="Settings_Notification.Text" xml:space="preserve"><value>完成通知</value></data>
   <data name="Settings_Notification_Desc.Text" xml:space="preserve"><value>保存后显示 Windows 通知</value></data>
   <data name="Settings_Language_Desc.Text" xml:space="preserve"><value>更改此设置后需重启应用</value></data>

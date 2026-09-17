@@ -292,7 +292,7 @@ public static class RecordingSettingsHelper
 
         target.VideoCodecIndex = source.VideoCodecIndex;
 
-        target.CountdownEnabled = source.CountdownEnabled;
+        target.CountdownSeconds = source.CountdownSeconds;
 
         target.NotificationEnabled = source.NotificationEnabled;
 
