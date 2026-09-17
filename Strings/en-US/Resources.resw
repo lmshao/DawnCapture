@@ -69,7 +69,6 @@
   <data name="About_Trust_Windows11" xml:space="preserve"><value>Built for Windows 11 with native capture APIs</value></data>
   <data name="About_ProductName" xml:space="preserve"><value>DawnCapture</value></data>
   <data name="Capture_Validation_Title" xml:space="preserve"><value>Can't start recording</value></data>
-  <data name="Status_Countdown" xml:space="preserve"><value>Starting in {0}…</value></data>
   <data name="Status_CountdownCancelled" xml:space="preserve"><value>Recording cancelled</value></data>
   <data name="Notification_RecordingSaved" xml:space="preserve"><value>Recording saved</value></data>
   <data name="Status_Paused" xml:space="preserve"><value>Paused</value></data>
@@ -134,13 +133,8 @@
   <data name="Capture_EmptyWindow_Desc" xml:space="preserve"><value>Choose an application window with the Windows capture picker.</value></data>
   <data name="Capture_EmptyRegion_Title" xml:space="preserve"><value>No region selected</value></data>
   <data name="Capture_EmptyRegion_Desc" xml:space="preserve"><value>Draw a precise capture area in the transparent region picker.</value></data>
-  <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>Audio only / AAC-LC / M4A</value></data>
-  <data name="Capture_Source_None" xml:space="preserve"><value>No source</value></data>
   <data name="Dock_Preset" xml:space="preserve"><value>Preset</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>Audio quality</value></data>
-  <data name="Dock_Codec_Avc" xml:space="preserve"><value>Compatible / H.264 AVC</value></data>
-  <data name="Dock_Codec_Hevc" xml:space="preserve"><value>Smaller files / H.265 HEVC</value></data>
-  <data name="Dock_Codec_Audio" xml:space="preserve"><value>AAC-LC / M4A</value></data>
   <data name="Dock_StartRecording" xml:space="preserve"><value>Start recording</value></data>
   <data name="Dock_StopRecording" xml:space="preserve"><value>Stop recording</value></data>
   <data name="Dock_Output_SelectSource" xml:space="preserve"><value>Select a source to preview output settings.</value></data>
@@ -208,7 +202,6 @@
   <data name="MainWindow_CloseRecordingContinue" xml:space="preserve"><value>Keep recording</value></data>
   <data name="About_Version" xml:space="preserve"><value>DawnCapture {0}</value></data>
   <data name="About_Title" xml:space="preserve"><value>Capture the moments that matter.</value></data>
-  <data name="About_Author" xml:space="preserve"><value>Created by SHAO Liming · {0}</value></data>
   <data name="DisplayDialog_Title" xml:space="preserve"><value>Choose a display</value></data>
   <data name="DisplayDialog_Desc" xml:space="preserve"><value>Select the display to capture. Your current source stays active until you confirm.</value></data>
   <data name="DisplayDialog_Use" xml:space="preserve"><value>Use display</value></data>
@@ -308,7 +301,6 @@
   <data name="AudioQuality_Option_Standard_Short" xml:space="preserve"><value>Standard · 128 kbps</value></data>
   <data name="AudioQuality_Option_High_Short" xml:space="preserve"><value>High · 192 kbps</value></data>
   <data name="AudioQuality_Option_Best_Short" xml:space="preserve"><value>Best · 256 kbps</value></data>
-  <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>Selected region / 1280 x 720</value></data>
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>Selected region / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>Select a recording region</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>Keep the selected region unchanged while recording.</value></data>

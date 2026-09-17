@@ -36,12 +36,6 @@ public partial class CaptureViewModel
     private string _outputFootnoteTooltip = string.Empty;
 
     [ObservableProperty]
-    private string _videoCodecSummary = string.Empty;
-
-    [ObservableProperty]
-    private string _audioCodecSummary = string.Empty;
-
-    [ObservableProperty]
     private int _capturePresetIndex = 1;
 
     [ObservableProperty]
@@ -137,21 +131,12 @@ public partial class CaptureViewModel
             SystemAudioEnabled = settings.SystemAudioEnabled;
             ApplyFlyoutSelection(PresetFlyout, CapturePresetIndex);
             ApplyFlyoutSelection(AudioQualityFlyout, AudioQualityIndex);
-            UpdateCodecSummaries(settings.VideoCodecIndex);
             UpdateOutputSummary();
         }
         finally
         {
             _suppressSettingsSave = false;
         }
-    }
-
-    private void UpdateCodecSummaries(int codecIndex)
-    {
-        VideoCodecSummary = codecIndex == 1
-            ? LocalizationService.GetString("Dock_Codec_Hevc")
-            : LocalizationService.GetString("Dock_Codec_Avc");
-        AudioCodecSummary = LocalizationService.GetString("Dock_Codec_Audio");
     }
 
     private MenuFlyout CreatePresetFlyout()

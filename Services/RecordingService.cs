@@ -85,7 +85,6 @@ public sealed partial class RecordingService : IRecordingService
     private long _frameDuration = 333_333;
     private long _framesWritten;
     private long _audioSamplesWritten;
-    private int _startingStreamCount;
     private RectInt32? _cropRect;
     private RegionMarkerWindow? _regionMarker;
     private RecordingControlWindow? _controlWindow;
@@ -445,7 +444,7 @@ public sealed partial class RecordingService : IRecordingService
 
             _isStopping = true;
 
-            // Stop feeding the encoder before waiting for finalize (P0-5): WGC must
+            // Stop feeding the encoder before waiting for finalize: WGC must
             // not enqueue frames while MediaTranscoder drains audio/video to EOS.
             _isRecording = false;
             StopGraphicsCaptureSession();

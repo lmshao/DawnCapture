@@ -148,9 +148,11 @@ internal sealed class WasapiCaptureDevice : IDisposable
         {
             capture.StopRecording();
         }
-        catch
+        catch (Exception ex)
         {
-            // The device may already be gone.
+            // The device may already be gone, which is not worth failing over - but it is the
+            // difference between a clean stop and an endpoint that vanished, so log it.
+            Log.Info($"Stopping the capture failed (the device may already be gone): {ex.Message}");
         }
 
         capture.Dispose();

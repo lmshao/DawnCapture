@@ -504,6 +504,11 @@ public sealed partial class RecordingCatalogService
         }
     }
 
+    /// <summary>
+    /// Deserialization target for the pre-catalog settings file. It is never instantiated in code
+    /// (System.Text.Json creates it), so CA1812's "never instantiated" is a false positive here -
+    /// do not remove it as dead code.
+    /// </summary>
     private sealed class LegacyCatalogEntry
     {
         public Guid Id { get; set; }

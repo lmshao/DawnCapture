@@ -12,8 +12,6 @@ namespace DawnCapture.Services;
 
 public interface IAudioCapturePipeline : IDisposable
 {
-    bool HasAudio { get; }
-
     Task StartAsync(RecordingAudioOptions options, Stopwatch clock, CancellationToken cancellationToken);
 
     void Stop();

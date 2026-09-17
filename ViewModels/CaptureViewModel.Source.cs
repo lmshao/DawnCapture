@@ -50,9 +50,6 @@ public partial class CaptureViewModel
     private bool _showCursorOption = true;
 
     [ObservableProperty]
-    private bool _showVideoPreview = true;
-
-    [ObservableProperty]
     private bool _showAudioPreview;
 
     [ObservableProperty]
@@ -175,7 +172,6 @@ public partial class CaptureViewModel
     private void ApplySelectedMode()
     {
         ShowAudioPreview = SelectedMode == CaptureModeKind.AudioOnly;
-        ShowVideoPreview = SelectedMode != CaptureModeKind.AudioOnly;
         ShowCursorOption = SelectedMode != CaptureModeKind.AudioOnly;
         SourceOptionsLabel = SelectedMode == CaptureModeKind.AudioOnly
             ? LocalizationService.GetString("Capture_SourceLabel_Audio")
@@ -492,15 +488,6 @@ public partial class CaptureViewModel
 
     private void UpdatePreviewCopy()
     {
-        ControllerSource = SelectedMode switch
-        {
-            CaptureModeKind.AudioOnly => LocalizationService.GetString("Capture_Source_AudioOnly"),
-            CaptureModeKind.Region when HasSource => SelectedRegion?.Summary ?? LocalizationService.GetString("Capture_Preview_RegionPlaceholder"),
-            CaptureModeKind.Window when HasSource => $"{SelectedWindow?.DisplayName} / {SelectedWindow?.Resolution}",
-            CaptureModeKind.FullScreen when HasSource => $"{SelectedDisplay?.Name} / {SelectedDisplay?.Resolution}",
-            _ => LocalizationService.GetString("Capture_Source_None")
-        };
-
         if (SelectedMode == CaptureModeKind.AudioOnly)
         {
             PreviewLabel = BuildAudioSourceSummary();

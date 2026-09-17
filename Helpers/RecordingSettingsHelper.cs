@@ -273,34 +273,6 @@ public static class RecordingSettingsHelper
 
 
 
-    public static void ApplyFromSettings(AppSettings target, AppSettings source)
-
-    {
-
-        target.OutputFolder = source.OutputFolder;
-
-        target.FrameRate = source.FrameRate;
-
-        target.BitrateKbps = source.BitrateKbps;
-
-        target.BitrateMode = source.BitrateMode;
-
-        target.CaptureCursor = source.CaptureCursor;
-
-        target.Language = source.Language;
-
-        target.QualityIndex = source.QualityIndex;
-
-        target.AudioQualityIndex = source.AudioQualityIndex;
-
-        target.VideoCodecIndex = source.VideoCodecIndex;
-
-        target.CountdownSeconds = source.CountdownSeconds;
-
-        target.NotificationEnabled = source.NotificationEnabled;
-
-    }
-
 
 
     private static bool MatchesPresetBitrate(AppSettings settings, int presetIndex)

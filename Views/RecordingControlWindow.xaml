@@ -9,7 +9,7 @@
 
     <Grid x:Name="Root" Background="Transparent">
         <Grid.Resources>
-        <!-- Recording Dock design tokens (see design/DESIGN.md) — follow system theme -->
+        <!-- Recording Dock design tokens - follow system theme -->
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
@@ -19,7 +19,6 @@
                     <SolidColorBrush x:Key="DockStrokeBrush" Color="#D6D9DD" />
                     <SolidColorBrush x:Key="DockTextBrush" Color="#1C2024" />
                     <SolidColorBrush x:Key="DockTextMutedBrush" Color="#626971" />
-                    <SolidColorBrush x:Key="DockHoverBrush" Color="#EBEEF2" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="DockAccentBrush" Color="#F07A61" />
@@ -28,7 +27,6 @@
                     <SolidColorBrush x:Key="DockStrokeBrush" Color="#41464C" />
                     <SolidColorBrush x:Key="DockTextBrush" Color="#F3F4F5" />
                     <SolidColorBrush x:Key="DockTextMutedBrush" Color="#B5BAC0" />
-                    <SolidColorBrush x:Key="DockHoverBrush" Color="#33383E" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Default">
                     <SolidColorBrush x:Key="DockAccentBrush" Color="#D85B42" />
@@ -37,7 +35,6 @@
                     <SolidColorBrush x:Key="DockStrokeBrush" Color="#D6D9DD" />
                     <SolidColorBrush x:Key="DockTextBrush" Color="#1C2024" />
                     <SolidColorBrush x:Key="DockTextMutedBrush" Color="#626971" />
-                    <SolidColorBrush x:Key="DockHoverBrush" Color="#EBEEF2" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>

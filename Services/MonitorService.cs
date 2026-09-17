@@ -83,8 +83,11 @@ public class MonitorService : IMonitorService
             using Bitmap? thumbnail = await Task.Run(() => CaptureThumbnailBitmap(x, y, width, height));
             return thumbnail is null ? null : ToWriteableBitmap(thumbnail);
         }
-        catch
+        catch (Exception ex)
         {
+            // The thumbnail is decorative: one monitor that cannot be captured (or a graphics
+            // device that was just reset) must not fail the page, but it belongs in the log.
+            Log.Info($"Thumbnail capture failed for {width}x{height} at ({x},{y}): {ex.Message}");
             return null;
         }
     }

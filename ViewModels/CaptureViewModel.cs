@@ -505,15 +505,6 @@ public partial class CaptureViewModel : ObservableObject
     private bool _isRecording;
 
     [ObservableProperty]
-    private bool _showController;
-
-    [ObservableProperty]
-    private string _timerText = "00:00";
-
-    [ObservableProperty]
-    private string _controllerSource = string.Empty;
-
-    [ObservableProperty]
     private bool _isPaused;
 
     partial void OnIsRecordingChanged(bool value)
@@ -521,7 +512,6 @@ public partial class CaptureViewModel : ObservableObject
         RecordButtonLabel = value
             ? LocalizationService.GetString("Dock_StopRecording")
             : LocalizationService.GetString("Dock_StartRecording");
-        ShowController = value;
         UpdateHeaderCopy();
         UpdatePreviewCopy();
         UpdatePreviewEngine();
@@ -720,14 +710,9 @@ public partial class CaptureViewModel : ObservableObject
         IsRecording = state is RecordingState.Recording or RecordingState.Paused;
         IsPaused = state == RecordingState.Paused;
 
-        switch (state)
+        if (state == RecordingState.Recording)
         {
-            case RecordingState.Recording:
-                _mainViewModel.ClearCaptureNotice();
-                break;
-            case RecordingState.Idle:
-                TimerText = "00:00";
-                break;
+            _mainViewModel.ClearCaptureNotice();
         }
     }
 

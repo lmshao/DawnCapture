@@ -69,7 +69,6 @@
   <data name="About_Trust_Windows11" xml:space="preserve"><value>基于 Windows 11 原生录制 API 构建</value></data>
   <data name="About_ProductName" xml:space="preserve"><value>DawnCapture</value></data>
   <data name="Capture_Validation_Title" xml:space="preserve"><value>无法开始录制</value></data>
-  <data name="Status_Countdown" xml:space="preserve"><value>{0} 秒后开始录制…</value></data>
   <data name="Status_CountdownCancelled" xml:space="preserve"><value>已取消录制</value></data>
   <data name="Notification_RecordingSaved" xml:space="preserve"><value>录像已保存</value></data>
   <data name="Status_Paused" xml:space="preserve"><value>已暂停</value></data>
@@ -132,13 +131,8 @@
   <data name="Capture_EmptyWindow_Desc" xml:space="preserve"><value>使用 Windows 捕获选择器选择应用程序窗口。</value></data>
   <data name="Capture_EmptyRegion_Title" xml:space="preserve"><value>未选择区域</value></data>
   <data name="Capture_EmptyRegion_Desc" xml:space="preserve"><value>在透明区域选择器中框选精确录制区域。</value></data>
-  <data name="Capture_Source_AudioOnly" xml:space="preserve"><value>仅音频 / AAC-LC / M4A</value></data>
-  <data name="Capture_Source_None" xml:space="preserve"><value>无来源</value></data>
   <data name="Dock_Preset" xml:space="preserve"><value>录制预设</value></data>
   <data name="Dock_AudioQuality" xml:space="preserve"><value>音质</value></data>
-  <data name="Dock_Codec_Avc" xml:space="preserve"><value>兼容 / H.264 AVC</value></data>
-  <data name="Dock_Codec_Hevc" xml:space="preserve"><value>更小文件 / H.265 HEVC</value></data>
-  <data name="Dock_Codec_Audio" xml:space="preserve"><value>AAC-LC / M4A</value></data>
   <data name="Dock_StartRecording" xml:space="preserve"><value>开始录制</value></data>
   <data name="Dock_StopRecording" xml:space="preserve"><value>停止录制</value></data>
   <data name="Dock_Output_SelectSource" xml:space="preserve"><value>选择捕获源以预览输出参数。</value></data>
@@ -206,7 +200,6 @@
   <data name="MainWindow_CloseRecordingContinue" xml:space="preserve"><value>继续录制</value></data>
   <data name="About_Version" xml:space="preserve"><value>DawnCapture {0}</value></data>
   <data name="About_Title" xml:space="preserve"><value>记录重要时刻。</value></data>
-  <data name="About_Author" xml:space="preserve"><value>作者：SHAO Liming · {0}</value></data>
   <data name="DisplayDialog_Title" xml:space="preserve"><value>选择显示器</value></data>
   <data name="DisplayDialog_Desc" xml:space="preserve"><value>选择要录制的显示器。确认前当前来源保持不变。</value></data>
   <data name="DisplayDialog_Use" xml:space="preserve"><value>使用此显示器</value></data>
@@ -306,7 +299,6 @@
   <data name="AudioQuality_Option_Standard_Short" xml:space="preserve"><value>标准 · 128 kbps</value></data>
   <data name="AudioQuality_Option_High_Short" xml:space="preserve"><value>高 · 192 kbps</value></data>
   <data name="AudioQuality_Option_Best_Short" xml:space="preserve"><value>最佳 · 256 kbps</value></data>
-  <data name="Capture_Preview_RegionPlaceholder" xml:space="preserve"><value>已选区域 / 1280 x 720</value></data>
   <data name="Capture_Preview_RegionDetailFormat" xml:space="preserve"><value>已选区域 / {0} / X {1} / Y {2}</value></data>
   <data name="AppStatus_SelectRegion" xml:space="preserve"><value>请选择录制区域</value></data>
   <data name="Capture_Preview_RegionRecordingHint" xml:space="preserve"><value>录制期间请保持选区不变。</value></data>

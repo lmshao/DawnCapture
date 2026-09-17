@@ -82,7 +82,6 @@ public sealed partial class RecordingService
         var source = audioDescriptor is null
             ? new MediaStreamSource(descriptor)
             : new MediaStreamSource(descriptor, audioDescriptor);
-        _startingStreamCount = 0;
         source.BufferTime = TimeSpan.Zero;
         source.Starting += OnMediaStreamSourceStarting;
         source.SampleRequested += OnMediaStreamSourceSampleRequested;
@@ -183,7 +182,6 @@ public sealed partial class RecordingService
         var audioDescriptor = new AudioStreamDescriptor(pcmProperties);
 
         var source = new MediaStreamSource(audioDescriptor);
-        _startingStreamCount = 0;
         source.BufferTime = TimeSpan.Zero;
         source.Starting += OnMediaStreamSourceStarting;
         source.SampleRequested += OnMediaStreamSourceSampleRequested;
@@ -272,7 +270,6 @@ public sealed partial class RecordingService
 
     private void OnMediaStreamSourceStarting(MediaStreamSource sender, MediaStreamSourceStartingEventArgs args)
     {
-        _startingStreamCount++;
         args.Request.SetActualStartPosition(TimeSpan.Zero);
     }
 

@@ -92,7 +92,8 @@ public sealed class AudioCapturePipeline : IAudioCapturePipeline
     /// <summary>Clean chunks that clear the report again (50 x 20 ms = 1 s).</summary>
     private const int ClippingChunksToClear = 50;
 
-    public bool HasAudio { get; private set; }
+    /// <summary>False when the caller asked for no source at all; drives the sample pump.</summary>
+    private bool HasAudio { get; set; }
 
     public double PeakLevel => _peakLevel;
 
