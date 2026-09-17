@@ -1,3 +1,6 @@
+// Copyright (c) 2026 SHAO Liming <lmshao@163.com>
+// SPDX-License-Identifier: MIT
+
 using CommunityToolkit.Mvvm.DependencyInjection;
 using DawnCapture.Models;
 using DawnCapture.ViewModels;

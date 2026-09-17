@@ -1,3 +1,6 @@
+// Copyright (c) 2026 SHAO Liming <lmshao@163.com>
+// SPDX-License-Identifier: MIT
+
 using System;
 using System.Diagnostics;
 using System.IO;

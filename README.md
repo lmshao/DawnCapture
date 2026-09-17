@@ -78,7 +78,6 @@ DawnCapture/
 ├── Strings/      # zh-CN / en-US 本地化资源
 ├── ViewModels/   # MVVM（CommunityToolkit.Mvvm）
 ├── Views/        # 页面、悬浮控制条、区域选择器、对话框
-├── design/       # 设计文档与原型
 ├── run.ps1       # 开发调试脚本
 └── distribute.ps1 # 打包分发脚本
 ```
@@ -89,6 +88,6 @@ WinUI 3（Windows App SDK 2.4）· Windows.Graphics.Capture · MediaTranscoder�
 
 ## 许可与声明
 
-- 本软件：闭源，保留所有权利（Copyright © 2026 SHAO Liming）
+- 本软件：MIT 许可（Copyright © 2026 SHAO Liming），详见 `LICENSE`
 - 第三方组件：见 `THIRD-PARTY-NOTICES.md`
 - 隐私政策：见 `PRIVACY-POLICY.md` 与商店列表页

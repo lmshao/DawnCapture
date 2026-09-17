@@ -1,3 +1,6 @@
+# Copyright (c) 2026 SHAO Liming <lmshao@163.com>
+# SPDX-License-Identifier: MIT
+
 # DawnCapture one-click clean, rebuild, and launch (Debug/x64)
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
