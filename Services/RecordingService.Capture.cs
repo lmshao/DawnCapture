@@ -17,7 +17,21 @@ namespace DawnCapture.Services;
 
 public sealed partial class RecordingService
 {
+    // A failed start must leave State at Idle. The Start*Async entry points refuse to run
+    // unless it is, and they return false rather than throw, so their catch blocks never see
+    // it: one failed transcode preparation used to disable recording until the app restarted.
     private async Task<bool> StartCaptureAsync(GraphicsCaptureItem item, RectInt32? crop)
+    {
+        bool started = await StartCaptureCoreAsync(item, crop);
+        if (!started)
+        {
+            State = RecordingState.Idle;
+        }
+
+        return started;
+    }
+
+    private async Task<bool> StartCaptureCoreAsync(GraphicsCaptureItem item, RectInt32? crop)
     {
         try
         {
@@ -82,6 +96,7 @@ public sealed partial class RecordingService
             if (pipeline is null)
             {
                 await CleanupCaptureAsync();
+                State = RecordingState.Idle;
                 RaiseFailed(LocalizationService.GetString("Failure_TranscodePrepare"));
                 return false;
             }

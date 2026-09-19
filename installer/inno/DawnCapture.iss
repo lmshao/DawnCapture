@@ -45,6 +45,9 @@
 ; --- Application identity ----------------------------------------------------
 #define AppName "DawnCapture"
 #define AppExeName "DawnCapture.exe"
+; The notification identity from App.xaml.cs, where registration happens. Must stay equal to
+; it: the uninstaller removes what is filed under this name.
+#define AppUserModelId "DawnCapture.App"
 
 ; The AppId value as the registry sees it: one leading brace, because the doubled
 ; brace below is how it is written in a directive. [Code] needs this form twice
@@ -502,12 +505,13 @@ zh.FinishLockupLine={#AppVersion} · 安装完成
 en.FinishLead=Setup has finished installing DawnCapture on your computer.
 zh.FinishLead=安装程序已在你的计算机上安装了 DawnCapture。
 
-; Page 6's body: the one selectable row and the hotkey line above the footer. The hotkey
-; sentence is the same one the uninstall side uses, so the two cannot drift apart.
+; Page 6's body: the one selectable row and the hotkey line above the footer.
 en.FinishLaunch=Launch DawnCapture now
 zh.FinishLaunch=立即启动 DawnCapture
-en.FinishHotkeyNote=Press Ctrl+Shift+F9 at any time to start recording.
-zh.FinishHotkeyNote=随时按 Ctrl+Shift+F9 开始录制。
+; The default start hotkey - F9, per HotkeyBinding.ToggleRecordingDefault. The installer used
+; to promise Ctrl+Shift+F9, which the app never bound. Change the two together.
+en.FinishHotkeyNote=Press F9 at any time to start recording.
+zh.FinishHotkeyNote=随时按 F9 开始录制。
 
 
 [Files]
@@ -577,7 +581,9 @@ Filename: "{app}\{#AppExeName}"; Flags: postinstall nowait skipifsilent; Check: 
 ; rescans the Videos folder after a reinstall to show the recordings it kept.
 ;
 ; [Registry] - nothing to register. Toasts work because the app registers its own COM
-; activator in HKCU at first launch, not because the installer wrote a key.
+; activator in HKCU at first launch, not because the installer wrote a key. Those keys are
+; removed again on the way out - from [Code], not from here, because the activator CLSID has
+; to be read before it can be deleted; see the usUninstall branch of CurUninstallStepChanged.
 ;
 ; AppMutex - the app's single-instance guard is a WinRT AppInstance key rather than a
 ; documented named mutex, so there is no stable name to hand to Inno Setup.
@@ -601,6 +607,9 @@ var
     InitializeUninstall. Recordings have no flag because they are never deleted: they are
     the user's files. }
   DeleteConfigData: Boolean;
+
+  { Uninstall: the app's activation CLSID, read from the registry at removal time. }
+  ActivatorClsid: String;
 
   { Page 2 state. }
   PrevPage: TWizardPage;
@@ -2236,6 +2245,21 @@ end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
+  { The app's notification registration, which Inno knows nothing about and which otherwise
+    keeps pointing at a folder this run is deleting. The activation CLSID is read rather than
+    hard-coded because it is regenerated on every registration - measured here three times,
+    three different values. No entry to read means nothing to delete. }
+  if CurUninstallStep = usUninstall then
+  begin
+    if RegQueryStringValue(HKCU, 'Software\Classes\AppUserModelId\{#AppUserModelId}',
+                           'CustomActivator', ActivatorClsid) and (ActivatorClsid <> '') then
+      RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\CLSID\' + ActivatorClsid);
+
+    RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\AppUserModelId\{#AppUserModelId}');
+    RegDeleteKeyIncludingSubkeys(HKCU,
+      'Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\{#AppUserModelId}');
+  end;
+
   if CurUninstallStep = usPostUninstall then
   begin
     { Second line of defence: even if someone later flips a default, a silent uninstall

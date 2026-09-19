@@ -25,6 +25,9 @@ public partial class App : Application
     // builds ignore this and use their package identity instead.
     private const string AppUserModelId = "DawnCapture.App";
 
+    // The notification registration below is removed by the uninstaller, not from here:
+    // AppNotificationManager.Unregister reports success and leaves every key behind (measured).
+
     private AppInstance? _singleInstance;
     private readonly SettingsService _settingsService;
 

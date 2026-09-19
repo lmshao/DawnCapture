@@ -43,7 +43,9 @@ param(
     [string]$Architecture = "x64",
     [string]$Version = "",
     [string]$Publisher = "",
-    [int]$CertYears = 5
+    [int]$CertYears = 5,
+    # Reuse bin\obj instead of wiping them - see the clean step below. Named-only, like the rest.
+    [switch]$SkipClean
 )
 
 $ErrorActionPreference = "Stop"
@@ -66,6 +68,7 @@ if (-not $Method)
     Write-Host "  -Version 1.0.0.0              default from Package.appxmanifest"
     Write-Host "  -Publisher `"CN=...`"           default from Package.appxmanifest"
     Write-Host "  -Configuration Release         default Release"
+    Write-Host "  -SkipClean                    reuse bin\obj instead of wiping them"
     Write-Host ""
     Write-Host "Artifacts (Name-Version-Arch-Channel):" -ForegroundColor White
     Write-Host "  bin\DawnCapture-<version>-<arch>-portable.zip"
@@ -107,19 +110,28 @@ Write-Host "Version: $Version | Publisher: $Publisher" -ForegroundColor Gray
 Get-Process DawnCapture -ErrorAction SilentlyContinue | Stop-Process -Force
 
 # ---------------------------------------------------------------------------
-# Clean the build cache first so every package is built from scratch.
+# Clean the build cache first so every package is built from scratch, unless the caller
+# asked for it to be reused: the wipe is the slow half of every iteration, and a shell
+# that confirms bulk deletions refuses it outright.
 # ---------------------------------------------------------------------------
-Write-Host "==> Cleaning $Configuration build cache" -ForegroundColor Cyan
-foreach ($dir in @(
-    (Join-Path $root "bin\$Configuration"),
-    (Join-Path $root "obj\$Configuration"),
-    (Join-Path $root "bin\$Architecture\$Configuration"),
-    (Join-Path $root "obj\$Architecture\$Configuration")
-))
+if ($SkipClean)
 {
-    if (Test-Path $dir)
+    Write-Host "==> Reusing $Configuration build cache (-SkipClean)" -ForegroundColor Cyan
+}
+else
+{
+    Write-Host "==> Cleaning $Configuration build cache" -ForegroundColor Cyan
+    foreach ($dir in @(
+        (Join-Path $root "bin\$Configuration"),
+        (Join-Path $root "obj\$Configuration"),
+        (Join-Path $root "bin\$Architecture\$Configuration"),
+        (Join-Path $root "obj\$Architecture\$Configuration")
+    ))
     {
-        Remove-Item $dir -Recurse -Force
+        if (Test-Path $dir)
+        {
+            Remove-Item $dir -Recurse -Force
+        }
     }
 }
 

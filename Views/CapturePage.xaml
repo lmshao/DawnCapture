@@ -2,13 +2,17 @@
 <!-- Copyright (c) 2026 SHAO Liming <lmshao@163.com> -->
 <!-- SPDX-License-Identifier: MIT -->
 
+<!-- NavigationCacheMode keeps one instance per Frame. The page subscribes to the singleton
+     CaptureViewModel and cannot unsubscribe - the handler is a lambda - so a new instance
+     per navigation would be kept alive for the life of the app. -->
 <Page
     x:Class="DawnCapture.Views.CapturePage"
     x:Name="RootPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:models="using:DawnCapture.Models"
-    xmlns:helpers="using:DawnCapture.Helpers">
+    xmlns:helpers="using:DawnCapture.Helpers"
+    NavigationCacheMode="Required">
 
     <Grid HorizontalAlignment="Stretch">
         <Grid
