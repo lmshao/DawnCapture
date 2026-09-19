@@ -65,7 +65,7 @@
 ; --- Version -----------------------------------------------------------------
 ; Read from the published executable's version resource rather than hardcoded,
 ; so the installer version can never drift from the payload it wraps. The value
-; originates in DawnCapture.csproj as <Version>.
+; originates in Directory.Build.props as <Version>.
 #ifndef AppVersion
   #define AppVersion GetVersionNumbersString(PayloadDir + "\" + AppExeName)
 #endif

@@ -89,7 +89,10 @@ $publishDir = Join-Path $root "bin\$Configuration\$framework\$runtimeId\publish"
 [xml]$manifest = Get-Content "Package.appxmanifest" -Raw -Encoding UTF8
 if (-not $Version)
 {
-    $Version = $manifest.Package.Identity.Version
+    # The version has one home. The manifest also carries it, but only because the build
+    # pokes it there from this file.
+    [xml]$versionProps = Get-Content "Directory.Build.props" -Raw -Encoding UTF8
+    $Version = $versionProps.Project.PropertyGroup.Version
 }
 
 if (-not $Publisher)
@@ -105,6 +108,42 @@ $msixDir = Join-Path $root "AppPackages\DawnCapture_${Version}_${Architecture}_R
 $finalMsix = Join-Path $msixDir "DawnCapture-${Version}-${Architecture}.msix"
 
 Write-Host "Version: $Version | Publisher: $Publisher" -ForegroundColor Gray
+
+# ---------------------------------------------------------------------------
+# Brings both manifests in step with $Version, which lives in Directory.Build.props.
+#
+# Textual on purpose. XmlPoke - or any XML round-trip - rewrites the entire document:
+# attribute lists collapse onto one line, blank lines disappear, the trailing newline goes.
+# Here only the value changes, and only when it is wrong, so the files keep their shape and
+# a version bump shows up as a one-line diff.
+# ---------------------------------------------------------------------------
+function Sync-ManifestVersions
+{
+    param([string]$Value)
+
+    foreach ($manifest in @(
+        # \b keeps this off MinVersion and MaxVersionTested, whose attribute names merely end
+        # in "Version"; without it the manifest's minimum OS version was rewritten too.
+        @{ Path = (Join-Path $root "Package.appxmanifest"); Pattern = '(\bVersion=")[0-9.]+(")' },
+        @{ Path = (Join-Path $root "app.manifest"); Pattern = '(assemblyIdentity version=")[0-9.]+(")' }
+    ))
+    {
+        $text = [System.IO.File]::ReadAllText($manifest.Path)
+        $updated = $text -creplace $manifest.Pattern, ('${1}' + $Value + '${2}')
+        if ($updated -eq $text)
+        {
+            continue
+        }
+
+        # Keep the byte-order mark the file already had; both carry one today.
+        $bytes = [System.IO.File]::ReadAllBytes($manifest.Path)
+        $hasBom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+        [System.IO.File]::WriteAllText($manifest.Path, $updated, [System.Text.UTF8Encoding]::new($hasBom))
+        Write-Host "    synced $(Split-Path $manifest.Path -Leaf) to $Value" -ForegroundColor Gray
+    }
+}
+
+Sync-ManifestVersions -Value $Version
 
 # Close any running instance so files are not locked.
 Get-Process DawnCapture -ErrorAction SilentlyContinue | Stop-Process -Force

@@ -56,6 +56,8 @@ dotnet format whitespace DawnCapture.csproj --verify-no-changes --no-restore
 > 免签名原理、关键决策、实测数据与已知边界记录在安装脚本 `installer\inno\DawnCapture.iss` 的注释中。
 > 未签名的安装包从网络下载后会触发 SmartScreen 提示（可点「更多信息 → 仍要运行」）；Windows 11 若开启 Smart App Control 会拦截且用户无法绕过。
 
+> 版本号只在 `Directory.Build.props` 写一次：程序集版本、两个清单、安装器与产物文件名都由它派生（`distribute.ps1` 打包前会把清单同步过去）。MSIX 要求四段且最后一段必须为 0，第一段不能为 0。
+
 > 计划通过 Microsoft Store 分发：商店提交由微软签名。MSIX 自签名侧载包仅供本地测试。
 
 ## 数据存储
