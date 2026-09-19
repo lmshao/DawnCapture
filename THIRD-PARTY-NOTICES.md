@@ -1,18 +1,32 @@
 DawnCapture uses the following third-party components, each distributed
-under its own license. Every runtime component is MIT-licensed; the build
-tooling section at the end covers the Inno Setup license.
+under its own license. Most are MIT-licensed, but not all of them are:
+SQLitePCLRaw is Apache-2.0 and the WebView2 bits that arrive with the
+Windows App SDK are under a Microsoft BSD-style license. Both are covered
+below, as is the Inno Setup license for the build tooling.
 
-— NuGet dependencies
+The versions named here mirror DawnCapture.csproj, which is the source of
+truth; package names follow the NuGet packages actually referenced, which
+for the Windows App SDK and NAudio are the split packages rather than the
+older single packages. The list covers what is referenced directly and what
+ends up redistributed in a published build.
 
-• CommunityToolkit.Mvvm 8.4.0 — MIT — © .NET Foundation and Contributors
-• Microsoft.Data.Sqlite 8.0.11 — MIT — © .NET Foundation and Contributors
-• Microsoft.Extensions.DependencyInjection 8.0.1 — MIT — © .NET Foundation and Contributors
-• Microsoft.Windows.SDK.BuildTools 10.0.28000.2705 — MIT — © Microsoft Corporation
-• Microsoft.WindowsAppSDK 2.4.0 — MIT — © Microsoft Corporation
-• NAudio 2.2.1 — MIT — © Mark Heath
-• System.Drawing.Common 8.0.8 — MIT — © .NET Foundation and Contributors
-• Vortice.Direct3D11 3.8.3 — MIT — © Amer Koleci
-• Vortice.DXGI 3.8.3 — MIT — © Amer Koleci
+— MIT-licensed dependencies
+
+• CommunityToolkit.Mvvm 8.4.0 — © .NET Foundation and Contributors
+• Microsoft.Data.Sqlite 8.0.11 (with Microsoft.Data.Sqlite.Core) — © .NET Foundation and Contributors
+• Microsoft.Extensions.DependencyInjection 8.0.1 (with .Abstractions 8.0.2) — © .NET Foundation and Contributors
+• Microsoft.Windows.SDK.BuildTools 10.0.28000.2705 — © Microsoft Corporation
+• Windows App SDK 2.4 — © Microsoft Corporation. Referenced as the split packages
+  Base 2.0.4, Foundation 2.3.9, InteractiveExperiences 2.1.6, WinUI 2.3.6,
+  DWrite 2.1.0 and Runtime 2.4.0.
+• NAudio.Wasapi 2.2.1 (with NAudio.Core 2.2.1) — © Mark Heath
+• System.Drawing.Common 8.0.8 — © .NET Foundation and Contributors
+• Vortice.Direct3D11 3.8.3, Vortice.DXGI 3.8.3, Vortice.DirectX 3.8.3 — © Amer Koleci
+• Vortice.Mathematics 2.1.0 — © Amer Koleci
+• WinRT.Runtime (C#/WinRT) — © Microsoft Corporation
+• .NET 10 runtime and class libraries — © .NET Foundation and Contributors. Included
+  because the installer and portable builds are published self-contained, so the
+  runtime travels with the app instead of being a prerequisite on the machine.
 
 — MIT License
 
@@ -37,6 +51,62 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+— Apache-2.0 dependency
+
+• SQLitePCLRaw 2.1.6 — bundle_e_sqlite3, core, lib.e_sqlite3, provider.e_sqlite3
+  — © Eric Sink — Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
+  These come in transitively with Microsoft.Data.Sqlite and are what binds the
+  SQLite library to .NET. SQLite itself is public domain — see below.
+
+— BSD-3-Clause dependency
+
+• Microsoft.Web.WebView2 1.0.3719.77 — © Microsoft Corporation. It arrives with
+  the Windows App SDK and is redistributed here as WebView2Loader.dll and
+  Microsoft.Web.WebView2.Core.dll, although the app never hosts web content of
+  its own. Its license requires the following to accompany the binary:
+
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * The name of Microsoft Corporation, or the names of its contributors
+may not be used to endorse or promote products derived from this
+software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+— Public domain
+
+• SQLite, the library behind e_sqlite3.dll —
+  See https://www.sqlite.org/copyright.html
+
+— Notices carried by the Windows App SDK
+
+The Windows App SDK redistributes components of its own, and its Runtime package
+carries a NOTICE.txt (about 330 KB) aggregating their licenses. That file ships
+with the NuGet package rather than with the app, so it is found wherever the SDK
+is restored — %USERPROFILE%\.nuget\packages\microsoft.windowsappsdk.runtime\
+<version>\NOTICE.txt — and the native DLLs in a published build come from there
+(Microsoft.ui.xaml.dll, DWriteCore.dll, CoreMessagingXP.dll and the like).
 
 — Build tooling (not a runtime dependency)
 

@@ -1,4 +1,4 @@
-Last updated: 2026-09-09
+Last updated: 2026-09-19
 
 DawnCapture is a screen recording app. This policy explains what data it
 collects and how that data is handled.
@@ -12,9 +12,11 @@ collects and how that data is handled.
 — Data stored on your device
 
 • Recordings (video/audio) — saved in your chosen output folder (default: Videos\DawnCapture). These are the files you create; you control and delete them.
-• Settings — %LocalAppData%\DawnCapture\settings.json — remembers your preferences.
+• Settings — %LocalAppData%\DawnCapture\settings.json — remembers your preferences, including the output folder you picked.
 • Recording library index — %LocalAppData%\DawnCapture\library.db — lists your recordings with thumbnails and metadata.
-• Technical logs — %LocalAppData%\DawnCapture\logs\ — kept for 14 days and used only for diagnosing crashes and errors.
+• Technical logs — %LocalAppData%\DawnCapture\logs\ — kept for 14 days and used only for diagnosing crashes and errors. A log can name your Windows user account (it appears inside file paths), your displays and their resolutions, your audio devices, and where recordings were written; it never contains the picture or sound of a recording.
+• Notification registration — two keys under HKCU\Software\Classes: an AppUserModelId entry for DawnCapture, and the CLSID entry that activates it. Windows needs these to show the "recording finished" notification and to reopen the app when the notification is clicked. They hold the app's name, its icon and the path to its executable — nothing about you or your recordings.
+• Temporary files — a hidden .dawncapture_*.tmp inside your output folder while the app checks that it can write there, and a settings.json.tmp next to the settings file while settings are saved. Both are removed as soon as the operation finishes.
 
 — Permissions
 
@@ -25,7 +27,9 @@ collects and how that data is handled.
 — Deleting your data
 
 • Delete recordings in the app's library (they go to the Recycle Bin), or delete the output folder manually.
-• Uninstalling DawnCapture leaves the files listed above on your device; delete them manually if you want them gone. DawnCapture never keeps a remote copy.
+• Uninstalling DawnCapture asks whether to delete %LocalAppData%\DawnCapture — your settings, library index and logs. Say yes and they are removed; say no and they stay, ready for a later reinstall. A silent uninstall never deletes them.
+• The notification registration is always removed by the uninstaller, so no entry is left pointing at a folder that no longer exists.
+• Your recordings are never deleted by the uninstaller: they are your files. DawnCapture never keeps a remote copy.
 
 — Policy changes
 
@@ -35,9 +39,9 @@ If this policy changes, the updated version ships with the app.
 
 Questions about this policy: lmshao@163.com
 
-────────────────────────
+──────── 简体中文 ────────
 
-最近更新：2026-09-09
+最近更新：2026-09-19
 
 DawnCapture 是一款屏幕录制应用。本政策说明它会收集哪些数据以及如何处理这些数据。
 
@@ -50,9 +54,11 @@ DawnCapture 是一款屏幕录制应用。本政策说明它会收集哪些数�
 — 存储在你设备上的数据
 
 • 录像文件（视频/音频）— 保存在你选择的输出文件夹中（默认：视频\DawnCapture）。这些是你创建的文件，由你控制并删除。
-• 设置 — %LocalAppData%\DawnCapture\settings.json — 记住你的偏好设置。
+• 设置 — %LocalAppData%\DawnCapture\settings.json — 记住你的偏好设置，包括你选择的输出文件夹。
 • 录像库索引 — %LocalAppData%\DawnCapture\library.db — 存放录像列表、缩略图与元数据。
-• 技术日志 — %LocalAppData%\DawnCapture\logs\ — 保留 14 天，仅用于诊断崩溃和错误。
+• 技术日志 — %LocalAppData%\DawnCapture\logs\ — 保留 14 天，仅用于诊断崩溃和错误。日志中可能出现你的 Windows 用户名（出现在文件路径中）、显示器名称与分辨率、音频设备名称以及录像文件路径；日志不包含录像的画面或声音。
+• 通知注册项 — HKCU\Software\Classes 下的两个键：DawnCapture 的 AppUserModelId 项，以及用于激活它的 CLSID 项。Windows 依靠它们显示「录制完成」通知，并在你点击通知时唤回应用。其中只保存应用名称、图标与可执行文件路径，不含任何与你或你的录像有关的信息。
+• 临时文件 — 应用检查输出文件夹是否可写时，会在其中短暂生成一个隐藏的 .dawncapture_*.tmp；保存设置时会生成 settings.json.tmp。两者在操作结束后立即删除。
 
 — 权限
 
@@ -63,7 +69,9 @@ DawnCapture 是一款屏幕录制应用。本政策说明它会收集哪些数�
 — 删除你的数据
 
 • 在应用的录像库中删除录像（会移入回收站），或手动删除输出文件夹。
-• 卸载 DawnCapture 后，上面列出的文件仍保留在设备上；如需清除请手动删除。DawnCapture 不会在远端保留任何副本。
+• 卸载 DawnCapture 时会询问是否删除 %LocalAppData%\DawnCapture —— 即设置、录像库索引与日志。选择删除则一并清除；选择保留则留待日后重装使用。静默卸载从不删除这些内容。
+• 通知注册项由卸载程序始终清除，不会留下指向已删除文件夹的无效项。
+• 卸载程序不会删除你的录像：它们是你自己的文件。DawnCapture 不会在远端保留任何副本。
 
 — 政策变更
 
