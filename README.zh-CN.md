@@ -70,6 +70,8 @@ dotnet build DawnCapture.csproj -c Debug -p:Platform=x64
 | 设置与录像目录 | `%LocalAppData%\DawnCapture` |
 | 日志（保留 14 天） | `%LocalAppData%\DawnCapture\logs` |
 
+> Microsoft Store 版由 Windows 把设置、录像库与日志重定向到包自己的文件夹，具体路径见隐私政策；录像文件两种渠道都写入上表的位置。
+
 ## 许可
 
 [MIT](LICENSE) © 2026 SHAO Liming

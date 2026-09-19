@@ -70,6 +70,10 @@ The version number is defined in one place, `Directory.Build.props`; the assembl
 | Settings and library | `%LocalAppData%\DawnCapture` |
 | Logs (kept 14 days) | `%LocalAppData%\DawnCapture\logs` |
 
+> In the Microsoft Store build, Windows redirects the settings, library and logs into the
+> package's own folder instead. The privacy policy lists that path; recordings go to the
+> folder above in either case.
+
 ## License
 
 [MIT](LICENSE) © 2026 SHAO Liming
