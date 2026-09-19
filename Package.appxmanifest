@@ -2,19 +2,27 @@
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   IgnorableNamespaces="uap rescap">
 
-  <Identity
-    Name="5a9d9dbe-cdf2-45c6-8868-3eb111170803"
-    Publisher="CN=SHAO Liming"
-    Version="1.0.0.0" />
+  <!-- Name and Publisher are assigned by the Store for this product (Partner Center >
+       Product identity) and must match it exactly - a package whose Publisher differs is
+       rejected at submission. Those used to be a locally generated GUID and a name-only
+       publisher left over from self-signed test builds.
 
-  <mp:PhoneIdentity PhoneProductId="5a9d9dbe-cdf2-45c6-8868-3eb111170803" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+       distribute.ps1 reads Publisher from here and uses it as the subject of the signing
+       certificate, so the manifest and the certificate cannot drift apart: change one and
+       the next package is signed consistently.
+
+       The phone identity that sat below Identity is gone with the mp namespace - a Windows
+       Phone artifact that a desktop package has never needed. -->
+  <Identity
+    Name="SHAOLiming.DawnCapture"
+    Publisher="CN=C56CB3C0-9DE6-4561-B8C7-F0F6721C4DC9"
+    Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>DawnCapture</DisplayName>
@@ -23,7 +31,9 @@
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26226.0" />
+    <!-- Windows.Desktop only. The Windows.Universal entry arrived with the template: for a
+         desktop app it says nothing useful and only widens the set of devices the package
+         claims to support. -->
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26226.0" />
   </Dependencies>
 
@@ -35,9 +45,12 @@
     <Application Id="App"
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
+      <!-- Description used to repeat the app name, which then showed up verbatim on the
+           tile. The description customers read in the Store comes from the listing in
+           Partner Center; this one is what the shell shows for the app itself. -->
       <uap:VisualElements
         DisplayName="DawnCapture"
-        Description="DawnCapture"
+        Description="A lightweight, focused screen recorder for Windows"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
