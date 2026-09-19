@@ -22,13 +22,26 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
     private readonly object _sync = new();
     private bool _schemaInitialized;
 
+    private readonly SemaphoreSlim _writeGate = new(1, 1);
+
     // How long a connection waits for a competing writer before surfacing SQLITE_BUSY.
     private const int BusyTimeoutMilliseconds = 5000;
 
     public Task SyncLibraryAsync(string outputFolder, CancellationToken cancellationToken = default)
     {
         return Task.Run(
-            async () => await SyncLibraryCoreAsync(outputFolder, cancellationToken),
+            async () =>
+            {
+                await _writeGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await SyncLibraryCoreAsync(outputFolder, cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    _writeGate.Release();
+                }
+            },
             cancellationToken);
     }
 
@@ -43,41 +56,49 @@ public sealed partial class RecordingCatalogService : IRecordingCatalogService
     {
         return Task.Run(async () =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            EnsureSchema();
-
-            string fullPath = Path.GetFullPath(filePath);
-            if (!File.Exists(fullPath))
+            await _writeGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                return;
+                cancellationToken.ThrowIfCancellationRequested();
+                EnsureSchema();
+
+                string fullPath = Path.GetFullPath(filePath);
+                if (!File.Exists(fullPath))
+                {
+                    return;
+                }
+
+                var fileInfo = new FileInfo(fullPath);
+                string hash = await RecordingFileHashHelper.ComputeSha256HexAsync(fullPath, cancellationToken);
+                var probe = await RecordingMediaProbe.ProbeAsync(fullPath, mediaKind);
+                ExistingEntryRef? existing = FindExistingEntry(fullPath, hash);
+
+                var entry = BuildEntryFromFile(
+                    fileInfo,
+                    hash,
+                    recordedAt,
+                    mediaKind,
+                    sourceKind,
+                    duration > TimeSpan.Zero ? (long)duration.TotalMilliseconds : probe.DurationMs,
+                    encoding,
+                    probe.Width,
+                    probe.Height,
+                    probe.VideoCodec,
+                    probe.AudioCodec,
+                    probe.VideoBitrateKbps,
+                    probe.AudioBitrateKbps,
+                    existingId: existing?.Id,
+                    existingDisplayName: existing?.DisplayName,
+                    existingThumbnail: existing?.ThumbnailPng,
+                    existingThumbnailWidth: existing?.ThumbnailWidth,
+                    existingThumbnailHeight: existing?.ThumbnailHeight);
+
+                UpsertEntry(entry);
             }
-
-            var fileInfo = new FileInfo(fullPath);
-            string hash = await RecordingFileHashHelper.ComputeSha256HexAsync(fullPath, cancellationToken);
-            var probe = await RecordingMediaProbe.ProbeAsync(fullPath, mediaKind);
-            ExistingEntryRef? existing = FindExistingEntry(fullPath, hash);
-
-            var entry = BuildEntryFromFile(
-                fileInfo,
-                hash,
-                recordedAt,
-                mediaKind,
-                sourceKind,
-                duration > TimeSpan.Zero ? (long)duration.TotalMilliseconds : probe.DurationMs,
-                encoding,
-                probe.Width,
-                probe.Height,
-                probe.VideoCodec,
-                probe.AudioCodec,
-                probe.VideoBitrateKbps,
-                probe.AudioBitrateKbps,
-                existingId: existing?.Id,
-                existingDisplayName: existing?.DisplayName,
-                existingThumbnail: existing?.ThumbnailPng,
-                existingThumbnailWidth: existing?.ThumbnailWidth,
-                existingThumbnailHeight: existing?.ThumbnailHeight);
-
-            UpsertEntry(entry);
+            finally
+            {
+                _writeGate.Release();
+            }
         }, cancellationToken);
     }
 

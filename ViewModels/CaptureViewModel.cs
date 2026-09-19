@@ -238,46 +238,46 @@ public partial class CaptureViewModel : ObservableObject
         switch (SelectedMode)
         {
             case CaptureModeKind.FullScreen when SelectedDisplay is { } display:
-            {
-                await _monitorService.RefreshThumbnailAsync(display);
-                if (IsPreviewStillCurrent(epoch, display))
                 {
-                    SelectedDisplayThumbnail = display.Thumbnail;
-                }
+                    await _monitorService.RefreshThumbnailAsync(display);
+                    if (IsPreviewStillCurrent(epoch, display))
+                    {
+                        SelectedDisplayThumbnail = display.Thumbnail;
+                    }
 
-                break;
-            }
+                    break;
+                }
             case CaptureModeKind.Region when SelectedRegion is { } region:
-            {
-                var thumbnail = await RegionPreviewHelper.CaptureThumbnailAsync(region.ScreenBounds);
-                if (IsPreviewStillCurrent(epoch, region))
                 {
-                    RegionThumbnail = thumbnail;
-                }
+                    var thumbnail = await RegionPreviewHelper.CaptureThumbnailAsync(region.ScreenBounds);
+                    if (IsPreviewStillCurrent(epoch, region))
+                    {
+                        RegionThumbnail = thumbnail;
+                    }
 
-                break;
-            }
+                    break;
+                }
             case CaptureModeKind.Window when SelectedWindow is { } window && _windowPreviewSession is { } session:
-            {
-                var pixels = await session.TryExtractLatestPixelsAsync(WindowPreviewHelper.DefaultMaxWidth);
-
-                // A just-restarted session needs a moment to deliver its first
-                // frame; wait briefly so switching back shows a fresh image.
-                for (int attempt = 0; pixels is null && attempt < 4 && IsPreviewStillCurrent(epoch, window); attempt++)
                 {
-                    await Task.Delay(60);
-                    pixels = await session.TryExtractLatestPixelsAsync(WindowPreviewHelper.DefaultMaxWidth);
-                }
+                    var pixels = await session.TryExtractLatestPixelsAsync(WindowPreviewHelper.DefaultMaxWidth);
 
-                if (IsPreviewStillCurrent(epoch, window))
-                {
-                    WindowThumbnail = pixels is { } data
-                        ? RecordingThumbnailHelper.CreateWriteableBitmap(data)
-                        : WindowThumbnail;
-                }
+                    // A just-restarted session needs a moment to deliver its first
+                    // frame; wait briefly so switching back shows a fresh image.
+                    for (int attempt = 0; pixels is null && attempt < 4 && IsPreviewStillCurrent(epoch, window); attempt++)
+                    {
+                        await Task.Delay(60);
+                        pixels = await session.TryExtractLatestPixelsAsync(WindowPreviewHelper.DefaultMaxWidth);
+                    }
 
-                break;
-            }
+                    if (IsPreviewStillCurrent(epoch, window))
+                    {
+                        WindowThumbnail = pixels is { } data
+                            ? RecordingThumbnailHelper.CreateWriteableBitmap(data)
+                            : WindowThumbnail;
+                    }
+
+                    break;
+                }
         }
     }
 
