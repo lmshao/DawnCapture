@@ -37,14 +37,18 @@
 
 ## Download
 
-Get it from [Releases](https://github.com/lmshao/DawnCapture/releases):
+<a href="https://apps.microsoft.com/detail/9mzkr3274jk8"><img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft Store"></a>
+
+**Recommended: [Microsoft Store](https://apps.microsoft.com/detail/9mzkr3274jk8)** — signed by Microsoft and updated automatically.
+
+Prefer a standalone package? Get it from [Releases](https://github.com/lmshao/DawnCapture/releases):
 
 | Channel | |
 |---|---|
-| **Installer** (recommended) | `DawnCapture-<version>-x64-setup.exe` — double-click to install; per-user, so no administrator rights and no runtime to install first |
+| **Installer** (recommended) | `DawnCapture-<version>-x64-setup.exe` — double-click to install |
 | **Portable** | `DawnCapture-<version>-x64-portable.zip` — unzip and run |
 
-> The installer is not code-signed, so the first run may trigger a SmartScreen prompt ("More info" → "Run anyway"); with Smart App Control enabled, Windows 11 blocks it outright and there is no way around it. Distribution through the Microsoft Store is planned, where Microsoft signs it.
+> The standalone installer is not code-signed, so the first run may trigger a SmartScreen prompt ("More info" → "Run anyway"); with Smart App Control enabled, Windows 11 blocks it outright. The Store build has neither problem: Microsoft signs it and keeps it up to date.
 
 ## Requirements
 

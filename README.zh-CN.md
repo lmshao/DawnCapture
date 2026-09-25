@@ -37,14 +37,18 @@
 
 ## 下载安装
 
-从 [Releases](https://github.com/lmshao/DawnCapture/releases) 获取：
+<a href="https://apps.microsoft.com/detail/9mzkr3274jk8"><img src="https://get.microsoft.com/images/zh-cn%20dark.svg" width="200" alt="从 Microsoft Store 获取"></a>
+
+**推荐：[Microsoft Store](https://apps.microsoft.com/detail/9mzkr3274jk8)** —— 由微软签名，自动更新。
+
+也可以从 [Releases](https://github.com/lmshao/DawnCapture/releases) 下载独立安装包：
 
 | 渠道 | 说明 |
 |---|---|
-| **安装包**（推荐） | `DawnCapture-<版本>-x64-setup.exe`，双击安装；per-user，无需管理员，无需预装运行时 |
+| **安装包**（推荐） | `DawnCapture-<版本>-x64-setup.exe`，双击安装 |
 | **便携版** | `DawnCapture-<版本>-x64-portable.zip`，解压即用 |
 
-> 安装包未做代码签名，首次运行可能触发 SmartScreen 提示（「更多信息」→「仍要运行」）；Windows 11 若开启 Smart App Control 会直接拦截且无法绕过。Microsoft Store 渠道计划中，由微软签名。
+> 独立安装包未做代码签名，首次运行可能触发 SmartScreen 提示（「更多信息」→「仍要运行」）；Windows 11 若开启 Smart App Control 会直接拦截。商店版没有这两个问题：由微软签名，并自动更新。
 
 ## 系统要求
 
