@@ -1,0 +1,1387 @@
+﻿<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DawnCapture 安装程序 UX 原型 · Installer Prototype</title>
+<!--
+  DawnCapture 安装程序（Inno Setup 6）UX 原型
+  ==========================================================================
+  依据：design/DESIGN.md（既有设计系统）+ design/INSTALLER_APPROACH.md（通道取舍）
+  单文件自包含、离线可开、无框架依赖、无网络请求。
+  品牌色/中性色/字体全部取自 DESIGN.md 与 implementation 令牌（Styles.xaml 同值），
+  不引入新色值 —— 安装程序必须像 Windows 系统部件，不像另一个产品。
+
+  页面右上角三个开关：主题 / 语言 / 实现标注（看每页对应哪些 Inno 指令与 [Code]）
+  ==========================================================================
+-->
+<style>
+  /* ---------------------------------------------------------------- tokens
+     与 design/dawncapture-ui-prototype.html 完全同源（DESIGN.md 的令牌表） */
+  :root {
+    color-scheme: light;
+    --desktop: #e9edf2;
+    --page: #f7f8fa;
+    --app: rgba(248, 249, 251, .94);
+    --chrome: rgba(239, 242, 246, .88);
+    --surface: #ffffff;
+    --surface-muted: #f4f5f7;
+    --surface-hover: #ebeef2;
+    --text: #1c2024;
+    --text-muted: #626971;
+    --text-faint: #858c94;
+    --stroke: #d6d9dd;
+    --stroke-strong: #bdc2c8;
+    --accent: #d85b42;
+    --accent-hover: #bf4933;
+    --accent-soft: #f7e4df;
+    /* 大面积选中底色：比 accent-soft 淡一档，小色块（徽章 / 编号 / [Code] 标签）不受影响 */
+    --accent-tint: #fbf0ec;
+    --focus: #2563a6;
+    --danger: #c42b1c;
+    --danger-soft: #fdeceb;
+    --warning: #8a5a00;
+    --warning-soft: #fff6e5;
+    --success: #18794e;
+    --control: #24282d;
+    --control-text: #ffffff;
+    --shadow: 0 18px 60px rgba(0, 0, 0, .16);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, .08);
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --desktop: #111417;
+    --page: #16191d;
+    --app: rgba(30, 33, 37, .96);
+    --chrome: rgba(37, 40, 45, .92);
+    --surface: #292d32;
+    --surface-muted: #24282c;
+    --surface-hover: #33383e;
+    --text: #f3f4f5;
+    --text-muted: #b5bac0;
+    --text-faint: #8f969e;
+    --stroke: #41464c;
+    --stroke-strong: #555c64;
+    --accent: #f07a61;
+    --accent-hover: #ff8a70;
+    --accent-soft: #4a2c27;
+    --accent-tint: #36231e;
+    --focus: #60a5fa;
+    --danger: #ff7669;
+    --danger-soft: #3d2320;
+    --warning: #f0b95a;
+    --warning-soft: #33291a;
+    --success: #65c99a;
+    --control: #f0f1f2;
+    --control-text: #202327;
+    --shadow: 0 18px 60px rgba(0, 0, 0, .5);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page);
+    color: var(--text);
+    font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { margin: 0; font-weight: 600; }
+  p { margin: 0; }
+  button, input { font: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .mono { font-family: Consolas, "Cascadia Mono", monospace; font-variant-numeric: tabular-nums; }
+
+  /* ------------------------------------------------------------ page chrome */
+  .page-head {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 14px 32px;
+    background: var(--app);
+    border-bottom: 1px solid var(--stroke);
+    backdrop-filter: blur(28px) saturate(120%);
+  }
+  .page-head .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+  .page-head .brand svg { width: 28px; height: 28px; }
+  .page-head h1 { font-size: 15px; letter-spacing: .1px; }
+  .page-head .sub { font-size: 12px; color: var(--text-faint); }
+  .switches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .switches button {
+    height: 30px; padding: 0 12px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--stroke); border-radius: 6px;
+    font-size: 12px;
+  }
+  .switches button[aria-pressed="true"] { background: var(--surface-hover); border-color: var(--stroke-strong); font-weight: 600; }
+
+  main { max-width: 1360px; margin: 0 auto; padding: 32px; }
+  .lede { max-width: 78ch; color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+  .lede strong { color: var(--text); }
+
+  section { margin-bottom: 40px; }
+  .sec-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .sec-title h2 { font-size: 16px; }
+  .sec-title span { font-size: 12px; color: var(--text-faint); }
+
+  /* --------------------------------------------------------------- flow map */
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .flow .node {
+    padding: 8px 12px; background: var(--surface); border: 1px solid var(--stroke); border-radius: 6px; font-size: 12px;
+  }
+  .flow .node.cond { border-style: dashed; }
+  .flow .node.danger { border-color: var(--danger); color: var(--danger); }
+  .flow .arrow { color: var(--text-faint); font-size: 12px; }
+  .flow .bracket { font-size: 11px; color: var(--text-faint); }
+
+  /* ------------------------------------------------------------ screen grid */
+  /* 章节容器：一页一章、垂直堆叠；章与章之间的间距由 .chap 的 margin 提供，
+     这样章节标题与它自己的预览图不会被 grid gap 拆开 */
+  .screens { display: block; }
+  .screens > .chap { margin: 44px 0 14px; }
+  .screens > .chap:first-child { margin-top: 0; }
+  .shot { display: grid; grid-template-columns: minmax(0, 700px) minmax(240px, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 1080px) { .shot { grid-template-columns: minmax(0, 1fr); } }
+  .shot > .side { padding-top: 4px; }
+  .shot h3 { font-size: 13px; margin-bottom: 8px; }
+  .shot h3 .step {
+    display: inline-block; min-width: 20px; height: 20px; line-height: 20px; text-align: center;
+    margin-right: 8px; border-radius: 4px; background: var(--accent-soft); color: var(--accent);
+    font-size: 11px; font-weight: 700;
+  }
+  .side ul { margin: 0 0 14px; padding-left: 18px; font-size: 12px; color: var(--text-muted); }
+  .side li { margin-bottom: 5px; }
+  .side .tagline { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+  .impl { display: flex; flex-direction: column; gap: 6px; }
+  .impl code {
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 11px;
+    background: var(--surface-muted); border: 1px solid var(--stroke); border-radius: 4px;
+    padding: 4px 6px; display: block; word-break: break-word;
+  }
+  .impl .kind {
+    align-self: flex-start; font-size: 10px; letter-spacing: .04em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 4px; border: 1px solid var(--stroke);
+  }
+  .impl .kind.native { background: var(--surface-muted); color: var(--text-muted); }
+  .impl .kind.code { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+  .impl .kind.asset { background: var(--warning-soft); border-color: transparent; color: var(--warning); }
+  body.hide-notes .side { display: none; }
+  body.hide-notes .shot { grid-template-columns: minmax(0, 700px); }
+
+  /* -------------------------------------------------------------- the wizard */
+  .wizard {
+    /* Inno 的向导窗口在所有页面尺寸固定，不随内容变化 */
+    width: 700px; height: 580px; max-width: 100%;
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--stroke-strong);
+    border-radius: 8px; box-shadow: var(--shadow);
+  }
+  .wz-titlebar {
+    height: 34px; flex: none; display: flex; align-items: center; gap: 8px;
+    padding: 0 8px 0 12px; background: var(--chrome); border-bottom: 1px solid var(--stroke);
+    font-size: 12px; color: var(--text-muted); user-select: none;
+  }
+  .wz-titlebar svg { width: 16px; height: 16px; flex: none; }
+  .wz-titlebar .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wz-titlebar .winbtns { margin-left: auto; display: flex; letter-spacing: 2px; color: var(--text-faint); padding-right: 4px; }
+  .wz-body { flex: 1; display: flex; min-height: 0; position: relative; }
+  /* 通高图区（.wz-art）已随 ① 改版整体取消：WizardImageFile 置空，品牌改为页内 132px 锁排 */
+  /* 属性表上方的小节标签 */
+  .wz-label { font-size: 11px; letter-spacing: .06em; color: var(--text-faint); margin-bottom: 10px; }
+  .wz-hr { height: 1px; background: var(--stroke); margin: 18px 0; }
+  /* 首屏锁排（欢迎页定稿）：页内 132px LOGO + 产品名 / 版本 / 发布者 */
+  .hero { display: flex; align-items: center; gap: 20px; }
+  .hero-logo { width: 132px; height: 132px; flex: none; }
+  .hero-nm { font-size: 22px; font-weight: 600; letter-spacing: .2px; }
+  .hero-vr { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+  /* 欢迎页 / 条件页：正文（首屏锁排 + 三句）在剩余空间里居中，
+     收尾句独占最后一行、贴住页脚分隔线的上方——它说的按钮就在那下面。
+     只用于正好三块的 .cover 内容（锁排 / 正文 / 收尾句），靠两个 auto 外边距分摊空白。 */
+  .wz-content.cover { gap: 16px; padding-bottom: 14px; }
+  .wz-content.cover > :first-child { margin-top: auto; }
+  .wz-content.cover > :nth-last-child(2) { margin-bottom: auto; }
+  .wz-lead { font-size: 13px; line-height: 1.6; margin: 0; }
+  .wz-note { font-size: 12.5px; line-height: 1.7; color: var(--text-muted); margin: 10px 0 0; }
+  /* ④ 的固定项（开始菜单）：与可选行同版式，但不参与勾选、灰底、无 hover */
+  .fixed-row {
+    display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: center;
+    padding: 5px 12px; border: 1px solid var(--stroke); border-radius: 6px;
+    background: var(--surface-muted);
+  }
+  .fixed-row .mark {
+    width: 16px; height: 16px; flex: none; border-radius: 50%;
+    border: 1px solid var(--accent); background: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .fixed-row .mark i { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+  .fixed-row .ttl { font-size: 12.5px; font-weight: 400; color: var(--text); }
+  /* ④ 末页同时承担 Ready 页：安装前的动作清单，用一条细分隔线与上面的选项分开 */
+  .ready {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--stroke);
+    font-size: 12.5px;
+  }
+  .ready .wz-label { margin-bottom: 0; }
+  .rec {
+    display: inline-block; padding: 1px 8px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); font-size: 10.5px; font-weight: 600;
+  }
+  /* ---- 章节：一页一章、上下排列；同页多变体则左右并排 ---- */
+  .chap { display: flex; align-items: baseline; gap: 10px; margin: 0 0 14px; }
+  .chap .no {
+    align-self: center; min-width: 24px; height: 22px; line-height: 22px; text-align: center;
+    border-radius: 4px; background: var(--accent-soft); color: var(--accent);
+    font-size: 11px; font-weight: 700;
+  }
+  .chap h2 { font-size: 16px; }
+  .chap > span:last-child { font-size: 12px; color: var(--text-faint); }
+  /* 每章一个 .shot，直接跟在章节标题后：预览在上、说明在下 */
+  .screens > .shot { display: flex; flex-direction: column; gap: 14px; max-width: 700px; }
+  /* 英文界面一节：同一份 DOM 的英文侧，只评审界面，不带侧栏说明 */
+  #en-screens .side { display: none; }
+  #en-screens .shot { max-width: 700px; }
+  .wz-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .wz-corner { flex: none; display: flex; justify-content: flex-end; padding: 14px 16px 0; }
+  .wz-corner svg { width: 44px; height: 44px; }
+  .wz-content { flex: 1; display: flex; flex-direction: column; padding: 6px 24px 0; overflow: hidden; }
+  .wz-content.no-corner { padding-top: 22px; }
+  /* 内容短的页面统一用 .cover（见下）：正文整组居中、最后一行贴页脚分隔线 */
+  .wz-foot {
+    flex: none; display: flex; align-items: center; gap: 8px; justify-content: flex-end;
+    padding: 12px 16px; border-top: 1px solid var(--stroke); background: var(--surface-muted);
+  }
+  .wz-foot .spacer { margin-right: auto; font-size: 11px; color: var(--text-faint); }
+  .wz-h { font-size: 19px; font-weight: 600; margin-bottom: 4px; }
+  .wz-sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; }
+  .wz-p { font-size: 12.5px; color: var(--text-muted); }
+  .wz-p + .wz-p { margin-top: 8px; }
+  .wz-p strong { color: var(--text); font-weight: 600; }
+
+  /* buttons */
+  .btn {
+    height: 32px; padding: 0 18px; border-radius: 6px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--stroke-strong);
+  }
+  .btn:hover { background: var(--surface-hover); }
+  .btn.primary { background: var(--accent); border-color: transparent; color: #fff; font-weight: 600; }
+  .btn.primary:hover { background: var(--accent-hover); }
+  .btn.danger { background: var(--danger); border-color: transparent; color: #fff; font-weight: 600; }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .btn:disabled { opacity: .5; cursor: default; }
+
+  /* option rows (radio / checkbox) */
+  .opts { display: flex; flex-direction: column; gap: 4px; }
+  .opt {
+    display: grid; grid-template-columns: 20px 1fr; gap: 10px;
+    padding: 5px 12px; border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+  }
+  .opt:hover { background: var(--surface-hover); }
+  .opt.sel { background: var(--accent-tint); border-color: var(--accent); }
+  .opt .mark {
+    width: 16px; height: 16px; margin-top: 2px; flex: none;
+    border: 1px solid var(--stroke-strong); background: var(--surface);
+    display: grid; place-items: center;
+  }
+  .opt .mark.radio { border-radius: 50%; }
+  /* 多选项也画成圆点（与 ③ 地址选择页同一视觉）。
+     类名保持 check：它决定的是交互行为（可多选），不是形状。 */
+  .opt .mark.check { border-radius: 50%; }
+  .opt.sel .mark { border-color: var(--accent); background: var(--accent); }
+  .opt .mark i { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+  .opt.sel .mark i { background: #fff; }
+  .opt .mark.check i { width: 6px; height: 6px; border-radius: 50%; }
+  /* 选项标题＝普通字重的正文大小（Windows 原生单选/复选框的排法），
+     选中态靠底色 + 边框 + 圆点表达，不靠把字加粗 */
+  .opt .ttl { display: block; font-size: 12.5px; font-weight: 400; color: var(--text); }
+  .opt .meta { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  /* 徽标容器不能带 .meta，否则会被 display:block 顶到下一行 */
+  .badgewrap { display: inline-block; margin-left: 6px; }
+  .opt .meta .mono { font-size: 11px; }
+  .opt .meta .warn { color: var(--warning); }
+  /* 徽章要能独立成立于标题行内（.ttl）与说明行（.meta） */
+  .badge {
+    display: inline-block; padding: 0 6px; border-radius: 999px; font-size: 10.5px;
+    background: var(--surface-muted); border: 1px solid var(--stroke); color: var(--text-muted);
+    margin-left: 6px;
+  }
+  .badge.rec { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+  .badge.admin { background: var(--warning-soft); border-color: transparent; color: var(--warning); }
+  .badge.danger { background: var(--danger-soft); border-color: transparent; color: var(--danger); font-weight: 600; }
+
+  /* inline path row for the custom mode */
+  .pathrow { display: flex; gap: 8px; margin: 8px 0 0 30px; }
+  /* 路径框与「浏览…」按钮共用一条高度规则，避免两边各写一份改歪；
+     文字也收齐：输入框 12px 等宽，按钮 12.5px（与正文一致）。 */
+  .pathrow input {
+    flex: 1; height: 28px; padding: 0 8px; border-radius: 6px;
+    background: var(--surface); border: 1px solid var(--stroke-strong);
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px;
+  }
+  .pathrow .btn { height: 28px; padding: 0 12px; font-size: 12.5px; }
+  /* 三选一：三个范围上下排列 + 下面共用一个地址框 */
+
+  /* key/value list */
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 12.5px; margin-bottom: 14px; }
+  .kv dt { color: var(--text-faint); }
+  .kv dd { margin: 0; }
+
+  /* ---------------------------------------- 卸载侧：照平台真实形态画
+     实测（Inno Setup 6.7.3）：卸载器不能有向导页——CreateInputOptionPage 与
+     CreateCustomPage 都是致命错误；确认只能走 Inno 原生提示，多选项只能靠
+     CreateCustomForm 建的独立小对话框。所以 U1 / U2 / U4 这三屏不再套 700×580
+     的向导外壳，按提示框 / 对话框 / 进度窗口的结果页来画。 */
+  .dlg {
+    width: 420px; max-width: 100%; font-size: 12.5px;
+    background: var(--surface); border: 1px solid var(--stroke-strong);
+    border-radius: 8px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .dlg-titlebar {
+    height: 30px; flex: none; display: flex; align-items: center;
+    padding: 0 8px 0 10px; background: var(--chrome); border-bottom: 1px solid var(--stroke);
+    font-size: 12px; color: var(--text-muted); user-select: none;
+  }
+  .dlg-titlebar .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dlg-titlebar .winbtns { margin-left: auto; letter-spacing: 2px; color: var(--text-faint); }
+  .dlg-body { padding: 14px 16px 6px; display: flex; flex-direction: column; gap: 8px; }
+  .dlg-body .h { font-weight: 600; font-size: 13px; }
+  .dlg-body .sub { color: var(--text-muted); line-height: 1.7; }
+  .dlg-body .ledger { color: var(--text-muted); line-height: 1.7; }
+  .dlg-body .ledger b { color: var(--text); font-weight: 600; }
+  .dlg-foot { flex: none; display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px 14px; }
+  .dlg-foot .btn { height: 28px; padding: 0 14px; font-size: 12.5px; }
+  /* 系统复选框：真实对话框里是方框，不是圆点 */
+  .chk { display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: start; }
+  .chk .box {
+    width: 14px; height: 14px; margin-top: 2px; border-radius: 2px;
+    border: 1px solid var(--stroke-strong); background: var(--surface);
+    display: grid; place-items: center; font-size: 10px; line-height: 1; color: var(--text-muted);
+  }
+  .chk.on .box { border-color: var(--text-muted); }
+  .chk .path { display: block; color: var(--text-faint); font-size: 11px; margin-top: 2px; }
+  /* 原生提示框（消息框）：图标 + 文案 + 是 / 否 */
+  .msg {
+    width: 460px; max-width: 100%; font-size: 12.5px;
+    background: var(--surface); border: 1px solid var(--stroke-strong);
+    border-radius: 8px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .msg-body { display: grid; grid-template-columns: 32px 1fr; gap: 12px; padding: 16px; }
+  .msg-ico {
+    width: 28px; height: 28px; border-radius: 50%; font-weight: 700;
+    background: var(--surface-muted); border: 1px solid var(--stroke-strong);
+    color: var(--text-muted); display: grid; place-items: center;
+  }
+  .msg-body .txt { line-height: 1.75; }
+  .msg-foot { flex: none; display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px; }
+  .msg-foot .btn { height: 28px; padding: 0 16px; font-size: 12.5px; }
+
+  /* progress */
+  .prog { margin-top: 10px; }
+  .bar { height: 6px; border-radius: 3px; background: var(--surface-muted); border: 1px solid var(--stroke); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+  .prog .cap { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 6px; }
+  .prog .file { font-size: 11px; color: var(--text-faint); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* spec tables */
+  table.spec { border-collapse: collapse; width: 100%; font-size: 12.5px; background: var(--surface); }
+  table.spec caption { text-align: left; font-size: 12px; color: var(--text-faint); padding-bottom: 8px; }
+  table.spec th, table.spec td { border: 1px solid var(--stroke); padding: 7px 10px; text-align: left; vertical-align: top; }
+  table.spec th { background: var(--surface-muted); font-weight: 600; white-space: nowrap; }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
+  .sw { width: 118px; border: 1px solid var(--stroke); border-radius: 6px; overflow: hidden; background: var(--surface); }
+  .sw .chip { height: 40px; }
+  .sw .lb { padding: 5px 7px; font-size: 10.5px; color: var(--text-muted); }
+  .sw .lb b { display: block; color: var(--text); font-size: 11px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+</style>
+</head>
+<body class="notes-on" data-lang="zh">
+
+<!-- 品牌图形只定义一次，后面全部用 <use> 引用（与 Assets/brand/*.svg 同源路径） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="logo-master" viewBox="0 0 100 100">
+      <rect x="0" y="0" width="100" height="100" rx="14" ry="14" fill="#FFFFFF"/>
+      <rect x="7" y="7" width="86" height="86" rx="12" ry="12" fill="none" stroke="#BDC2C8" stroke-width="4"/>
+      <path d="M 14 68 A 36 36 0 0 1 86 68" fill="none" stroke="#D85B42" stroke-width="8"/>
+      <path d="M 10 68 H 90" fill="none" stroke="#8A9199" stroke-width="3.5"/>
+      <circle cx="67" cy="74.5" r="6.5" fill="#D85B42"/>
+    </symbol>
+    <symbol id="logo-symbol" viewBox="0 0 100 100">
+      <rect x="0" y="0" width="100" height="100" rx="14" ry="14" fill="#FFFFFF"/>
+      <path d="M 12 66 A 38 38 0 0 1 88 66" fill="none" stroke="#D85B42" stroke-width="8"/>
+      <path d="M 8 66 H 92" fill="none" stroke="#8A9199" stroke-width="3.5"/>
+      <circle cx="68" cy="75" r="7.5" fill="#D85B42"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="page-head">
+  <div class="brand">
+    <svg><use href="#logo-master"/></svg>
+    <div>
+      <h1>DawnCapture · <span data-t="安装程序 UX 原型|Installer UX prototype">安装程序 UX 原型</span></h1>
+      <div class="sub">Inno Setup 6 · 700×580 · zh / en · light / dark</div>
+    </div>
+  </div>
+  <div class="switches">
+    <button id="btn-theme" aria-pressed="false" data-t="深色主题|Dark theme">深色主题</button>
+    <button id="btn-lang" aria-pressed="false" data-t="English|中文">English</button>
+    <button id="btn-notes" aria-pressed="true" data-t="实现标注|Implementation notes">实现标注</button>
+  </div>
+</header>
+
+<main>
+  <p class="lede" data-t="沿用 design/DESIGN.md 的既有系统（Industrial-Utilitarian 轻量版）：一个品牌强调色 + 中性色阶，字体交给 Segoe UI Variable，装饰为零。安装程序是用户第一次接触 DawnCapture 的地方，它的任务是「像 Windows 自带部件一样可信」，而不是展示设计。<br>文案全部双语：中文系统显示中文，其他系统显示英文（由 .iss 的 [Languages] 匹配与回退顺序决定）。右上角可切换语言；下面另有一节「英文界面」，把每一屏的英文版本一次性排出来评审。|Follows the existing system in design/DESIGN.md (light Industrial-Utilitarian): one brand accent plus neutrals, Segoe UI Variable, zero decoration. The installer is a user's first contact with DawnCapture; its job is to feel like a Windows component, not to show off design.<br>All copy is bilingual: Chinese on Chinese systems, English everywhere else (decided by the [Languages] matching and fallback order in the .iss). The switch in the header changes language; a section further down lays every screen out in English for review.">沿用 design/DESIGN.md 的既有系统（Industrial-Utilitarian 轻量版）：一个品牌强调色 + 中性色阶，字体交给 Segoe UI Variable，装饰为零。安装程序是用户第一次接触 DawnCapture 的地方，它的任务是「像 Windows 自带部件一样可信」，而不是展示设计。<br>文案全部双语：中文系统显示中文，其他系统显示英文（由 .iss 的 [Languages] 匹配与回退顺序决定）。页面右上角可切换语言；屏幕更下方另有一节「英文界面」，把每一屏的英文版本一次性排出来评审。</p>
+
+  <!-- ============================================================ flow map -->
+  <section>
+    <div class="sec-title">
+      <h2 data-t="安装与卸载流程|Install / uninstall flow">安装与卸载流程</h2>
+      <span data-t="6 页 + 2 个条件状态；卸载 4 页|6 pages + 2 conditional states; 4 uninstall pages">6 页 + 2 个条件状态；卸载 4 页</span>
+    </div>
+    <div class="flow">
+      <div class="node" data-t="① 欢迎|1 Welcome">① 欢迎</div><span class="arrow">→</span>
+      <div class="node cond" data-t="② 已安装检测（条件）|2 Existing install (conditional)">② 已安装检测（条件）</div><span class="arrow">→</span>
+      <div class="node" data-t="③ 安装范围|3 Install scope">③ 安装范围</div><span class="arrow">→</span>
+      <div class="node" data-t="④ 安装选项|4 Options">④ 安装选项</div><span class="arrow">→</span>
+      <div class="node" data-t="⑤ 正在安装|5 Installing">⑤ 正在安装</div><span class="arrow">→</span>
+      <div class="node" data-t="⑥ 完成|6 Finish">⑥ 完成</div>
+      <span class="bracket" data-t="　（③ 选到不可写目录时 → 错误状态，留在本页）|(a non-writable folder in 3 pops an error state and stays on the page)">　（③ 选到不可写目录时 → 错误状态，留在本页）</span>
+    </div>
+    <div class="flow" style="margin-top:10px">
+      <div class="node" data-t="U1 卸载确认|U1 Confirm">U1 卸载确认</div><span class="arrow">→</span>
+      <div class="node" data-t="U2 选择删除的数据|U2 Choose what to remove">U2 选择删除的数据</div><span class="arrow">→</span>
+      <div class="node" data-t="U3 正在卸载|U3 Uninstalling">U3 正在卸载</div><span class="arrow">→</span>
+      <div class="node" data-t="U4 完成|U4 Finished">U4 完成</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= screens -->
+  <section class="screens">
+
+    <!-- ① 欢迎页（定稿 · 单变体） -->
+    <div class="chap">
+      <span class="no">①</span>
+      <h2 data-t="欢迎页|Welcome">欢迎页</h2>
+      <span data-t="名称与版本只在顶部出现一次；正文四句全部落在 Inno/NSIS 的惯例措辞内；动作清单在 ④ 安装按钮上方。页内 132×132 大图，非向导图位|Name and version appear once in the header; all four body sentences stay within Inno/NSIS conventional wording; the action list sits above the Install button on page 4. A 132×132 in-page image, not the wizard artwork slot">名称与版本只在顶部出现一次；正文四句全部落在 Inno/NSIS 的惯例措辞内；动作清单在 ④ 安装按钮上方。页内 132×132 大图，非向导图位</span>
+    </div>
+
+    <!-- 欢迎页 -->
+      <article class="shot">
+        <div class="wizard">
+          <div class="wz-titlebar">
+            <svg><use href="#logo-symbol"/></svg>
+            <span class="t" data-t="安装 - DawnCapture 1.0.0.0|Setup - DawnCapture 1.0.0.0">安装 - DawnCapture 1.0.0.0</span>
+            <span class="winbtns">— ▢ ✕</span>
+          </div>
+          <div class="wz-body">
+            <div class="wz-main">
+              <div class="wz-content cover">
+                <div>
+                  <div class="hero">
+                    <svg class="hero-logo"><use href="#logo-master"/></svg>
+                    <div>
+                      <div class="hero-nm">DawnCapture</div>
+                      <div class="hero-vr" data-t="1.0.0.0（x64）· 由 SHAO Liming 发布|1.0.0.0 (x64) · Published by SHAO Liming">1.0.0.0（x64）· 由 SHAO Liming 发布</div>
+                    </div>
+                  </div>
+                  <div class="wz-hr"></div>
+                </div>
+                <div>
+                  <p class="wz-lead" data-t="安装程序现在将引导你完成 DawnCapture 的安装。|Setup will now guide you through the installation of DawnCapture.">安装程序现在将引导你完成 DawnCapture 的安装。</p>
+                  <p class="wz-note" data-t="如果 DawnCapture 正在运行，安装程序会在继续之前自动关闭它。|If DawnCapture is running, Setup closes it automatically before continuing.">如果 DawnCapture 正在运行，安装程序会在继续之前自动关闭它。</p>
+                  <p class="wz-note" data-t="需要 Windows 10 2004（10.0.19041）或更高版本；至少需要有 173 MB 的可用磁盘空间。|Requires Windows 10 2004 (10.0.19041) or later. At least 173 MB of free disk space is required.">需要 Windows 10 2004（10.0.19041）或更高版本；至少需要有 173 MB 的可用磁盘空间。</p>
+                </div>
+                <p class="wz-note" style="margin-top:0" data-t="点击“下一步”继续，或点击“取消”退出安装程序。|Click Next to continue, or Cancel to exit Setup.">点击“下一步”继续，或点击“取消”退出安装程序。</p>
+              </div>
+              <div class="wz-foot">
+                <button class="btn" data-t="取消|Cancel">取消</button>
+                <button class="btn primary" data-t="下一步(&amp;N) >|&amp;Next >">下一步(N) ></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <h3><span class="step">1</span><span data-t="欢迎页（定稿）|Welcome (final)">欢迎页（定稿）</span></h3>
+          <p class="tagline" data-t="完全收口到惯例：正文四句（引导 / 自动关闭 DawnCapture / 系统与空间要求 / 单击下一步），最后一句直接用 Inno 官方原文。原来的「接下来 ① ② ③」已删除——序号步骤是 Web 分步表单的进度指示，安装器欢迎页的惯例只有「单击下一步」，动作清单属于安装前的确认页，已移到 ④。Inno 的「请关闭其他程序」也删了：这个安装不替换被他人占用的共享文件，唯一可能被占用的只有 DawnCapture 自己，CloseApplications=yes 已交给 Restart Manager。|Fully conventional now: four sentences (what the wizard does / a running DawnCapture is closed automatically / OS and space requirements / click Next), the last one being Inno's own wording. The previous numbered “what happens next” row is gone — numbered steps are a web-form pattern; on an installer welcome page the only convention is “click Next”, and the action list belongs on the page before installation, so it moved to page 4. Inno's boilerplate “close other applications” is gone too: this install replaces no shared files held by others, and the only app that can hold one is DawnCapture itself, which CloseApplications=yes already handles.">完全收口到惯例：正文四句（引导 / 自动关闭 DawnCapture / 系统与空间要求 / 单击下一步），最后一句直接用 Inno 官方原文。原来的「接下来 ① ② ③」已删除——序号步骤是 Web 分步表单的进度指示，安装器欢迎页的惯例只有「单击下一步」，动作清单属于安装前的确认页，已移到 ④。Inno 的「请关闭其他程序」也删了：这个安装不替换被他人占用的共享文件，唯一可能被占用的只有 DawnCapture 自己，`CloseApplications=yes` 已交给 Restart Manager。</p>
+          <ul>
+            <li data-t="同一页里每个信息只说一次：名称与版本只在顶部出现，页脚不重复产品名；发布者并入顶部第二行，与版本同行（都是身份信息）。|Every fact is stated once: name and version only in the header, no product name in the footer, and the publisher folded into the header's second line next to the version.">同一页里每个信息只说一次：名称与版本只在顶部出现，页脚不重复产品名；发布者并入顶部第二行，与版本同行（都是身份信息）。</li>
+            <li data-t="四句的来源都是别的安装器已经在用的句子：引导句取 NSIS MUI 的 Welcome 原文，收尾句是 Inno 的 ClickNext 原文（一字不差，中英都对过 .isl），系统那句与 MinVersion / DiskSpaceMBLabel 同源；只有「自动关闭 DawnCapture」是为这台机器写的真话——「请关闭其他程序」那句惯例话在这里不成立，所以换掉。|All four sentences are lines other installers already use: the guide sentence is NSIS MUI's welcome text, the closing line is Inno's own ClickNext (verbatim, in both languages, checked against the .isl), and the requirements sentence matches MinVersion / DiskSpaceMBLabel; only “a running DawnCapture is closed automatically” is written for this machine, because the conventional “close other applications” line is not true here.">四句的来源都是别的安装器已经在用的句子：引导句取 NSIS MUI 的 Welcome 原文，收尾句是 Inno 的 `ClickNext` 原文（一字不差，中英都对过 .isl），系统那句与 `MinVersion` / `DiskSpaceMBLabel` 同源；只有「自动关闭 DawnCapture」是为这台机器写的真话——「请关闭其他程序」那句惯例话在这里不成立，所以换掉。</li>
+            <li data-t="那句磁盘空间里的 173 MB 不要手写：它等于 Inno 按 [Files] 算出的所需空间（页脚与 U1 用同一个数字）。安装器自己会在空间不足时报错，所以这里只是提前告知，数字由构建回填。|The 173 MB inside that sentence must not be hand-written: it is the space Inno computes from [Files] (the footer and U1 use the same number). Setup reports a shortage on its own, so this line only gives advance notice — fill the number in at build time.">那句磁盘空间里的 173 MB 不要手写：它等于 Inno 按 `[Files]` 算出的所需空间（页脚与 U1 用同一个数字）。安装器自己会在空间不足时报错，所以这里只是提前告知，数字由构建回填。</li>
+            <li data-t="「权限」与「数据位置」移到 ③ 安装范围与位置页——用户正在那里选权限，说了才有用；提前一页说是无效信息。|The rights and data-location notes moved to page 3, where the user is picking them; a page earlier they would be premature.">「权限」与「数据位置」移到 ③ 安装范围与位置页——用户正在那里选权限，说了才有用；提前一页说是无效信息。</li>
+            <li data-t="页脚左侧留空，不写任何与顶部重复的文字（Inno 的页脚 spacer 本来也是给「空间不足」这类提示用的）。|The footer's left slot stays empty rather than repeating the header; Inno's footer spacer exists for hints such as “not enough space”.">页脚左侧留空，不写任何与顶部重复的文字（Inno 的页脚 spacer 本来也是给「空间不足」这类提示用的）。</li>
+            <li data-t="不预告后续步骤：NSIS MUI 与 Inno 原生的默认文案都只有引导句 + 单击下一步——欢迎页列清单是 Web 表单的做法。动作清单移到 ④（[安装(I)] 之前唯一一页），那里才是惯例放「将执行什么」的位置。|No step preview: the NSIS MUI and Inno default texts carry only a guide sentence plus “click Next” — listing steps is a web-form pattern. The action list moved to page 4, the only page before [Install], which is where the convention puts a “what will happen” summary.">不预告后续步骤：NSIS MUI 与 Inno 原生的默认文案都只有引导句 + 单击下一步——欢迎页列清单是 Web 表单的做法。动作清单移到 ④（`[安装(I)]` 之前唯一一页），那里才是惯例放「将执行什么」的位置。</li>
+            <li data-t="正文短，所以正文整组在剩余空间里居中，收尾句单独占最后一行、贴住页脚分隔线上方：空白被拆到锁排上方与正文下方，而不是堆成一整块。|The body is short, so the body group is centred in the leftover space while the closing line takes the last row just above the footer divider: the empty space splits above the lockup and below the body instead of pooling in one block.">正文短，所以正文整组在剩余空间里居中，收尾句单独占最后一行、贴住页脚分隔线上方：空白被拆到锁排上方与正文下方，而不是堆成一整块。</li>
+            <li data-t="（x64）是整个流程唯一一次出现架构：版本行的职责是说明「你启动的是哪个安装包」，而本项目 x86 / x64 / ARM64 三套分别发行（distribute.ps1 -Architecture，.iss 里由 /DAppArch 决定）。② 到 ⑥、U1 到 U4 只谈范围、任务、进度与结果，重复架构不改变任何决定——② 甚至无从得知旧版的架构，只报新版会变成猜测。|The (x64) tag is the only architecture mention in the whole flow: the version line's job is to say which setup file you launched, and this project ships x86, x64 and ARM64 as separate builds (distribute.ps1 -Architecture, fed to the script as /DAppArch). Pages 2-6 and U1-U4 only cover scope, tasks, progress and the result, where repeating the architecture changes no decision — page 2 cannot even know the old build's architecture, so naming only the new one would be a guess.">（x64）是整个流程唯一一次出现架构：版本行的职责是说明「你启动的是哪个安装包」，而本项目 x86 / x64 / ARM64 三套分别发行（`distribute.ps1 -Architecture`，`.iss` 里由 `/DAppArch` 决定）。② 到 ⑥、U1 到 U4 只谈范围、任务、进度与结果，重复架构不改变任何决定——② 甚至无从得知旧版的架构，只报新版会变成猜测。</li>
+          </ul>
+          <div class="impl">
+            <span class="kind code" data-t="需要 [Code]（约 12 行）|needs [Code] (~12 lines)">需要 [Code]（约 12 行）</span>
+            <code>WizardImageFile 置空 · InitializeWizard：TBitmapImage(132×132) 挂到 WizardForm.WelcomePage</code>
+            <code data-t="还必须把 WelcomeLabel1/2 的 Left/Width 挪到页左侧——置空向导图只让左侧不再画图，Inno 的布局不变、标签仍在原位置|WelcomeLabel1/2 must also be moved to the left edge: blanking the wizard image stops the drawing but does not change Inno's layout, so the labels stay where they were">还必须把 `WelcomeLabel1/2` 的 `Left`/`Width` 挪到页左侧——置空向导图只让左侧不再画图，Inno 的布局不变、标签仍在原位置</code>
+            <span class="kind native" data-t="其余全部原生|everything else native">其余全部原生</span>
+            <code data-t="正文四句整段写进 [Messages] 的 WelcomeLabel2（多行纯文本，Inno 原生支持换行）；删掉步骤行后连静态文本都不需要了，[Code] 只剩那张页内大图。|All four sentences go into [Messages] WelcomeLabel2 as multi-line plain text; with the step row gone no static text is needed, so [Code] is down to the in-page image alone.">正文四句整段写进 `[Messages]` 的 `WelcomeLabel2`（多行纯文本，Inno 原生支持换行）；删掉步骤行后连静态文本都不需要了，`[Code]` 只剩那张页内大图。</code>
+          </div>
+        </div>
+            </article>
+
+    <!-- ② 已安装检测（条件页，单变体） -->
+    <div class="chap">
+      <span class="no">②</span>
+      <h2 data-t="检测到已安装的版本|An existing installation was found">检测到已安装的版本</h2>
+      <span data-t="仅在注册表里查到同一 AppId 时出现；沿用 ① 的骨架（132px 页内 LOGO + 三句正文 + 收尾句），旧版由安装器静默卸载|Shown only when the same AppId exists in the registry; reuses the page-1 skeleton (132px in-page logo, three body sentences, a closing line), and Setup removes the old build silently">仅在注册表里查到同一 AppId 时出现；沿用 ① 的骨架（132px 页内 LOGO + 三句正文 + 收尾句），旧版由安装器静默卸载</span>
+    </div>
+
+      <!-- 检测到已安装的版本 -->
+      <article class="shot">
+        <div class="wizard">
+          <div class="wz-titlebar">
+            <svg><use href="#logo-symbol"/></svg>
+            <span class="t" data-t="安装 - DawnCapture 1.0.0.0|Setup - DawnCapture 1.0.0.0">安装 - DawnCapture 1.0.0.0</span>
+            <span class="winbtns">— ▢ ✕</span>
+          </div>
+          <div class="wz-body">
+            <div class="wz-main">
+              <div class="wz-corner"><svg><use href="#logo-symbol"/></svg></div>
+              <div class="wz-content cover">
+                <div>
+                  <div class="hero">
+                    <svg class="hero-logo"><use href="#logo-master"/></svg>
+                    <div>
+                      <div class="hero-nm">DawnCapture</div>
+                      <div class="hero-vr" data-t="0.9.4 → 1.0.0.0|0.9.4 → 1.0.0.0">0.9.4 → 1.0.0.0</div>
+                      <div class="mono" style="font-size:11px;color:var(--text-faint);margin-top:4px">C:\Users\liming\AppData\Local\Programs\DawnCapture</div>
+                    </div>
+                  </div>
+                  <div class="wz-hr"></div>
+                </div>
+                <div>
+                  <p class="wz-lead" data-t="检测到已安装的 DawnCapture 0.9.4（仅为我安装）。|DawnCapture 0.9.4 is already installed for you only.">检测到已安装的 DawnCapture 0.9.4（仅为我安装）。</p>
+                  <p class="wz-note" data-t="继续将先静默卸载旧版本，再安装 1.0.0.0。|Continuing removes the old build silently and then installs 1.0.0.0.">继续将先静默卸载旧版本，再安装 1.0.0.0。</p>
+                  <p class="wz-note" data-t="设置、日志与录制文件会保留；旧版的程序文件与快捷方式会被删除。|Settings, logs and recordings are kept; the old program files and shortcuts are removed.">设置、日志与录制文件会保留；旧版的程序文件与快捷方式会被删除。</p>
+                </div>
+                <p class="wz-note" style="margin-top:0" data-t="点击“下一步”继续，或点击“取消”退出安装程序。|Click Next to continue, or Cancel to exit Setup.">点击“下一步”继续，或点击“取消”退出安装程序。</p>
+              </div>
+              <div class="wz-foot">
+                <button class="btn" data-t="取消|Cancel">取消</button>
+                <button class="btn" data-t="< 上一步(&amp;B)|< &amp;Back">< 上一步(B)</button>
+                <button class="btn primary" data-t="下一步(&amp;N) >|&amp;Next >">下一步(N) ></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <h3><span class="step">2</span><span data-t="检测到已安装的版本（条件页）|An existing installation was found (conditional)">检测到已安装的版本（条件页）</span></h3>
+          <p class="tagline" data-t="沿用 ① 的骨架：同一枚 132px LOGO、同一条分隔线、同样三句正文，收尾句也同样贴在页脚分隔线上方。差别只在内容——① 说的是将要发生的事，这一页说的是已经发生的事。|Reuses the page-1 skeleton: the same 132px logo, the same divider, the same three body sentences, and the closing line pinned above the footer divider as well. Only the copy differs — page 1 describes what is about to happen, this one what already happened.">沿用 ① 的骨架：同一枚 132px LOGO、同一条分隔线、同样三句正文，收尾句也同样贴在页脚分隔线上方。差别只在内容——① 说的是将要发生的事，这一页说的是已经发生的事。</p>
+          <ul>
+            <li data-t="打断轻：读完三句就能点下一步，不需要理解「卸载再安装」的机制。|Light interruption: three sentences and the user can click Next without understanding the uninstall-then-install mechanics.">打断轻：读完三句就能点下一步，不需要理解「卸载再安装」的机制。</li>
+            <li data-t="安装目录放在锁排里（版本行下方）、11px 等宽 + 最浅一档灰：它属于「这是哪一份安装」的身份信息而不是正文，所以不占正文行数——正文因此正好三行，与 ① 的三句同节奏。|The install folder sits in the lockup under the version row, at 11px monospace in the faintest grey: it belongs to the identity of which installation this is rather than to the body, so it costs no body line — leaving exactly three body lines, the same rhythm as page 1.">安装目录放在锁排里（版本行下方）、11px 等宽 + 最浅一档灰：它属于「这是哪一份安装」的身份信息而不是正文，所以不占正文行数——正文因此正好三行，与 ① 的三句同节奏。</li>
+            <li data-t="代价：只有版本号与路径，不显示卸载命令行、范围等技术细节，排查问题要回到日志。|Cost: only the version and path — no uninstall command line or other technical detail; troubleshooting goes to the log.">代价：只有版本号与路径，不显示卸载命令行、范围等技术细节，排查问题要回到日志。</li>
+          </ul>
+          <div class="impl">
+            <span class="kind code" data-t="需要 [Code]|needs [Code]">需要 [Code]</span>
+            <code>新增一页：CreateCustomPage + 与 ① 同款的页内图片与三个 TNewStaticText</code>
+            <span class="kind native" data-t="逻辑不变|logic unchanged">逻辑不变</span>
+            <code data-t="检测仍在 InitializeSetup 读注册表；卸载仍在 PrepareToInstall 静默执行|Detection stays in InitializeSetup reading the registry; removal stays in PrepareToInstall">检测仍在 `InitializeSetup` 读注册表；卸载仍在 `PrepareToInstall` 静默执行</code>
+          </div>
+        </div>
+      </article>
+
+    <!-- ③ 安装范围与位置（定稿 · 单变体） -->
+    <div class="chap">
+      <span class="no">③</span>
+      <h2 data-t="安装范围与位置|Install scope and location">安装范围与位置</h2>
+      <span data-t="三个范围选项上下排列，下方共用一个可编辑地址框；权限只由徽章表达，切换范围与编辑路径的规则不占页面|Three scopes stacked vertically with one shared editable path box below; the rights live in the badges and the refill/edit rules stay off the page">三个范围选项上下排列，下方共用一个可编辑地址框；权限只由徽章表达，切换范围与编辑路径的规则不占页面</span>
+    </div>
+
+      <!-- ③ 安装范围与位置 -->
+      <article class="shot">
+        <div class="wizard">
+          <div class="wz-titlebar">
+            <svg><use href="#logo-symbol"/></svg>
+            <span class="t" data-t="安装 - DawnCapture 1.0.0.0|Setup - DawnCapture 1.0.0.0">安装 - DawnCapture 1.0.0.0</span>
+            <span class="winbtns">— ▢ ✕</span>
+          </div>
+          <div class="wz-body">
+            <div class="wz-main">
+              <div class="wz-corner"><svg><use href="#logo-symbol"/></svg></div>
+              <div class="wz-content cover">
+                <div>
+                  <div class="hero">
+                    <svg class="hero-logo"><use href="#logo-master"/></svg>
+                    <div>
+                      <div class="hero-nm">DawnCapture</div>
+                      <div class="hero-vr" data-t="选择安装范围与位置|Choose the scope and location">选择安装范围与位置</div>
+                    </div>
+                  </div>
+                  <div class="wz-hr"></div>
+                </div>
+                <div>
+                  <p class="wz-lead" data-t="安装范围决定哪些账户可以使用、是否需要管理员权限。|The scope decides who can use the app and whether administrator rights are needed.">安装范围决定哪些账户可以使用、是否需要管理员权限。</p>
+                  <div class="opts" style="margin-top:10px">
+                    <label class="opt sel">
+                      <span class="mark radio"><i></i></span>
+                      <span>
+                        <span class="ttl" data-t="仅为我安装|Install for me only">仅为我安装<span class="badgewrap"><span class="badge rec" data-t="推荐|Recommended">推荐</span></span></span>
+                      </span>
+                    </label>
+                    <label class="opt">
+                      <span class="mark radio"><i></i></span>
+                      <span>
+                        <span class="ttl" data-t="为所有用户安装|Install for all users">为所有用户安装<span class="badgewrap"><span class="badge admin" data-t="需要管理员|Administrator">需要管理员</span></span></span>
+                      </span>
+                    </label>
+                    <label class="opt">
+                      <span class="mark radio"><i></i></span>
+                      <span>
+                        <span class="ttl" data-t="自定义位置|Custom location">自定义位置</span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="pathrow" style="margin:12px 0 0 0">
+                    <span class="wz-label" style="margin:0;flex:none" data-t="安装位置|Location">安装位置</span>
+                    <input value="%LocalAppData%\Programs\DawnCapture" spellcheck="false">
+                    <button class="btn" data-t="浏览(&amp;B)...|&amp;Browse...">浏览(B)...</button>
+                  </div>
+                </div>
+                <p class="wz-note" style="margin-top:0" data-t="点击“下一步”继续，或点击“取消”退出安装程序。|Click Next to continue, or Cancel to exit Setup.">点击“下一步”继续，或点击“取消”退出安装程序。</p>
+              </div>
+              <div class="wz-foot">
+                <button class="btn" data-t="取消|Cancel">取消</button>
+                <button class="btn" data-t="< 上一步(&amp;B)|< &amp;Back">< 上一步(B)</button>
+                <button class="btn primary" data-t="下一步(&amp;N) >|&amp;Next >">下一步(N) ></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <h3><span class="step">3</span><span data-t="三选一 + 共用地址框|Three scopes with one shared path box">三选一 + 共用地址框</span></h3>
+          <p class="tagline" data-t="三个范围选项上下排列，下面的安装位置是共用一个可编辑地址框——这是 Inno 原生「权限单选 + 目录页」合并后的写法。相比每行各配一个框，省下约 100px 高度，而且「路径属于哪个范围」由选中项决定，用户不必在几行里挑一个来改。|The three scopes stack vertically and the install location below is a single shared, editable box — Inno's own privileges radio plus directory page, merged. It saves about 100px compared with one box per row, and which scope the path belongs to is decided by the selection instead of the user picking a row to edit.">三个范围选项上下排列，下面的安装位置是共用一个可编辑地址框——这是 Inno 原生「权限单选 + 目录页」合并后的写法。相比每行各配一个框，省下约 100px 高度，而且「路径属于哪个范围」由选中项决定，用户不必在几行里挑一个来改。</p>
+          <ul>
+            <li data-t="界面只说一次：徽章表达权限，地址框表达位置；两条规则不占页面——切换范围会把地址框换成该范围的默认目录；手工改过即视为「自定义位置」（自定义是编辑路径的结果，不是第三个要按的按钮）。|The page states each thing once: badges carry the rights, the path box carries the location, and two rules stay off the page — switching scope refills the box with that scope's default, and editing it means a custom location (custom is the result of editing, not a third button to press).">界面只说一次：徽章表达权限，地址框表达位置；两条规则不占页面——切换范围会把地址框换成该范围的默认目录；手工改过即视为「自定义位置」（自定义是编辑路径的结果，不是第三个要按的按钮）。</li>
+            <li data-t="浏览与子目录：选到 D:\Apps 自动补成 D:\Apps\DawnCapture（不存在就创建、已存在就沿用），免得程序文件被直接倒进 D:\Apps 根目录。|Browse and subfolder: picking D:\Apps becomes D:\Apps\DawnCapture — created if missing, reused if present — so the program files never land loose in D:\Apps.">浏览与子目录：选到 D:\Apps 自动补成 D:\Apps\DawnCapture（不存在就创建、已存在就沿用），免得程序文件被直接倒进 D:\Apps 根目录。</li>
+            <li data-t="原先那句「设置与录制文件保存在用户目录，不随安装目录移动」不再占页面：路径已经内联可见，而这一页只做一次选择；要解释「装到 Program Files 数据会不会跟着走」，放在 ④ 或 README 更合适。|The old sentence about settings and recordings staying in the user profile is gone from the page: the path is already visible inline, and this page makes a single choice; the “does my data move to Program Files” question belongs on page 4 or in the README.">原先那句「设置与录制文件保存在用户目录，不随安装目录移动」不再占页面：路径已经内联可见，而这一页只做一次选择；要解释「装到 Program Files 数据会不会跟着走」，放在 ④ 或 README 更合适。</li>
+            <li data-t="落地前提：.iss 的 PrivilegesRequiredOverridesAllowed 必须去掉 dialog、只留 commandline。否则向导启动前会先弹 Inno 自己的「为所有用户 / 仅为我」对话框，与这一页重复提问；而且原生目录页被这一页取代后，[Messages] 里为它写的 SelectDirBrowseLabel（中英两份）会变成永不显示的配置。|Prerequisite: the .iss must drop dialog from PrivilegesRequiredOverridesAllowed and keep commandline only. Otherwise Inno's own “all users / just me” dialog appears before the wizard and asks the same thing twice — and because this page replaces the native directory page, the SelectDirBrowseLabel entries written for it (both languages) become config that never shows.">落地前提：`.iss` 的 `PrivilegesRequiredOverridesAllowed` 必须去掉 `dialog`、只留 `commandline`。否则向导启动前会先弹 Inno 自己的「为所有用户 / 仅为我」对话框，与这一页重复提问；而且原生目录页被这一页取代后，`[Messages]` 里为它写的 `SelectDirBrowseLabel`（中英两份）会变成永不显示的配置。</li>
+          </ul>
+          <div class="impl">
+            <span class="kind code" data-t="需要 [Code]（约 70–90 行）|needs [Code] (~70-90 lines)">需要 [Code]（约 70–90 行）</span>
+            <code>CreateCustomPage + TNewRadioButton ×3（上下排列）+ 单个 TNewEdit + TNewButton(浏览)</code>
+            <code data-t="OnChange：切换范围 → 地址框换成该范围的默认目录；用户编辑过 → 选中项切到「自定义位置」|OnChange: switching scope refills the box with that scope's default; once edited, the selection moves to Custom location">`OnChange`：切换范围 → 地址框换成该范围的默认目录；用户编辑过 → 选中项切到「自定义位置」</code>
+            <code data-t="浏览用 IFileDialog / SHBrowseForFolder；选完若尾段不是 DawnCapture 就追加它（并去掉多余的分隔符）|Browse via IFileDialog / SHBrowseForFolder; afterwards append DawnCapture unless the last segment already is it, trimming any trailing separator">浏览用 `IFileDialog` / `SHBrowseForFolder`；选完若尾段不是 `DawnCapture` 就追加它（并去掉多余的分隔符）</code>
+            <code>NextButtonClick：不可写 → MsgBox + 重新提权 Exec(srcexe, '/ALLUSERS /DIR="…"')</code>
+            <span class="kind native" data-t="降级方案（零代码）|fallback (no code)">降级方案（零代码）</span>
+            <code data-t="PrivilegesRequiredOverridesAllowed=dialog 两选一 + 独立目录页|PrivilegesRequiredOverridesAllowed=dialog with a separate directory page">PrivilegesRequiredOverridesAllowed=dialog 两选一 + 独立目录页</code>
+          </div>
+        </div>
+      </article>
+
+    <!-- ③b 不可写（条件状态，单变体 · 重建版） -->
+    <div class="chap">
+      <span class="no">③b</span>
+      <h2 data-t="无法写入所选位置|The chosen folder is not writable">无法写入所选位置</h2>
+      <span data-t="③ 页点「下一步」时检测到目录不可写才出现；不跳页，就地给出以管理员身份重试的出口|Appears only when page 3 is submitted with a folder that cannot be written; it stays put and offers an elevated retry instead of navigating">③ 页点「下一步」时检测到目录不可写才出现；不跳页，就地给出以管理员身份重试的出口</span>
+    </div>
+
+    <article class="shot">
+      <div class="wizard">
+        <div class="wz-titlebar">
+          <svg><use href="#logo-symbol"/></svg>
+          <span class="t" data-t="安装 - DawnCapture 1.0.0.0|Setup - DawnCapture 1.0.0.0">安装 - DawnCapture 1.0.0.0</span>
+          <span class="winbtns">— ▢ ✕</span>
+        </div>
+        <div class="wz-body">
+          <div class="wz-main">
+            <div class="wz-corner"><svg><use href="#logo-symbol"/></svg></div>
+            <div class="wz-content cover">
+              <div>
+                <div class="hero">
+                  <svg class="hero-logo"><use href="#logo-master"/></svg>
+                  <div>
+                    <div class="hero-nm">DawnCapture</div>
+                    <div class="hero-vr" data-t="选择安装范围与位置|Choose the scope and location">选择安装范围与位置</div>
+                  </div>
+                </div>
+                <div class="wz-hr"></div>
+              </div>
+              <div>
+                <p class="wz-lead" data-t="安装范围决定哪些账户可以使用、是否需要管理员权限。|The scope decides who can use the app and whether administrator rights are needed.">安装范围决定哪些账户可以使用、是否需要管理员权限。</p>
+                <div class="opts" style="margin-top:10px">
+                  <label class="opt">
+                    <span class="mark radio"><i></i></span>
+                    <span>
+                      <span class="ttl" data-t="仅为我安装|Install for me only">仅为我安装<span class="badgewrap"><span class="badge rec" data-t="推荐|Recommended">推荐</span></span></span>
+                    </span>
+                  </label>
+                  <label class="opt">
+                    <span class="mark radio"><i></i></span>
+                    <span>
+                      <span class="ttl" data-t="为所有用户安装|Install for all users">为所有用户安装<span class="badgewrap"><span class="badge admin" data-t="需要管理员|Administrator">需要管理员</span></span></span>
+                    </span>
+                  </label>
+                  <label class="opt sel">
+                    <span class="mark radio"><i></i></span>
+                    <span>
+                      <span class="ttl" data-t="自定义位置|Custom location">自定义位置</span>
+                    </span>
+                  </label>
+                </div>
+                <div class="pathrow" style="margin:12px 0 0 0">
+                  <span class="wz-label" style="margin:0;flex:none" data-t="安装位置|Location">安装位置</span>
+                  <input value="C:\Program Files\DawnCapture" spellcheck="false">
+                  <button class="btn" data-t="浏览(&amp;B)...|&amp;Browse...">浏览(B)...</button>
+                </div>
+                <p class="wz-note" style="margin-top:6px;color:var(--danger)" data-t="无法写入该文件夹：需要管理员权限。单击「以管理员身份重试」会重新启动安装程序并请求提权。|This folder cannot be written to: administrator rights are required. Clicking Retry as administrator restarts Setup and asks for elevation.">无法写入该文件夹：需要管理员权限。单击「以管理员身份重试」会重新启动安装程序并请求提权。</p>
+              </div>
+            </div>
+            <div class="wz-foot">
+              <button class="btn" data-t="取消|Cancel">取消</button>
+              <button class="btn" data-t="< 上一步(&amp;B)|< &amp;Back">< 上一步(B)</button>
+              <button class="btn primary" data-t="以管理员身份重试(&amp;R)|&amp;Retry as administrator">以管理员身份重试(R)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <h3><span class="step">③b</span><span data-t="不可写（错误状态）|Not writable (error state)">不可写（错误状态）</span></h3>
+        <p class="tagline" data-t="③ 页点「下一步」时才发现目录不可写：不跳页、不丢用户已经填好的内容，就地给出唯一出口——以管理员身份重试（重启安装程序并把 /DIR 一起带过去）。|The folder turns out to be unwritable only when page 3 is submitted: the page stays put, keeps what the user typed, and offers the one way out — an elevated retry that restarts Setup and carries /DIR with it.">③ 页点「下一步」时才发现目录不可写：不跳页、不丢用户已经填好的内容，就地给出唯一出口——以管理员身份重试（重启安装程序并把 `/DIR` 一起带过去）。</p>
+        <ul>
+          <li data-t="检查放在提交时而不是输入时：判断可写性要碰文件系统，不能每次按键都做，否则打字会卡。|The check runs on submit rather than on every keystroke: testing writability touches the file system and would stutter while typing.">检查放在提交时而不是输入时：判断可写性要碰文件系统，不能每次按键都做，否则打字会卡。</li>
+          <li data-t="主按钮换文案：平时是「下一步」，这里必须是「以管理员身份重试」——用户不需要懂 UAC 和提权重启，只需要知道点哪个。|The primary button is relabelled: normally Next, here Retry as administrator — the user does not need to understand UAC or an elevated restart, only which button to press.">主按钮换文案：平时是「下一步」，这里必须是「以管理员身份重试」——用户不需要懂 UAC 和提权重启，只需要知道点哪个。</li>
+          <li data-t="「上一步」保留：想改回用户目录的人有退路；错误提示就在地址框下方，不必回头找。|Back stays available so anyone who would rather use the user folder can retreat, and the error sits right under the path box instead of somewhere to go looking for.">「上一步」保留：想改回用户目录的人有退路；错误提示就在地址框下方，不必回头找。</li>
+        </ul>
+        <div class="impl">
+          <span class="kind code" data-t="需要 [Code]（约 20 行）|needs [Code] (~20 lines)">需要 [Code]（约 20 行）</span>
+          <code>NextButtonClick(自定义页 ID) → 试写探针（SaveStringToFile 写临时文件，与 .iss 现有 IsWritableDir 一致）</code>
+          <code>不可写 → 就地显示 ScopeError（[CustomMessages] DirNotWritable）、主按钮换文案为「以管理员身份重试」，向导不跳页</code>
+          <code>再点一次 → ShellExec('runas', ExpandConstant('{srcexe}'), '/ALLUSERS /DIR="…"', ewWaitUntilTerminated)：新窗口带管理员权限继续，本窗口停在本页；用 Result := False 而不是 Abort，两者都停页，但 Abort 在 NextButtonClick 里语义含混</code>
+          <code data-t="Result := False 让向导停在本页，用户填的路径不丢|Result := False keeps the wizard on this page so the typed path survives">`Result := False` 让向导停在本页，用户填的路径不丢</code>
+        </div>
+      </div>
+    </article>
+
+    <!-- ④ 附加任务（单变体） -->
+    <div class="chap">
+      <span class="no">④</span>
+      <h2 data-t="附加任务|Additional tasks">附加任务</h2>
+      <span data-t="与 ③ 同一套选项行：一个可勾选项 + 一行灰底固定项（开始菜单）；「安装后启动」不在这里，它在完成页|Same option rows as page 3: one selectable row plus a grey fixed row for the Start menu. Launching after install is not here — it lives on the finish page">与 ③ 同一套选项行：一个可勾选项 + 一行灰底固定项（开始菜单）；「安装后启动」不在这里，它在完成页</span>
+    </div>
+
+    <article class="shot">
+      <div class="wizard">
+        <div class="wz-titlebar">
+          <svg><use href="#logo-symbol"/></svg>
+          <span class="t" data-t="安装 - DawnCapture 1.0.0.0|Setup - DawnCapture 1.0.0.0">安装 - DawnCapture 1.0.0.0</span>
+          <span class="winbtns">— ▢ ✕</span>
+        </div>
+        <div class="wz-body">
+          <div class="wz-main">
+            <div class="wz-corner"><svg><use href="#logo-symbol"/></svg></div>
+            <div class="wz-content cover">
+              <div>
+                <div class="hero">
+                  <svg class="hero-logo"><use href="#logo-master"/></svg>
+                  <div>
+                    <div class="hero-nm">DawnCapture</div>
+                    <div class="hero-vr" data-t="选择附加任务|Select additional tasks">选择附加任务</div>
+                  </div>
+                </div>
+                <div class="wz-hr"></div>
+              </div>
+              <div>
+                <p class="wz-lead" data-t="安装程序准备就绪，现在可以开始安装 DawnCapture。下面选择要在安装过程中执行的附加任务。|Setup is now ready to begin installing DawnCapture. Select the additional tasks Setup should perform while installing.">安装程序准备就绪，现在可以开始安装 DawnCapture。下面选择要在安装过程中执行的附加任务。</p>
+                <div class="opts" style="margin-top:10px">
+                  <div class="fixed-row">
+                    <span class="mark check"><i></i></span>
+                    <span>
+                      <span class="ttl" data-t="创建开始菜单项|Create the Start menu entry">创建开始菜单项<span class="badgewrap"><span class="badge" data-t="始终创建，不可取消|Always created, cannot be turned off">始终创建，不可取消</span></span></span>
+                    </span>
+                  </div>
+                  <label class="opt">
+                    <span class="mark check"><i></i></span>
+                    <span>
+                      <span class="ttl" data-t="创建桌面快捷方式|Create a desktop shortcut">创建桌面快捷方式</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <div class="ready" style="margin-top:0">
+                  <span class="wz-label" data-t="接下来将执行|What happens next">接下来将执行</span>
+                  <span data-t="复制程序文件（173 MB）→ 创建开始菜单项 → 完成|Copy the program files (173 MB) → create the Start menu entry → finish">复制程序文件（173 MB）→ 创建开始菜单项 → 完成</span>
+                </div>
+              </div>
+            </div>
+            <div class="wz-foot">
+              <button class="btn" data-t="取消|Cancel">取消</button>
+              <button class="btn" data-t="< 上一步(&amp;B)|< &amp;Back">< 上一步(B)</button>
+              <button class="btn primary" data-t="安装(&amp;I)|&amp;Install">安装(I)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <h3><span class="step">4</span><span data-t="附加任务（选项样式与 ③ 同源）|Additional tasks (rows shared with 3)">附加任务（选项样式与 ③ 同源）</span></h3>
+        <p class="tagline" data-t="选项行与 ③ 完全同源：圆点、单行、上下排列、徽章表达状态。这一页只剩一个可勾选项，另有一行灰底的固定项——「创建开始菜单项」没有圆点可控，因为用户没有选择权。「安装后启动」不在这里，它由完成页承担。|The rows are identical to page 3: a dot, one line, stacked, badges for state. This screen now has a single selectable row plus one grey fixed row — the Start menu entry has nothing to toggle because the user has no choice about it. Launching after install is not here; the finish page owns it.">选项行与 ③ 完全同源：圆点、单行、上下排列、徽章表达状态。这一页只剩一个可勾选项，另有一行灰底的固定项——「创建开始菜单项」没有圆点可控，因为用户没有选择权。「安装后启动」不在这里，它由完成页承担。</p>
+        <ul>
+          <li data-t="桌面图标默认不勾：录屏工具是「用到才开」的工具，不该在安装时替用户铺满桌面（沿用当前 .iss 的选择）。|The desktop icon stays unchecked by default: a recorder is a tool you open on purpose, so setup does not carpet the desktop (this matches today's .iss).">桌面图标默认不勾：录屏工具是「用到才开」的工具，不该在安装时替用户铺满桌面（沿用当前 `.iss` 的选择）。</li>
+          <li data-t="开始菜单项是固定项：不参与勾选，用灰底 + 「始终创建，不可取消」徽章表示。它是通知归组与搜索的前提，值得让用户知道它存在。|The Start menu entry is fixed: not selectable, shown as a grey row with an “always created, cannot be turned off” badge. Notification grouping and search depend on it, so it is worth knowing it exists.">开始菜单项是固定项：不参与勾选，用灰底 + 「始终创建，不可取消」徽章表示。它是通知归组与搜索的前提，值得让用户知道它存在。</li>
+          <li data-t="「安装后启动」只出现在完成页，这里没有：它是 Inno 原生 [Run] postinstall 复选框的位置（画在最后一页）。放在这一页会出现两个默认勾选、互相矛盾的控件，而且 .iss 里的 [Tasks] 只有 desktopicon、并没有对应项。分工因此是：④ 决定创建什么，⑥ 决定装完之后做什么。|Launching after install appears only on the finish page: that is where Inno's native [Run] postinstall checkbox lives. Putting it here would mean two pre-checked controls that can contradict each other — and the .iss has only desktopicon in [Tasks], with no matching entry. The split is: page 4 decides what gets created, page 6 decides what happens afterwards.">「安装后启动」只出现在完成页，这里没有：它是 Inno 原生 `[Run] postinstall` 复选框的位置（画在最后一页）。放在这一页会出现两个默认勾选、互相矛盾的控件，而且 `.iss` 里的 `[Tasks]` 只有 `desktopicon`、并没有对应项。分工因此是：④ 决定创建什么，⑥ 决定装完之后做什么。</li>
+          <li data-t="那句「不创建开机自启项、不装后台服务」不再占界面，移到此处：安装程序确实不加自启项、不装服务，DawnCapture 只在双击或被热键唤醒时存在。|The “no startup entries, no background services” sentence is no longer on the page; it lives here: Setup really adds neither, and DawnCapture exists only while it is running.">那句「不创建开机自启项、不装后台服务」不再占界面，移到此处：安装程序确实不加自启项、不装服务，DawnCapture 只在双击或被热键唤醒时存在。</li>
+          <li data-t="底部只留「接下来将执行」，没有再补一句「单击安装继续」——它本身就在说下一步会发生什么，而安装按钮就在它下面。|The bottom holds only the “what happens next” line, with no “click Install to continue” on top of it — that line already states what happens next, and the Install button sits right beneath it.">底部只留「接下来将执行」，没有再补一句「单击安装继续」——它本身就在说下一步会发生什么，而安装按钮就在它下面。</li>
+        </ul>
+        <div class="impl">
+          <span class="kind native" data-t="Inno 原生|Native Inno">Inno 原生</span>
+          <code>[Tasks] desktopicon · Flags: unchecked</code>
+          <code data-t="「安装后启动」不在此页：它由完成页的原生复选框承担（[Run] 带 postinstall 时 Inno 就画在最后一页，见 ⑥）|Launching after install is not here: the finish page's native checkbox owns it ([Run] with postinstall puts it on the last page — see 6)">「安装后启动」不在此页：它由完成页的原生复选框承担（`[Run]` 带 `postinstall` 时 Inno 就画在最后一页，见 ⑥）</code>
+          <code data-t="开始菜单项写在 [Icons]，无条件创建（不加 Tasks 条件）|The Start menu entry lives in [Icons] and is created unconditionally (no Tasks condition)">开始菜单项写在 `[Icons]`，无条件创建（不加 `Tasks` 条件）</code>
+          <span class="kind code" data-t="圆点的代价|cost of the dots">圆点的代价</span>
+          <code data-t="圆点不是系统绘制：原生 [Tasks] 页只能画方框，要圆点就得改成自定义页并自绘（约 40–60 行 [Code]），或者接受方框。|A dot is not what the OS draws: the native [Tasks] page only offers square checkboxes, so dots mean a custom page with hand-drawn marks (about 40–60 lines of [Code]) — or keep squares.">圆点不是系统绘制：原生 `[Tasks]` 页只能画方框；要圆点需改成自定义页并自绘（约 40–60 行 `[Code]`），否则保留方框</code>
+        </div>
+      </div>
+    </article>
+
+    <!-- ⑤ 正在安装（单变体） -->
+    <div class="chap">
+      <span class="no">⑤</span>
+      <h2 data-t="正在安装|Installing">正在安装</h2>
+      <span data-t="与前面各页同一骨架，正文只留三样：进度条 / 状态与百分比 / 当前文件|Same skeleton as the earlier pages, with only three things in the body: the bar, the status and percentage, and the current file">与前面各页同一骨架，正文只留三样：进度条 / 状态与百分比 / 当前文件</span>
+    </div>
+
+    <article class="shot">
+      <div class="wizard">
+        <div class="wz-titlebar">
+          <svg><use href="#logo-symbol"/></svg>
+          <span class="t" data-t="安装 - DawnCapture 1.0.0.0|Setup - DawnCapture 1.0.0.0">安装 - DawnCapture 1.0.0.0</span>
+          <span class="winbtns">— ▢ ✕</span>
+        </div>
+        <div class="wz-body">
+          <div class="wz-main">
+            <div class="wz-corner"><svg><use href="#logo-symbol"/></svg></div>
+            <div class="wz-content cover">
+              <div>
+                <div class="hero">
+                  <svg class="hero-logo"><use href="#logo-master"/></svg>
+                  <div>
+                    <div class="hero-nm">DawnCapture</div>
+                    <div class="hero-vr" data-t="正在安装 1.0.0.0|Installing 1.0.0.0">正在安装 1.0.0.0</div>
+                  </div>
+                </div>
+                <div class="wz-hr"></div>
+              </div>
+              <div class="prog">
+                <div class="bar"><i style="width:38%"></i></div>
+                <div class="cap"><span data-t="正在提取文件...|Extracting files...">正在提取文件...</span><span class="mono">38%</span></div>
+                <div class="file mono">C:\Users\liming\AppData\Local\Programs\DawnCapture\Microsoft.ui.xaml.dll</div>
+              </div>
+              <p class="wz-note" style="margin-top:0" data-t="请不要关闭此窗口，全过程约 15–30 秒。|Do not close this window — this takes about 15–30 seconds.">请不要关闭此窗口，全过程约 15–30 秒。</p>
+            </div>
+            <div class="wz-foot">
+              <button class="btn" disabled data-t="取消|Cancel">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <h3><span class="step">5</span><span data-t="正在安装（进度页）|Installing (progress)">正在安装（进度页）</span></h3>
+        <p class="tagline" data-t="与 ①–④ 同一骨架，但这一页只有一件事可说：进度。所以正文只剩三样——一条进度条、一行状态与百分比、一行当前文件；没有标题句、没有段落。|The same skeleton as pages 1–4, but this page has only one thing to say: progress. The body keeps three items — a bar, a status line with the percentage, and the current file. No heading sentence, no paragraph.">与 ①–④ 同一骨架，但这一页只有一件事可说：进度。所以正文只剩三样——一条进度条、一行状态与百分比、一行当前文件；没有标题句、没有段落。</p>
+        <ul>
+          <li data-t="进度条回答「还要多久」，状态行回答「在干什么」，两者放在相邻两行，用户扫一眼就够，不必读完整句。|The bar answers “how long”, the status line answers “doing what”, and they sit on adjacent lines so one glance is enough.">进度条回答「还要多久」，状态行回答「在干什么」，两者放在相邻两行，用户扫一眼就够，不必读完整句。</li>
+          <li data-t="当前文件用等宽字体、路径过长时中段省略：它是给排障用的，不是给所有人读的；完整路径会把这一行撑断。|The current file is monospace and middle-truncated when long: it exists for troubleshooting rather than for everyone to read, and a full path would break the line.">当前文件用等宽字体、路径过长时中段省略：它是给排障用的，不是给所有人读的；完整路径会把这一行撑断。</li>
+          <li data-t="取消按钮置灰：这套安装只往用户目录写 173 MB、约 15–30 秒完成，中途取消只会留下半成品目录，代价大于等待。若要跟随 Inno 原生行为，去掉 disabled 即可（取消会中止并回滚）。|Cancel is greyed out: this install writes 173 MB into the user profile and finishes in 15–30 seconds, so cancelling only leaves a half-written folder — waiting costs less. To follow Inno's own behaviour, drop the disabled attribute and Cancel aborts with a rollback.">取消按钮置灰：这套安装只往用户目录写 173 MB、约 15–30 秒完成，中途取消只会留下半成品目录，代价大于等待。若要跟随 Inno 原生行为，去掉 `disabled` 即可（取消会中止并回滚）。</li>
+          <li data-t="底部一行不写「单击下一步」——这一页没有下一步动作，它给的是同一件事：别关窗口，以及大概等多久。|The bottom line is not “click Next” — this page has no next action; it says the one thing that matters: do not close the window, and roughly how long it takes.">底部一行不写「单击下一步」——这一页没有下一步动作，它给的是同一件事：别关窗口，以及大概等多久。</li>
+        </ul>
+        <div class="impl">
+          <span class="kind native" data-t="Inno 原生|Native Inno">Inno 原生</span>
+          <code>安装页（无自定义控件）· WizardSmallImageFile 占右上角 58×58（100% DPI）</code>
+          <code data-t="进度与当前文件来自 Inno 的进度回调，状态行文案在 [Messages]（ExtractingLabel / InstallingLabel，Default.isl 里存在这两个名字）；当前文件那行由 Setup 直接写 FilenameLabel，没有对应的消息名可改|Progress and the current file come from Inno's progress callbacks; the status wording lives in [Messages] (ExtractingLabel / InstallingLabel — both exist in Default.isl); the current-file line is written by Setup straight into FilenameLabel and has no message name to override">进度与当前文件来自 Inno 的进度回调，状态行文案在 `[Messages]`（`ExtractingLabel` / `InstallingLabel`，Default.isl 里存在这两个名字）；当前文件那行由 Setup 直接写 `FilenameLabel`，没有对应的消息名可改</code>
+          <span class="kind asset" data-t="需要资源|asset needed">需要资源</span>
+          <code data-t="WizardSmallImageFile=..\Assets\brand\wizard-small.png（按 58×58 的目标区域导出 2–3 倍图，透明 PNG；该文件目前不存在，.iss 也没设这个指令，所以内页现在显示的是 Inno 自带图）|WizardSmallImageFile=..\Assets\brand\wizard-small.png (export 2-3x of the 58x58 target area, transparent PNG; the file does not exist yet and the .iss does not set this directive, so inner pages currently show Inno's built-in artwork)">`WizardSmallImageFile=..\Assets\brand\wizard-small.png`（按 58×58 的目标区域导出 2–3 倍图，透明 PNG；该文件目前不存在，`.iss` 也没设这个指令，所以内页现在显示的是 Inno 自带图）</code>
+        </div>
+      </div>
+    </article>
+
+    <!-- ⑥ 完成（单变体） -->
+    <div class="chap">
+      <span class="no">⑥</span>
+      <h2 data-t="安装完成|Setup complete">安装完成</h2>
+      <span data-t="与其它页同一骨架：确认装好了，并留下「怎么开始」的最后一句|Same skeleton as the other pages: confirm the install and leave one last line on how to start">与其它页同一骨架：确认装好了，并留下「怎么开始」的最后一句</span>
+    </div>
+
+    <article class="shot">
+      <div class="wizard">
+        <div class="wz-titlebar">
+          <svg><use href="#logo-symbol"/></svg>
+          <span class="t" data-t="安装 - DawnCapture 1.0.0.0|Setup - DawnCapture 1.0.0.0">安装 - DawnCapture 1.0.0.0</span>
+          <span class="winbtns">— ▢ ✕</span>
+        </div>
+        <div class="wz-body">
+          <div class="wz-main">
+            <div class="wz-corner"><svg><use href="#logo-symbol"/></svg></div>
+            <div class="wz-content cover">
+              <div>
+                <div class="hero">
+                  <svg class="hero-logo"><use href="#logo-master"/></svg>
+                  <div>
+                    <div class="hero-nm">DawnCapture</div>
+                    <div class="hero-vr" data-t="1.0.0.0 · 安装完成|1.0.0.0 · Installed">1.0.0.0 · 安装完成</div>
+                  </div>
+                </div>
+                <div class="wz-hr"></div>
+              </div>
+              <div>
+                <p class="wz-lead" data-t="安装程序已在你的计算机上安装了 DawnCapture。|Setup has finished installing DawnCapture on your computer.">安装程序已在你的计算机上安装了 DawnCapture。</p>
+                <div class="opts" style="margin-top:10px">
+                  <label class="opt sel">
+                    <span class="mark check"><i></i></span>
+                    <span>
+                      <span class="ttl" data-t="立即启动 DawnCapture|Launch DawnCapture now">立即启动 DawnCapture<span class="badgewrap"><span class="badge rec" data-t="默认勾选|Checked by default">默认勾选</span></span></span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <p class="wz-note" style="margin-top:0" data-t="随时按 Ctrl+Shift+F9 开始录制。|Press Ctrl+Shift+F9 at any time to start recording.">随时按 Ctrl+Shift+F9 开始录制。</p>
+            </div>
+            <div class="wz-foot">
+              <button class="btn primary" data-t="完成(&amp;F)|&amp;Finish">完成(F)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <h3><span class="step">6</span><span data-t="完成页|Finish">完成页</span></h3>
+        <p class="tagline" data-t="与其它页同一骨架；这一页只做两件事——确认装好了、给出「怎么开始」的答案（默认热键）。热键放在页脚上方那一行，是用户离开向导前唯一真正需要带走的信息。|The same skeleton as the other pages; this screen does two things — confirm the install and answer “how do I start”, with the default hotkey on the line above the footer: the one thing worth taking away from the wizard.">与其它页同一骨架；这一页只做两件事——确认装好了、给出「怎么开始」的答案（默认热键）。热键放在页脚上方那一行，是用户离开向导前唯一真正需要带走的信息。</p>
+        <ul>
+          <li data-t="大图区不再出现第二次：① 改用页内 132px 锁排后，向导图位整套取消（WizardImageFile 置空），完成页与欢迎页因此不再共用大图。|The image area does not appear a second time: once page 1 moved to the 132px in-page lockup, the wizard artwork slot was dropped entirely (WizardImageFile left empty), so the finish page no longer shares artwork with the welcome page.">大图区不再出现第二次：① 改用页内 132px 锁排后，向导图位整套取消（`WizardImageFile` 置空），完成页与欢迎页因此不再共用大图。</li>
+          <li data-t="「立即启动」默认勾选并带徽章；首次启动约 2 秒、主窗口停在「录制」页——这条只在侧栏，不占界面。|Launch now is checked by default and badged; the first launch takes about two seconds and opens on the Capture page — that detail stays here rather than on the page.">「立即启动」默认勾选并带徽章；首次启动约 2 秒、主窗口停在「录制」页——这条只在侧栏，不占界面。</li>
+          <li data-t="热键那句要与应用同源：界面写 Ctrl+Shift+F9，必须与 DawnCapture 的默认设置核对（应用内可改），否则安装器文案会随应用改动而过期。|The hotkey line shares one source of truth with the app: the page says Ctrl+Shift+F9, which must be checked against DawnCapture's default (changeable in-app) or the installer copy goes stale whenever that default changes.">热键那句要与应用同源：界面写 Ctrl+Shift+F9，必须与 DawnCapture 的默认设置核对（应用内可改），否则安装器文案会随应用改动而过期。</li>
+          <li data-t="不写安装路径：全局装是 Program Files，单用户装是用户目录，写死一个会有一半情况是错的。|The install path is not printed: an all-users install lands in Program Files and a per-user one in the profile, so hard-coding either would be wrong half the time.">不写安装路径：全局装是 Program Files，单用户装是用户目录，写死一个会有一半情况是错的。</li>
+          <li data-t="整页只有一个按钮：安装已经结束，没有「上一步」也没有「取消」——留一个出口就够。|One button on the whole page: the install is over, so there is no Back and no Cancel — a single exit is enough.">整页只有一个按钮：安装已经结束，没有「上一步」也没有「取消」——留一个出口就够。</li>
+        </ul>
+        <div class="impl">
+          <span class="kind native" data-t="Inno 原生|Native Inno">Inno 原生</span>
+          <code>[Run] postinstall · Flags: nowait skipifsilent → 完成页复选（全流程只此一处，④ 不再重复）</code>
+          <code data-t="WizardImageFile 置空（与 ① 一致）；右上角 WizardSmallImageFile 保留|WizardImageFile is left empty (as on page 1); the upper-right WizardSmallImageFile stays">`WizardImageFile` 置空（与 ① 一致）；右上角 `WizardSmallImageFile` 保留</code>
+          <code data-t="热键这句写进 [Messages]，与卸载页的说明共用同一份措辞|The hotkey line lives in [Messages], sharing its wording with the uninstall screens">热键这句写进 `[Messages]`，与卸载页的说明共用同一份措辞</code>
+        </div>
+      </div>
+    </article>
+
+    <!-- U1 卸载确认（单变体） -->
+    <div class="chap">
+      <span class="no">U1</span>
+      <h2 data-t="卸载确认|Uninstall confirmation">卸载确认</h2>
+      <span data-t="只说将删除什么，不做取舍|States what will be removed; the trade-off comes next">只说将删除什么，不做取舍</span>
+    </div>
+
+    <article class="shot">
+      <div class="msg">
+        <div class="msg-titlebar">
+          <span class="t" data-t="DawnCapture 1.0.0.0 卸载|DawnCapture 1.0.0.0 Uninstall">DawnCapture 1.0.0.0 卸载</span>
+          <span class="winbtns">✕</span>
+        </div>
+        <div class="msg-body">
+          <span class="msg-ico">?</span>
+          <p class="txt" data-t="将删除程序文件、开始菜单与桌面快捷方式，以及「应用和功能」中的条目。<br>位置：%LocalAppData%\Programs\DawnCapture · 173 MB（383 个文件）<br><br>你确认要完全移除 DawnCapture 1.0.0.0 及其所有组件吗？|This removes the program files, the Start menu and desktop shortcuts, and the entry in Apps &amp; features.<br>Location: %LocalAppData%\Programs\DawnCapture · 173 MB (383 files)<br><br>Are you sure you want to completely remove DawnCapture 1.0.0.0 and all of its components?">将删除程序文件、开始菜单与桌面快捷方式，以及「应用和功能」中的条目。<br>位置：%LocalAppData%\Programs\DawnCapture · 173 MB（383 个文件）<br><br>你确认要完全移除 DawnCapture 1.0.0.0 及其所有组件吗？</p>
+        </div>
+        <div class="msg-foot">
+          <button class="btn" data-t="是(&amp;Y)|&amp;Yes">是(Y)</button>
+          <button class="btn" data-t="否(&amp;N)|&amp;No">否(N)</button>
+        </div>
+      </div>
+
+      <div class="side">
+        <h3><span class="step">U1</span><span data-t="卸载确认|Uninstall confirmation">卸载确认</span></h3>
+        <p class="tagline" data-t="平台不给卸载器向导页（实测是致命错误），所以第一屏只能是 Windows 自己的确认提示：我们唯一能控制的是那句话——把「将删除什么、在哪里、多大」写进 [Messages] 的 ConfirmUninstall，让代价在点下去之前就可见；真正的取舍留给下一页的对话框。|The platform gives the uninstaller no wizard pages (a fatal error, measured), so the first screen can only be Windows' own confirmation prompt: the one thing we control is the sentence — put what will be removed, where and how big into [Messages] ConfirmUninstall so the cost is visible before the click. The real trade-off belongs to the dialog on the next screen.">平台不给卸载器向导页（实测是致命错误），所以第一屏只能是 Windows 自己的确认提示：我们唯一能控制的是那句话——把「将删除什么、在哪里、多大」写进 `[Messages]` 的 `ConfirmUninstall`，让代价在点下去之前就可见；真正的取舍留给下一页的对话框。</p>
+        <div class="impl">
+          <span class="kind native" data-t="Inno 原生提示|Native Inno prompt">Inno 原生提示</span>
+          <code data-t="提示框由 unins000.exe 自己弹（Uninstallable=yes 生成），文案来自 [Messages] 的 ConfirmUninstall —— 版式、图标、按钮都归平台，我们只写那句话，所以「位置 / 体积」只能并进这句话，不能做成信息表。|The prompt is shown by unins000.exe itself (generated by Uninstallable=yes) and worded from [Messages] ConfirmUninstall — layout, icon and buttons belong to the platform. We only write the sentence, so the location and size are folded into it instead of becoming a table.">提示框由 `unins000.exe` 自己弹（`Uninstallable=yes` 生成），文案来自 `[Messages]` 的 `ConfirmUninstall` —— 版式、图标、按钮都归平台，我们只写那句话，所以「位置 / 体积」只能并进这句话，不能做成信息表。</code>
+        </div>
+      </div>
+    </article>
+
+    <!-- U2 选择要删除的数据（单变体） -->
+    <div class="chap">
+      <span class="no">U2</span>
+      <h2 data-t="选择要删除的数据|Choose what to remove">选择要删除的数据</h2>
+      <span data-t="默认删程序配置、保留录像|Deletes program settings by default, keeps recordings">默认删程序配置、保留录像</span>
+    </div>
+
+    <article class="shot">
+      <div class="dlg">
+        <div class="dlg-titlebar">
+          <span class="t" data-t="DawnCapture 1.0.0.0 卸载|DawnCapture 1.0.0.0 Uninstall">DawnCapture 1.0.0.0 卸载</span>
+          <span class="winbtns">✕</span>
+        </div>
+        <div class="dlg-body">
+          <span class="h" data-t="选择要删除的数据|Choose what to remove">选择要删除的数据</span>
+          <span class="sub" data-t="程序文件始终会被删除；下面两项可选。|Program files are always removed. The two items below are optional.">程序文件始终会被删除；下面两项可选。</span>
+          <div class="chk on">
+            <span class="box">✓</span>
+            <span>
+              <span data-t="删除程序配置|Delete program settings">删除程序配置</span>
+              <span class="path mono">%LocalAppData%\DawnCapture</span>
+            </span>
+          </div>
+          <div class="chk">
+            <span class="box"></span>
+            <span>
+              <span data-t="同时删除已录制的视频文件（不可恢复）|Also delete my recordings (this cannot be undone)">同时删除已录制的视频文件（不可恢复）</span>
+              <span class="path mono" style="color:var(--danger)">%USERPROFILE%\Videos\DawnCapture</span>
+            </span>
+          </div>
+          <span class="sub" data-t="程序配置默认会被删除，取消勾选则保留；录像不勾选时原样保留，重新安装后可以直接继续使用。|Program settings are deleted by default — untick to keep them. Recordings stay untouched unless you tick that box, so a reinstall picks them up where they left off.">程序配置默认会被删除，取消勾选则保留；录像不勾选时原样保留，重新安装后可以直接继续使用。</span>
+        </div>
+        <div class="dlg-foot">
+          <button class="btn" data-t="取消|Cancel">取消</button>
+          <button class="btn primary" data-t="卸载(&amp;U)|&amp;Uninstall">卸载(U)</button>
+        </div>
+      </div>
+      <div class="side">
+        <h3><span class="step">U2</span><span data-t="删除范围（满足「全部卸载」）|Removal scope">删除范围（满足「全部卸载」）</span></h3>
+        <p class="tagline" data-t="不是向导里的一页，而是一个独立的小对话框（CreateCustomForm）——卸载器只支持这个形态。默认值按「谁发起」定：人主动卸载 → 默认删程序配置（预勾、可见、可取消）；机器发起（升级时用 /VERYSILENT 跑这个卸载器）→ 不弹窗、一律不删。录像永远不预勾，因为它不可逆。|Not a wizard page but a standalone dialog (CreateCustomForm) — the only form the uninstaller supports. The default depends on who started it: a person gets program settings deleted by default (pre-ticked, visible, cancellable), while a machine-started run (the upgrade path with /VERYSILENT) shows nothing and deletes nothing. Recordings are never pre-ticked, because they cannot be undone.">不是向导里的一页，而是一个独立的小对话框（`CreateCustomForm`）——卸载器只支持这个形态。默认值按「谁发起」定：人主动卸载 → 默认删程序配置（预勾、可见、可取消）；机器发起（升级时用 `/VERYSILENT` 跑这个卸载器）→ 不弹窗、一律不删。录像永远不预勾，因为它不可逆。</p>
+        <ul>
+          <li data-t="不可逆项用红色语义 + 「不可恢复」徽章（DESIGN.md：红色只留给不可逆操作）；「且不会进入回收站」这条留在侧栏，界面不再多占一行。|The irreversible row uses the danger token plus a “permanent” badge (in DESIGN.md red is reserved for irreversible actions); “and it does not go to the Recycle Bin” stays here instead of taking another line.">不可逆项用红色语义 + 「不可恢复」徽章（DESIGN.md：红色只留给不可逆操作）；「且不会进入回收站」这条留在侧栏，界面不再多占一行。</li>
+          <li data-t="两行都带具体路径与体积（等宽字体），用户知道自己删的是什么；「包含热键、输出目录、界面语言、缩略图」这类明细同样留在侧栏——不再出现「录制目录库」这类容易被读成录像目录的词。|Both rows carry a real path and size in monospace so the user knows exactly what is going; the finer breakdown (hotkeys, output folder, UI language, thumbnails) also stays here, and wording like “library catalog” — easily misread as the folder holding recordings — is gone.">两行都带具体路径与体积（等宽字体），用户知道自己删的是什么；「包含热键、输出目录、界面语言、缩略图」这类明细同样留在侧栏——不再出现「录制目录库」这类容易被读成录像目录的词。</li>
+            <li data-t="配置预勾、录像永不预勾，是因为两者可逆性不同：配置删了只是重设一次热键，录像删了就没了。把不可逆的那个留在用户手里。|Settings are pre-ticked and recordings never are, because reversibility differs: a deleted setting costs one re-configuration, a deleted recording is gone. The irreversible one stays in the user's hands.">配置预勾、录像永不预勾，是因为两者可逆性不同：配置删了只是重设一次热键，录像删了就没了。把不可逆的那个留在用户手里。</li>
+        </ul>
+        <div class="impl">
+          <span class="kind code" data-t="需要 [Code]（约 20 行）|needs [Code] (~20 lines)">需要 [Code]（约 20 行）</span>
+          <code>function InitializeUninstall(): Boolean → CreateCustomForm + TNewCheckBox ×2 + TNewButton(mrOk / mrCancel)（配置预勾、录像不预勾）</code>
+          <code data-t="卸载器不支持向导页（实测：CreateInputOptionPage / CreateCustomPage 直接致命错误），只有自定义对话框能用；所以这一屏是对话框而不是向导页。|The uninstaller refuses wizard pages (measured: CreateInputOptionPage and CreateCustomPage are fatal), so only a custom form works - which is why this screen is a dialog, not a wizard page.">卸载器**不支持向导页**（实测：`CreateInputOptionPage` / `CreateCustomPage` 直接致命错误），只有自定义对话框能用；所以这一屏是对话框而不是向导页。</code>
+          <code data-t="预勾之后静默守卫就是必需的：静默/无人值守会取默认值、直接删掉设置，而 ② 升级时正是用 /VERYSILENT 跑这个卸载器。静默一律不删；要脚本化清理得显式传参。|With a pre-ticked option the silent guard becomes mandatory: a silent or unattended run takes the defaults and would delete the settings, and page 2's upgrade path is exactly such a run. Silent always keeps; scripted cleanup needs an explicit switch.">预勾之后静默守卫就是**必需**的：静默/无人值守会取默认值、直接删掉设置，而 ② 升级时正是用 `/VERYSILENT` 跑这个卸载器。静默一律不删；要脚本化清理得显式传参。</code>
+          <code>CurUninstallStepChanged(usPostUninstall) → DelTree(%LocalAppData%\DawnCapture)</code>
+          <code>[UninstallDelete] 只放静态项（程序文件与快捷方式由 Inno 自动清理）</code>
+          <span class="kind asset" data-t="需要统计|counts needed">需要统计</span>
+          <code data-t="复选框里的文件数与体积在运行时统计（FindFirst/FindNext 累计），无数据时隐藏该行；.iss 目前是静态文案，统计尚未实现|File count and size are computed at runtime (FindFirst/FindNext); the .iss currently uses static wording, so the counts are not implemented yet">复选框里的文件数与体积在运行时统计（FindFirst/FindNext 累计），无数据时隐藏该行；`.iss` 目前是静态文案，统计尚未实现</code>
+        </div>
+      </div>
+    </article>
+
+    <!-- U3 卸载进度（单变体） -->
+    <div class="chap">
+      <span class="no">U3</span>
+      <h2 data-t="卸载进度|Uninstall progress">卸载进度</h2>
+      <span data-t="与 ⑤ 同一版式：进度条 / 状态与百分比 / 当前文件|Same layout as page 5: the bar, the status with percentage, and the current file">与 ⑤ 同一版式：进度条 / 状态与百分比 / 当前文件</span>
+    </div>
+
+    <article class="shot">
+      <div class="wizard">
+        <div class="wz-titlebar">
+          <svg><use href="#logo-symbol"/></svg>
+          <span class="t" data-t="DawnCapture 1.0.0.0 卸载|DawnCapture 1.0.0.0 Uninstall">DawnCapture 1.0.0.0 卸载</span>
+          <span class="winbtns">— ▢ ✕</span>
+        </div>
+        <div class="wz-body">
+          <div class="wz-main">
+            <div class="wz-corner"><svg><use href="#logo-symbol"/></svg></div>
+            <div class="wz-content cover">
+              <div>
+                <div class="hero">
+                  <svg class="hero-logo"><use href="#logo-master"/></svg>
+                  <div>
+                    <div class="hero-nm">DawnCapture</div>
+                    <div class="hero-vr" data-t="正在卸载 1.0.0.0|Removing 1.0.0.0">正在卸载 1.0.0.0</div>
+                  </div>
+                </div>
+                <div class="wz-hr"></div>
+              </div>
+              <div class="prog">
+                <div class="bar"><i style="width:62%"></i></div>
+                <div class="cap"><span data-t="正在删除文件…|Removing files…">正在删除文件…</span><span class="mono">62%</span></div>
+                <div class="file mono">C:\Users\liming\AppData\Local\Programs\DawnCapture\Microsoft.ui.xaml.dll</div>
+              </div>
+              <p class="wz-note" style="margin-top:0" data-t="请不要关闭此窗口，卸载通常几秒钟完成。|Do not close this window — uninstalling usually takes a few seconds.">请不要关闭此窗口，卸载通常几秒钟完成。</p>
+            </div>
+            <div class="wz-foot">
+              <button class="btn" disabled data-t="取消|Cancel">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <h3><span class="step">U3</span><span data-t="卸载进度|Uninstall progress">卸载进度</span></h3>
+        <p class="tagline" data-t="与 ⑤ 完全同版式，只换文案与进度：卸载阶段用户只关心两件事——还要多久、在删什么。|Exactly the same layout as page 5 with different wording and progress. While uninstalling the user cares about two things only: how long, and what is being removed.">与 ⑤ 完全同版式，只换文案与进度：卸载阶段用户只关心两件事——还要多久、在删什么。</p>
+        <div class="impl">
+          <span class="kind native" data-t="Inno 原生|Native Inno">Inno 原生</span>
+          <code>卸载进度页（UninstallProgressForm）· 无自定义控件</code>
+          <code data-t="Inno 的卸载进度页自带「显示详细信息」按钮；这里与安装页保持一致，不暴露日志刷屏|Inno's uninstall progress page offers a “show details” button; this stays consistent with the install page and does not expose a log flood">Inno 的卸载进度页自带「显示详细信息」按钮；这里与安装页保持一致，不暴露日志刷屏</code>
+        </div>
+      </div>
+    </article>
+
+    <!-- U4 卸载完成（单变体） -->
+    <div class="chap">
+      <span class="no">U4</span>
+      <h2 data-t="卸载完成|Uninstall complete">卸载完成</h2>
+      <span data-t="列出删了什么、留了什么|Lists what was removed and what was kept">列出删了什么、留了什么</span>
+    </div>
+
+    <article class="shot">
+      <div class="dlg">
+        <div class="dlg-titlebar">
+          <span class="t" data-t="DawnCapture 1.0.0.0 卸载|DawnCapture 1.0.0.0 Uninstall">DawnCapture 1.0.0.0 卸载</span>
+          <span class="winbtns">✕</span>
+        </div>
+        <div class="dlg-body">
+          <span class="h" data-t="卸载完成|Uninstall complete">卸载完成</span>
+          <span class="sub" data-t="已顺利从你的计算机上移除了 DawnCapture 1.0.0.0。|DawnCapture 1.0.0.0 was successfully removed from your computer.">已顺利从你的计算机上移除了 DawnCapture 1.0.0.0。</span>
+          <span class="ledger" data-t="<b>已删除</b> · 程序文件 · 开始菜单与桌面快捷方式 · 程序配置（2.4 MB）<br><b>已保留</b> · 12 个录制文件（1.8 GB，位于 视频\DawnCapture）<br><br>重新安装 DawnCapture 后，保留下来的录像会自动回到录制库中。|<b>Removed</b> · program files · shortcuts · program settings (2.4 MB)<br><b>Kept</b> · 12 recordings (1.8 GB, in Videos\DawnCapture)<br><br>Install DawnCapture again and the kept recordings reappear in the library automatically."><b>已删除</b> · 程序文件 · 开始菜单与桌面快捷方式 · 程序配置（2.4 MB）<br><b>已保留</b> · 12 个录制文件（1.8 GB，位于 视频\DawnCapture）<br><br>重新安装 DawnCapture 后，保留下来的录像会自动回到录制库中。</span>
+        </div>
+        <div class="dlg-foot">
+          <button class="btn primary" data-t="完成(&amp;F)|&amp;Finish">完成(F)</button>
+        </div>
+      </div>
+      <div class="side">
+        <h3><span class="step">U4</span><span data-t="卸载完成|Uninstall complete">卸载完成</span></h3>
+        <p class="tagline" data-t="不是一页：这是卸载进度窗口的结束页。我们能改的只有正文（UninstallProgressForm 的 FinishedLabel 一族 + [Messages] 的 UninstalledAll），所以「删了什么 / 留了什么」以多行文字写进那句正文——结果逐项写清这件事没变，只是载体从表格变成了文字。|Not a page: this is the finish screen of the uninstall progress window. All we can change is the text (UninstallProgressForm's FinishedLabel family plus [Messages] UninstalledAll), so the removed/kept ledger becomes lines of that text - the itemised outcome survives, only the carrier changes from a table to prose.">不是一页：这是卸载进度窗口的结束页。我们能改的只有正文（`UninstallProgressForm` 的 `FinishedLabel` 一族 + `[Messages]` 的 `UninstalledAll`），所以「删了什么 / 留了什么」以多行文字写进那句正文——结果逐项写清这件事没变，只是载体从表格变成了文字。</p>
+        <div class="impl">
+          <span class="kind native" data-t="Inno 原生|Native Inno">Inno 原生</span>
+          <code data-t="卸载完成页（UninstallProgressForm.FinishedLabel / FinishedHeadingLabel；正文走 [Messages] 的 UninstalledAll 一类）|The uninstall finish page (UninstallProgressForm.FinishedLabel / FinishedHeadingLabel; the body text comes from [Messages] entries such as UninstalledAll)">卸载完成页（`UninstallProgressForm.FinishedLabel` / `FinishedHeadingLabel`；正文走 `[Messages]` 的 `UninstalledAll` 一类）</code>
+          <span class="kind code" data-t="需要 [Code]|needs [Code]">需要 [Code]</span>
+          <code data-t="结果文案按 U2 的勾选动态拼装：勾了哪项就写「已删除」，没勾的写「已保留」。默认第一项已勾，所以默认结果里程序配置落在「已删除」一行，录像落在「已保留」。|The result text is assembled from the page-2 ticks: anything ticked reads “removed”, the rest reads “kept”. With the first option pre-ticked, program settings land under “removed” by default and recordings under “kept”.">结果文案按 U2 的勾选动态拼装：勾了哪项就写「已删除」，没勾的写「已保留」。默认第一项已勾，所以默认结果里程序配置落在「已删除」一行，录像落在「已保留」。</code>
+        </div>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ======================================================= en screens -->
+  <section id="en-preview">
+    <div class="sec-title">
+      <h2 data-t="英文界面（非中文系统）|English UI (non-Chinese systems)">英文界面（非中文系统）</h2>
+      <span data-t="下面每一屏都是同一份 DOM，只是所有文案换成 data-t 的英文侧——中文系统以外的机器上，安装程序就是这样。侧栏说明已隐藏，这里只看界面|Each screen below is the same DOM with every string switched to the English side of data-t — this is what Setup shows on anything that is not a Chinese system. The side notes are hidden so only the UI is left">下面每一屏都是同一份 DOM，只是所有文案换成 data-t 的英文侧——中文系统以外的机器上，安装程序就是这样。侧栏说明已隐藏，这里只看界面</span>
+    </div>
+    <div id="en-screens"></div>
+  </section>
+
+<!-- ============================================================== spec -->
+  <section>
+    <div class="sec-title"><h2 data-t="设计规格|Design specification">设计规格</h2><span data-t="全部取自 DESIGN.md，未新增色值|all values reuse DESIGN.md; no new colours">全部取自 DESIGN.md，未新增色值</span></div>
+    <div class="two">
+      <div>
+        <h3 style="font-size:13px;margin-bottom:8px" data-t="颜色令牌|Colour tokens">颜色令牌</h3>
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#d85b42"></div><div class="lb"><b>Accent</b>#D85B42 / #F07A61</div></div>
+          <div class="sw"><div class="chip" style="background:#c42b1c"></div><div class="lb"><b>Danger</b>#C42B1C / #FF7669</div></div>
+          <div class="sw"><div class="chip" style="background:#1c2024"></div><div class="lb"><b>Text</b>#1C2024 / #F3F4F5</div></div>
+          <div class="sw"><div class="chip" style="background:#626971"></div><div class="lb"><b>Text muted</b>#626971 / #B5BAC0</div></div>
+          <div class="sw"><div class="chip" style="background:#d6d9dd"></div><div class="lb"><b>Stroke</b>#D6D9DD / #41464C</div></div>
+          <div class="sw"><div class="chip" style="background:#ffffff"></div><div class="lb"><b>Surface</b>#FFFFFF / #292D32</div></div>
+        </div>
+        <p class="wz-p" data-t="强调色只出现在：品牌栏的短横线、主按钮、选中态；危险色只出现在「删除录制文件」和卸载按钮。|Accent appears only on the brand rule, the primary button and the selected state; danger only on the recordings checkbox and the uninstall button.">强调色只出现在：品牌栏的短横线、主按钮、选中态；危险色只出现在「删除录制文件」和卸载按钮。</p>
+      </div>
+      <div>
+        <h3 style="font-size:13px;margin-bottom:8px" data-t="控件与间距|Controls &amp; spacing">控件与间距</h3>
+        <table class="spec">
+          <tr><th data-t="项|Item">项</th><th data-t="值|Value">值</th></tr>
+          <tr><td data-t="向导窗口|Wizard window">向导窗口</td><td data-t="700 × 580 是本原型的画布尺寸。Inno 的实际窗口由 WizardSizePercent 决定：6.7 的默认是 120,120，取值范围 100–150，而且只放大窗口、不放大字体——所以画布尺寸不能当作窗口规格；实现时以实测回填，或显式设 WizardSizePercent|700x580 is this prototype's canvas size. The real window is governed by WizardSizePercent: Inno 6.7 defaults to 120,120, the range is 100-150, and it scales the window only, never the fonts — so the canvas size must not be read as a window spec. Fill in the measured value, or set WizardSizePercent explicitly">700 × 580 是本原型的**画布**尺寸。Inno 的实际窗口由 `WizardSizePercent` 决定：6.7 的默认是 120,120，取值范围 100–150，而且只放大窗口、不放大字体——所以画布尺寸不能当作窗口规格；实现时以实测回填，或显式设 `WizardSizePercent`</td></tr>
+          <tr><td data-t="首屏锁排|Header lockup">首屏锁排</td><td>页内 132×132 图片 + 产品名 22 / 版本行 13 px</td></tr>
+          <tr><td data-t="页标题 / 副标题|Title / sub">页标题 / 副标题</td><td>19 / 12.5 px（各页正文用 13 px 引导行）</td></tr>
+          <tr><td data-t="按钮|Buttons">按钮</td><td>h 32 · padding 0 18 · radius 6</td></tr>
+          <tr><td data-t="选项行|Option row">选项行</td><td>padding 5 12 · gap 4 · radius 6（标题 12.5 px 常规字重）</td></tr>
+          <tr><td data-t="间距基准|Spacing base">间距基准</td><td>8 px（内容边距 24）</td></tr>
+          <tr><td data-t="字体|Type">字体</td><td data-t="Segoe UI Variable Text · 路径用 Consolas。字体族与字号由 [LangOptions] 的 DialogFontName / DialogFontSize 指定（不是 [Setup]；Inno 6.7 默认 Segoe UI 9pt），改字号会连带改向导的行高与换行，落地前要实测 |Segoe UI Variable Text, Consolas for paths. Family and size come from [LangOptions] DialogFontName / DialogFontSize — not [Setup]; Inno 6.7 defaults to Segoe UI 9pt. Changing the size also changes the wizard's line heights and wrapping, so measure before committing">Segoe UI Variable Text · 路径用 Consolas。字体族与字号写在 `[LangOptions]` 的 `DialogFontName` / `DialogFontSize`（不是 `[Setup]`；Inno 6.7 默认 Segoe UI 9pt），改字号会连带改行高与换行，落地前要实测</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3 style="font-size:13px;margin:24px 0 8px" data-t="业界惯例对照（调研结论）|Industry conventions (research)">业界惯例对照（调研结论）</h3>
+    <table class="spec">
+      <tr><th data-t="来源|Source">来源</th><th data-t="欢迎 / 完成页|Welcome &amp; Finish">欢迎 / 完成页</th><th data-t="内页|Inner pages">内页</th><th data-t="首屏放什么|What page 1 shows">首屏放什么</th></tr>
+      <tr>
+        <td>NSIS MUI 规范</td>
+        <td data-t="左侧通高 164×314 位图（MUI_WELCOMEFINISHPAGE_BITMAP），文字在右；首尾页共用同一张|Full-height 164×314 bitmap on the left, text to its right; shared by both pages">左侧通高 164×314 位图（`MUI_WELCOMEFINISHPAGE_BITMAP`），文字在右；首尾页共用同一张</td>
+        <td data-t="顶部 150×57 header 图|150×57 header image at the top">顶部 150×57 header 图</td>
+        <td data-t="标题 + 一段说明文字（无文件信息）|Title + one paragraph, no file info">标题 + 一段说明文字（无文件信息）</td>
+      </tr>
+      <tr>
+        <td>Inno Setup</td>
+        <td data-t="大图宽高比 164:314，位于左侧；首尾页共用|164:314 aspect, on the left; shared by both pages">大图宽高比 164:314，位于左侧；首尾页共用</td>
+        <td data-t="右上角方形小图（100% DPI 下 58×58）|Square image in the upper-right corner (58×58 at 100% DPI)">右上角方形小图（100% DPI 下 58×58）</td>
+        <td data-t="WelcomeLabel1/2，默认只有两句欢迎语|WelcomeLabel1/2 — two sentences of welcome prose by default">`WelcomeLabel1/2`，默认只有两句欢迎语</td>
+      </tr>
+      <tr>
+        <td data-t="现代安装器（VS Code / Slack / Discord 一类）|Modern installers (VS Code, Slack, Discord)">现代安装器（VS Code / Slack / Discord 一类）</td>
+        <td data-t="不用侧边大图|No side artwork">不用侧边大图</td>
+        <td data-t="同上，单一纵向堆叠|Same; one vertical stack">同上，单一纵向堆叠</td>
+        <td data-t="顶部小图标 + 产品名 + 版本 + 发布者（信息卡）|Small icon at the top, then product, version, publisher — an info card">顶部小图标 + 产品名 + 版本 + 发布者（信息卡）</td>
+      </tr>
+      <tr>
+        <td data-t="本原型（页内锁排 + 惯例文案）|This prototype (in-page lockup, conventional copy)">本原型（页内锁排 + 惯例文案）</td>
+        <td data-t="向导大图位置空，品牌改用页内 132px 锁排|The wizard artwork slot is empty; the brand moves into a 132px in-page lockup">向导大图位置空，品牌改用页内 132px 锁排</td>
+        <td data-t="右上角小图沿用 Inno 原生|Native Inno small image in the upper-right">右上角小图沿用 Inno 原生</td>
+        <td data-t="正文四句落在 Inno/NSIS 惯例措辞内，收尾句贴页脚分隔线上方|Four body sentences within Inno/NSIS conventional wording, with the closing line just above the footer divider">正文四句落在 Inno/NSIS 惯例措辞内，收尾句贴页脚分隔线上方</td>
+      </tr>
+    </table>
+
+    <h3 style="font-size:13px;margin:24px 0 8px" data-t="逐页实现映射|Screen-to-implementation map">逐页实现映射</h3>
+    <table class="spec">
+      <tr><th data-t="页面|Screen">页面</th><th data-t="实现方式|How">实现方式</th><th data-t="关键指令|Key directives">关键指令</th></tr>
+      <tr><td data-t="① 欢迎|1 Welcome">① 欢迎</td><td data-t="原生 + 少量 [Code]|Native + a little code">原生 + 少量 [Code]</td><td class="mono">WizardImageFile 置空 · [Code] 放 132×132 图片（TBitmapImage 挂 WelcomePage）+ WelcomeLabel1/2 左移 · [Messages] 覆盖 WelcomeLabel1/2 · WizardSmallImageFile（58×58）</td></tr>
+      <tr><td data-t="② 已安装检测|2 Existing install">② 已安装检测</td><td data-t="[Code]|Code">[Code]</td><td class="mono">InitializeSetup 读注册表 · PrepareToInstall → Exec(unins000.exe /VERYSILENT …) · CloseApplications=yes</td></tr>
+      <tr><td data-t="③ 安装范围|3 Scope">③ 安装范围</td><td data-t="[Code] 自定义页|Custom page">[Code] 自定义页</td><td class="mono">CreateCustomPage · TNewRadioButton ×3 · TNewEdit · NextButtonClick 提权重启</td></tr>
+      <tr><td data-t="③b 不可写|3b Not writable">③b 不可写</td><td data-t="已实现|Done">已实现</td><td class="mono">同一页的就地错误态：NextButtonClick(③ 页 ID) · IsWritableDir · ScopeError 行 · 主按钮换文案 · 再点一次走 ShellExec('runas', {srcexe}, '/ALLUSERS /DIR="…"')</td></tr>
+      <tr><td data-t="④ 附加任务|4 Tasks">④ 附加任务</td><td data-t="原生|Native">原生</td><td class="mono">[Tasks] desktopicon · Flags: unchecked（「安装后启动」归 ⑥）</td></tr>
+      <tr><td data-t="⑤ 进度|5 Progress">⑤ 进度</td><td data-t="原生|Native">原生</td><td class="mono">安装页（无自定义）</td></tr>
+      <tr><td data-t="⑥ 完成|6 Finish">⑥ 完成</td><td data-t="原生|Native">原生</td><td class="mono">[Run] postinstall → 完成页复选</td></tr>
+      <tr><td data-t="U1–U4 卸载|Uninstall">U1–U4 卸载</td><td data-t="原生 + [Code]|Native + code">原生 + [Code]</td><td class="mono">InitializeUninstall · CreateInputOptionPage · CurUninstallStepChanged(usPostUninstall) · DelTree</td></tr>
+      
+    </table>
+
+    <h3 style="font-size:13px;margin:24px 0 8px" data-t="品牌露出位置（需求 3）|Where the logo appears (req. 3)">品牌露出位置（需求 3）</h3>
+    <table class="spec">
+      <tr><th data-t="位置|Where">位置</th><th data-t="图|Asset">图</th><th data-t="规格|Spec">规格</th></tr>
+      <tr><td data-t="欢迎 / 完成页页内锁排|Welcome &amp; Finish, in-page lockup">欢迎 / 完成页页内锁排</td><td>logo-master</td><td>132×132 PNG（建议导出 264×264 供高 DPI）</td></tr>
+      <tr><td data-t="其余各页右上角|Upper right, other pages">其余各页右上角</td><td>logo-symbol</td><td data-t="按 58×58 区域（100% DPI）导出 2–3 倍图，透明 PNG|Export 2-3x the 58x58 area (100% DPI), transparent PNG">按 58×58 区域（100% DPI）导出 2–3 倍图，透明 PNG</td></tr>
+      <tr><td data-t="任务栏 / 标题栏|Taskbar / title bar">任务栏 / 标题栏</td><td>AppIcon.ico</td><td>既有资源，SetupIconFile 已指向</td></tr>
+      <tr><td data-t="应用和功能 图标|Apps &amp; features icon">应用和功能 图标</td><td>exe 内嵌图标</td><td>UninstallDisplayIcon 已设</td></tr>
+      <tr><td data-t="开始菜单 / 桌面快捷方式|Shortcuts">开始菜单 / 桌面快捷方式</td><td>exe 内嵌图标</td><td>随 exe，无需额外文件</td></tr>
+    </table>
+
+    <h3 style="font-size:13px;margin:24px 0 8px" data-t="与原型的差异（需要你拍板）|Deviations from what ships today (need your call)">与原型的差异（需要你拍板）</h3>
+    <table class="spec">
+      <tr><th data-t="项|Item">项</th><th data-t="现状|Today">现状</th><th data-t="本原型|This prototype">本原型</th><th data-t="代价|Cost">代价</th></tr>
+      <tr><td data-t="安装范围|Scope">安装范围</td><td>Inno 两选一 + 独立目录页</td><td data-t="三选一，自定义内联路径|3-way, inline path">三选一，自定义内联路径</td><td data-t="约 80–100 行 [Code]|about 80–100 lines of [Code]">约 80–100 行 [Code]</td></tr>
+      <tr><td data-t="升级处理|Upgrade">升级处理</td><td data-t="就地覆盖，无提示|overwrite in place">就地覆盖，无提示</td><td data-t="检测页 + 静默卸载旧版|detect page + silent old uninstall">检测页 + 静默卸载旧版</td><td data-t="约 30 行 [Code]|about 30 lines">约 30 行 [Code]</td></tr>
+      <tr><td data-t="卸载数据|Uninstall data">卸载数据</td><td data-t="全部保留|keeps everything">全部保留</td><td data-t="两项勾选：第一项预勾（默认删配置）、录像不预勾|two options: settings pre-ticked, recordings not">两项勾选：第一项预勾（默认删配置）、录像不预勾</td><td data-t="已落地（约 40 行 [Code]）；体积与数量统计、脚本开关待补|landed (~40 lines of [Code]); size/count stats and the script switch still to do">已落地（约 40 行 `[Code]`）；体积与数量统计、脚本开关待补</td></tr>
+      <tr><td data-t="向导图|Wizard art">向导图</td><td data-t="Inno 默认图|Inno default">Inno 默认图</td><td data-t="品牌 SVG 导出的 PNG|PNG from brand SVG">品牌 SVG 导出的 PNG</td><td data-t="导出 2 张 PNG|export 2 PNGs">导出 2 张 PNG</td></tr>
+    </table>
+
+    <h3 style="font-size:13px;margin:24px 0 8px" data-t="落地前必须处理的技术项（已逐条验过）|Technical items to settle before implementing (each one checked)">落地前必须处理的技术项（已逐条验过）</h3>
+    <table class="spec">
+      <tr><th data-t="项|Item">项</th><th data-t="状态|Status">状态</th><th data-t="依据与做法|Evidence and fix">依据与做法</th></tr>
+      <tr>
+        <td data-t="U1 确认页（锁排 + 信息表）|U1 confirm page (lockup + info list)">U1 确认页（锁排 + 信息表）</td>
+        <td data-t="版式不可实现，需改设计|layout cannot be built; design change needed">版式不可实现，需改设计</td>
+        <td data-t="卸载器里没有可用的向导页（实测：CreateCustomPage 与 CreateInputOptionPage 都触发「Cannot call ... during Uninstall」致命错误）。确认只能走 Inno 原生提示，文案来自 [Messages] 的 ConfirmUninstall —— 也就是说 U1 能保留的只有「将删除什么」这句话，锁排与「位置 / 占用」信息表无法作为一页呈现。|The uninstaller offers no usable wizard pages: measured, both CreateCustomPage and CreateInputOptionPage fail with 'Cannot call ... during Uninstall'. The confirmation can only be Inno's own prompt, worded from [Messages] ConfirmUninstall - so U1 keeps the sentence about what will be removed, but its lockup and the Location / Size list cannot be shown as a page.">卸载器里没有可用的向导页（实测：`CreateCustomPage` 与 `CreateInputOptionPage` 都触发「Cannot call ... during Uninstall」致命错误）。确认只能走 Inno 原生提示，文案来自 `[Messages]` 的 `ConfirmUninstall` —— 也就是说 U1 能保留的只有「将删除什么」这句话，锁排与「位置 / 占用」信息表无法作为一页呈现。</td>
+      </tr>
+      <tr>
+        <td data-t="静默路径的默认值|Silent-path defaults">静默路径的默认值</td>
+        <td data-t="必须有守卫（已实现）|guard required (implemented)">必须有守卫（已实现）</td>
+        <td data-t="第一项预勾之后，静默/无人值守会取默认值、直接删掉设置——而 ② 升级时正是用 /VERYSILENT 跑这个卸载器。所以 UninstallSilent() 早退是必需而非保险：静默一律不保留删除动作。给 IT 的脚本化清理另开显式开关，不靠静默这个启发式。|With the first option pre-ticked, a silent or unattended run takes the defaults and would delete the settings — and page 2's upgrade path is exactly such a run. The early UninstallSilent() return is therefore required, not a nicety: a silent run never deletes. Scripted cleanup for IT gets an explicit switch instead of relying on the silent heuristic. Measured correction: InitializeUninstall is a Boolean function, and that early return used to leave Result at its default False - which the uninstaller reads as abort, so a silent uninstall removed nothing at all (program files, shortcuts and the registry key all stayed) and page 2's upgrade cleanup silently did nothing. The uninstaller's own log is the proof: InitializeUninstall returned False; aborting. The fix is Result := True; at the top, before any early return; measured afterwards: the old build's files and shortcuts go away while settings and recordings stay. This row's rule therefore covers every early return, not only the pre-ticked box.">第一项预勾之后，静默/无人值守会取默认值、直接删掉设置——而 ② 升级时正是用 `/VERYSILENT` 跑这个卸载器。所以 `UninstallSilent()` 早退是**必需**而非保险：静默一律不保留删除动作。给 IT 的脚本化清理另开显式开关，不靠静默这个启发式。<b>实测更正</b>：<code>InitializeUninstall</code> 是 <code>Boolean</code> 函数，静默分支的早退曾让 <code>Result</code> 留在默认的 <code>False</code>——卸载器把它读成「中止卸载」，于是静默卸载什么都没删（程序文件、快捷方式、注册表项全部保留），② 的升级清理也因此完全失效。卸载器自己的日志是决定性证据：<code>InitializeUninstall returned False; aborting.</code> 修法是函数开头先 <code>Result := True;</code> 再早退；修复后实测：旧版程序文件与快捷方式被删、设置与录像保留。所以这一行的要求不只针对「预勾」，而是任何早退都不能丢下 <code>Result</code>。</td>
+<｜｜DSML｜｜ parameter name="explanation" string="true">更正原型里静默卸载的结论
+      </tr>
+      <tr>
+        <td data-t="范围问两次|Scope asked twice">范围问两次</td>
+        <td data-t="需要改 .iss|needs a .iss change">需要改 .iss</td>
+        <td data-t="PrivilegesRequiredOverridesAllowed 里的 dialog 会在向导启动前先弹 Inno 自己的「为所有用户 / 仅为我」对话框，与 ③ 重复；去掉 dialog、只留 commandline 即可。|The dialog value in PrivilegesRequiredOverridesAllowed makes Inno ask “all users / just me” before the wizard starts, duplicating page 3; drop dialog and keep commandline only.">`PrivilegesRequiredOverridesAllowed` 里的 `dialog` 会在向导启动前先弹 Inno 自己的「为所有用户 / 仅为我」对话框，与 ③ 重复；去掉 `dialog`、只留 `commandline` 即可。</td>
+      </tr>
+      <tr>
+        <td data-t="SelectDirBrowseLabel 成为死配置|SelectDirBrowseLabel goes dead">SelectDirBrowseLabel 成为死配置</td>
+        <td data-t="需要改 .iss|needs a .iss change">需要改 .iss</td>
+        <td data-t="③ 是自定义页，取代了原生目录页，所以 .iss 里为它写的中英两条消息永远不显示，应删除或移到自定义页的说明里。|Page 3 is a custom page replacing the native directory page, so the two message entries written for it (both languages) never show; delete them or move the wording onto the custom page.">③ 是自定义页，取代了原生目录页，所以 `.iss` 里为它写的中英两条消息永远不显示，应删除或移到自定义页的说明里。</td>
+      </tr>
+      <tr>
+        <td>.iss 第 226–228 行[UninstallDelete] 立场</td>
+        <td data-t="冲突，需以本原型为准并同步|conflict; align with this prototype">冲突，需以本原型为准并同步</td>
+        <td data-t=".iss 第 226–228 行写的是「卸载保留设置与录像，这不是卸载器该替用户决定的」，与本原型 U2/U4（默认全保留、勾选才删）方向一致但表述不同：原注释读起来像「永不删」，本原型是「用户要求才删」。实现时把注释改成后者，并让 [Code] 承担删除。|Lines 226-228 of the .iss say uninstalling leaves the settings and recordings alone because that is not the uninstaller's decision — same direction as U2/U4 here (keep by default, delete only on request) but worded as “never”. Implement the deletion in [Code] and reword the comment to match.">`.iss` 第 226–228 行写的是「卸载保留设置与录像，这不是卸载器该替用户决定的」，与本原型 U2/U4（默认全保留、勾选才删）方向一致但表述不同：原注释读起来像「永不删」，本原型是「用户要求才删」。实现时把注释改成后者，并让 `[Code]` 承担删除。</td>
+      </tr>
+      <tr>
+        <td data-t="②③ 与 U1/U4 的实现|Code for 2, 3 and U1/U4">②③ 与 U1/U4 的实现</td>
+        <td data-t="②③ 已实现，U1/U4 仍是计划|pages 2 and 3 done, U1/U4 still planned">②③ 已实现，U1/U4 仍是计划</td>
+        <td data-t="卸载数据（U2）已落地为独立对话框：CreateCustomForm + 两个复选（配置预勾、录像不勾）+ 取消/卸载。实测三条硬约束写进 .iss 注释：Inno 6.7.3 的卸载器不允许向导页（CreateInputOptionPage / CreateCustomPage 直接致命错误），允许自定义对话框；ShowModal 在静默下也会阻塞，所以 UninstallSilent() 早退是必需。静默卸载实测：秒退、不删任何用户数据。② 的注册表检测与升级卸载、③ 的自定义范围页、U4 的结果拼装仍是计划。|The uninstall data step (U2) now ships as a standalone dialog: CreateCustomForm with two checkboxes (settings pre-ticked, recordings not) plus Cancel/Uninstall. Three hard constraints are recorded in the .iss: Inno 6.7.3's uninstaller refuses wizard pages (CreateInputOptionPage and CreateCustomPage are fatal there), allows a custom form, and ShowModal blocks even when silent - so the early UninstallSilent() return is required. A silent uninstall was measured: it exits at once and deletes no user data. Still to do: page 2's registry detection and upgrade uninstall, page 3's custom scope page and U4's result assembly.">卸载数据（U2）**已落地为独立对话框**：`CreateCustomForm` + 两个复选（配置预勾、录像不勾）+ 取消/卸载。实测三条硬约束写进 `.iss` 注释：Inno 6.7.3 的卸载器不允许向导页（`CreateInputOptionPage` / `CreateCustomPage` 直接致命错误），允许自定义对话框；`ShowModal` 在静默下也会阻塞，所以 `UninstallSilent()` 早退是**必需**。静默卸载实测：秒退、不删任何用户数据。② 的注册表检测与升级卸载、③ 的自定义范围页、U4 的结果拼装仍是计划。</td>
+      </tr>
+      <tr>
+        <td data-t="删配置会连带删索引|Deleting settings also drops the catalogue">删配置会连带删索引</td>
+        <td data-t="应用侧待办|app-side follow-up">应用侧待办</td>
+        <td data-t="录制库索引就在配置目录里。默认删配置、保留录像之后，重新安装时应用必须重扫 Videos\DawnCapture 重建索引，否则用户保留下来的录像在库里看不见——这是应用侧的活，不是安装器能解决的。|The recording catalogue lives in the settings folder. With settings deleted and recordings kept, the app must rescan Videos\DawnCapture after a reinstall to rebuild the index, or the kept recordings are invisible in the library - an app-side job, not something Setup can do.">录制库索引就在配置目录里。默认删配置、保留录像之后，重新安装时应用**必须重扫** `Videos\DawnCapture` 重建索引，否则用户保留下来的录像在库里看不见——这是应用侧的活，不是安装器能解决的。</td>
+      </tr>
+      <tr>
+        <td data-t="页内 132px 图片|The in-page 132px image">页内 132px 图片</td>
+        <td data-t="需要额外 [Code]|extra [Code] needed">需要额外 [Code]</td>
+        <td data-t="WizardImageFile 置空只让左侧不再画图，Inno 的布局不变、标签不会左移——必须显式把 WelcomeLabel1/2（完成页是 FinishedLabel 一族）挪到页左侧，否则当初那条空色带会回来。|Blanking WizardImageFile only stops the drawing; Inno's layout does not change and the labels do not move — WelcomeLabel1/2 (and the FinishedLabel family on the finish page) must be moved to the left edge by hand, or that empty strip comes back.">`WizardImageFile` 置空只让左侧不再画图，Inno 的布局不变、标签不会左移——必须显式把 `WelcomeLabel1/2`（完成页是 `FinishedLabel` 一族）挪到页左侧，否则当初那条空色带会回来。</td>
+      </tr>
+      <tr>
+        <td data-t="内页右上角小图|Inner-page small image">内页右上角小图</td>
+        <td data-t="资源缺失|asset missing">资源缺失</td>
+        <td data-t="全库没有任何向导小图，.iss 也没设 WizardSmallImageFile，所以内页现在显示的是 Inno 自带图；需要按 58×58 区域导出 2–3 倍 PNG。|There is no wizard small image anywhere and the .iss does not set WizardSmallImageFile, so inner pages currently show Inno's built-in artwork; export a 2-3x PNG for the 58x58 area.">全库没有任何向导小图，`.iss` 也没设 `WizardSmallImageFile`，所以内页现在显示的是 Inno 自带图；需要按 58×58 区域导出 2–3 倍 PNG。</td>
+      </tr>
+      <tr>
+        <td data-t="173 MB 与系统要求|173 MB and the OS requirement">173 MB 与系统要求</td>
+        <td data-t="由构建回填|filled in at build time">由构建回填</td>
+        <td data-t="①④⑤U1 用同一个数字，取自 Inno 按 [Files] 算出的所需空间；不要手写死，版本一变就失真。Windows 版本要求与 .iss 的 MinVersion=10.0.19041 一致。|Pages 1, 4, 5 and U1 share one number taken from the space Inno computes from [Files]; do not hard-code it or it drifts with every build. The OS requirement matches MinVersion=10.0.19041 in the .iss.">①④⑤U1 用同一个数字，取自 Inno 按 `[Files]` 算出的所需空间；不要手写死，版本一变就失真。Windows 版本要求与 `.iss` 的 `MinVersion=10.0.19041` 一致。</td>
+      </tr>
+      <tr>
+        <td data-t="⑥ 的热键文案|The hotkey line on page 6">⑥ 的热键文案</td>
+        <td data-t="需与应用同源|must share one source with the app">需与应用同源</td>
+        <td data-t="界面写 Ctrl+Shift+F9，必须与 DawnCapture 的默认设置核对（应用内可改），否则安装器文案会过期。|The page says Ctrl+Shift+F9, which must be checked against DawnCapture's default (changeable in-app) or the installer copy goes stale.">界面写 Ctrl+Shift+F9，必须与 DawnCapture 的默认设置核对（应用内可改），否则安装器文案会过期。</td>
+      </tr>
+      <tr>
+        <td>design/INSTALLER_APPROACH.md</td>
+        <td data-t="文件缺失|file missing">文件缺失</td>
+        <td data-t="被本文件、.iss、distribute.ps1 与 README 第 56 行引用，但磁盘上不存在（design/ 也在 .gitignore 里）。|Referenced by this file, the .iss, distribute.ps1 and README line 56, but it does not exist on disk (design/ is gitignored too).">被本文件、`.iss`、`distribute.ps1` 与 `README` 第 56 行引用，但磁盘上不存在（`design/` 也在 `.gitignore` 里）。</td>
+      </tr>
+    </table>
+  </section>
+</main>
+
+<script>
+  // ---- 语言：所有文案都带 data-t="中文|English" ----
+  // data-t 里按 Windows 的写法保留加速键（&N / &B…，可原样贴进 .isl），
+  // 但界面上加速键是系统画的下划线、不是字面 &，所以显示前把 & 去掉。
+  const stripAccel = s => s.replace(/&(?![a-zA-Z]+;)/g, '');
+  const nodes = document.querySelectorAll('[data-t]');
+  function setLang(lang) {
+    document.body.dataset.lang = lang;
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    nodes.forEach(n => {
+      const [zh, en] = n.getAttribute('data-t').split('|');
+      n.innerHTML = stripAccel(lang === 'zh' ? zh : (en || zh));
+    });
+    btnLang.textContent = lang === 'zh' ? 'English' : '中文';
+    btnLang.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
+  }
+
+  const btnLang = document.getElementById('btn-lang');
+  btnLang.addEventListener('click', () => setLang(document.body.dataset.lang === 'zh' ? 'en' : 'zh'));
+
+  // ---- 主题：令牌双份，跟随 DESIGN.md 的 ThemeDictionaries ----
+  const btnTheme = document.getElementById('btn-theme');
+  btnTheme.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+    btnTheme.setAttribute('aria-pressed', dark ? 'false' : 'true');
+    btnTheme.setAttribute('data-t', dark ? '深色主题|Dark theme' : '浅色主题|Light theme');
+    setLang(document.body.dataset.lang);
+  });
+
+  // ---- 实现标注：给评审看，交付时可关掉 ----
+  const btnNotes = document.getElementById('btn-notes');
+  btnNotes.addEventListener('click', () => {
+    const on = document.body.classList.toggle('hide-notes') === false;
+    btnNotes.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+
+  // ---- 原型交互：点一下选项就切换选中态（仅为演示） ----
+  document.querySelectorAll('.opt').forEach(opt => {
+    opt.addEventListener('click', ev => {
+      if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'BUTTON') return;
+      const group = opt.closest('.opts');
+      if (opt.querySelector('.mark.radio')) {
+        group.querySelectorAll('.opt').forEach(o => o.classList.remove('sel'));
+      }
+      opt.classList.toggle('sel');
+      ev.preventDefault();
+    });
+  });
+
+  // ---- 英文界面：克隆上方每一屏，文案换成 data-t 的英文侧 ----
+  // 单源：英文版不另写一份 HTML，避免两种语言各自漂移。
+  (function buildEnglishPreview() {
+    const src = document.querySelector('section.screens');
+    const host = document.getElementById('en-screens');
+    if (!src || !host) return;
+    const clone = src.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[data-t]').forEach(n => {
+      const parts = n.getAttribute('data-t').split('|');
+      n.innerHTML = stripAccel(parts[1] || parts[0]);
+    });
+    host.appendChild(clone);
+  })();
+
+  setLang('zh');
+</script>
+</body>
+</html>
